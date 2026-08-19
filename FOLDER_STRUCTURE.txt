@@ -1,0 +1,67 @@
+📁 EventFlow Folder Structure
+═════════════════════════════════════════════════════════════════
+
+eventflow/                          ← THIS IS YOUR MAIN FOLDER
+├── 📁 backend/                     ← Backend API
+│   ├── src/
+│   │   ├── index.ts               ← Main Express server
+│   │   ├── connectors/            ← Data source connectors
+│   │   ├── database/              ← Database config
+│   │   ├── models/                ← TypeScript types
+│   │   ├── services/              ← Business logic
+│   │   ├── jobs/                  ← Crawler jobs
+│   │   └── utils/                 ← Utilities
+│   ├── migrations/                ← Database migrations
+│   ├── package.json               ← Dependencies
+│   └── tsconfig.json              ← TypeScript config
+│
+├── 📁 frontend/                    ← Event Search App (React)
+│   ├── src/
+│   │   ├── App.tsx                ← Main React app
+│   │   └── services/              ← API client
+│   ├── package.json               ← Dependencies
+│   └── tsconfig.json              ← TypeScript config
+│
+├── 📁 admin/                       ← Admin Dashboard (React)
+│   ├── src/
+│   │   ├── App.tsx                ← Admin dashboard
+│   │   └── services/              ← API client
+│   ├── package.json               ← Dependencies
+│   └── tsconfig.json              ← TypeScript config
+│
+├── 📄 docker-compose.yml           ← Docker infrastructure
+├── 📄 .env.example                 ← Configuration template
+├── 📄 START.sh                     ← Auto setup script
+│
+└── 📚 Documentation/
+    ├── QUICK_START_NOW.md          ← ⭐ START HERE
+    ├── READ_THIS_FIRST.md          ← Quick overview
+    ├── COMPLETE_STARTUP_GUIDE.md   ← Full step-by-step
+    ├── WHAT_YOULL_SEE.md           ← Visual preview
+    ├── README.md                   ← Full reference
+    ├── ARCHITECTURE.md             ← System design
+    ├── PLATFORM_SUMMARY.md         ← Features overview
+    └── QUICKSTART.md               ← Quick reference
+
+═════════════════════════════════════════════════════════════════
+
+KEY FILES:
+  • docker-compose.yml    - Starts PostgreSQL, Redis, Elasticsearch
+  • .env.example          - Configuration (copy to .env to customize)
+  • backend/package.json  - Backend dependencies
+  • frontend/package.json - Frontend dependencies
+  • admin/package.json    - Admin dependencies
+
+WHAT'S INCLUDED:
+  ✅ Complete Express API
+  ✅ React Event Search App
+  ✅ React Admin Dashboard
+  ✅ PostgreSQL Database (42 tables)
+  ✅ Redis Cache & Job Queue
+  ✅ Elasticsearch Search
+  ✅ Automated Crawlers
+  ✅ Docker Configuration
+  ✅ All Source Code
+  ✅ Full Documentation
+
+═════════════════════════════════════════════════════════════════
