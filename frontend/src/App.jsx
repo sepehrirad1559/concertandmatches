@@ -1,13 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:30001/api';
 
-const events = [
-  { id: 1, title: 'Grand Concert Tour 2024', date: 'Dec 14', city: 'Madison, WI', price: '$45', description: 'Experience the ultimate concert experience with world-class performers!' },
-  { id: 2, title: 'Comedy Night Live', date: 'Dec 17', city: 'Green Bay, WI', price: '$25', description: 'Laugh the night away with top comedians performing live!' },
-  { id: 3, title: 'Winter Sports Tournament', date: 'Dec 19', city: 'Milwaukee, WI', price: '$35', description: 'Watch the most exciting winter sports competition!' }
-];
+function formatDate(dateStr) {
+  if (!dateStr) return 'Date TBA';
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatPrice(event) {
+  if (event.min_price == null && event.max_price == null) return 'Price TBA';
+  if (event.min_price != null && event.max_price != null && event.min_price !== event.max_price) {
+    return `$${Number(event.min_price).toFixed(0)} - $${Number(event.max_price).toFixed(0)}`;
+  }
+  const p = event.min_price != null ? event.min_price : event.max_price;
+  return `$${Number(p).toFixed(0)}`;
+}
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -19,6 +31,27 @@ export default function App() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [message, setMessage] = useState('');
+
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState('');
+
+  useEffect(() => {
+    const loadEvents = async () => {
+      setEventsLoading(true);
+      setEventsError('');
+      try {
+        const response = await fetch(`${API_URL}/events?limit=24`);
+        const data = await response.json();
+        setEvents(data.events || []);
+      } catch (error) {
+        setEventsError('Could not load events right now. Please try again later.');
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+    loadEvents();
+  }, []);
 
   const handleLogin = async () => {
     try {
@@ -102,13 +135,25 @@ export default function App() {
         </nav>
 
         <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid #ddd', padding: '30px', borderRadius: '8px' }}>
+          {selectedEvent.image_url && (
+            <img
+              src={selectedEvent.image_url}
+              alt={selectedEvent.title}
+              style={{ width: '100%', borderRadius: '8px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
+            />
+          )}
           <h1>{selectedEvent.title}</h1>
-          <p style={{ fontSize: '18px', color: '#666' }}>{selectedEvent.description}</p>
+          {selectedEvent.artist_name && (
+            <p style={{ fontSize: '18px', color: '#666' }}>{selectedEvent.artist_name}</p>
+          )}
+          {selectedEvent.description && (
+            <p style={{ fontSize: '15px', color: '#666' }}>{selectedEvent.description}</p>
+          )}
 
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-            <p><strong>📅 Date:</strong> {selectedEvent.date}</p>
-            <p><strong>📍 Location:</strong> {selectedEvent.city}</p>
-            <p><strong>💰 Price:</strong> {selectedEvent.price}</p>
+            <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
+            <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
+            <p><strong>💰 Price:</strong> {formatPrice(selectedEvent)}</p>
           </div>
 
           {loggedIn ? (
@@ -229,18 +274,32 @@ export default function App() {
         <h2>Status: {loggedIn ? '✅ Logged In' : '❌ Not Logged In'}</h2>
 
         <h3>Featured Events</h3>
+
+        {eventsLoading && <p>Loading events...</p>}
+        {!eventsLoading && eventsError && <p>{eventsError}</p>}
+        {!eventsLoading && !eventsError && events.length === 0 && <p>No events available right now. Check back soon!</p>}
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
           {events.map((event) => (
-            <div key={event.id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '8px' }}>
-              <h4>{event.title}</h4>
-              <p>📅 {event.date}</p>
-              <p>📍 {event.city}</p>
-              <p>💰 {event.price}</p>
-              <button
-                onClick={() => setSelectedEvent(event)}
-                style={{ padding: '8px 16px', cursor: 'pointer', width: '100%' }}>
-                View Event
-              </button>
+            <div key={event.id} style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
+              {event.image_url && (
+                <img
+                  src={event.image_url}
+                  alt={event.title}
+                  style={{ width: '100%', height: '150px', objectFit: 'cover' }}
+                />
+              )}
+              <div style={{ padding: '15px' }}>
+                <h4>{event.title}</h4>
+                <p>📅 {formatDate(event.date)}</p>
+                <p>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
+                <p>💰 {formatPrice(event)}</p>
+                <button
+                  onClick={() => setSelectedEvent(event)}
+                  style={{ padding: '8px 16px', cursor: 'pointer', width: '100%' }}>
+                  View Event
+                </button>
+              </div>
             </div>
           ))}
         </div>
