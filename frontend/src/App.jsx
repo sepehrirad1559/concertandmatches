@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './App.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:30001/api';
+
 const events = [
   { id: 1, title: 'Grand Concert Tour 2024', date: 'Dec 14', city: 'Madison, WI', price: '$45', description: 'Experience the ultimate concert experience with world-class performers!' },
   { id: 2, title: 'Comedy Night Live', date: 'Dec 17', city: 'Green Bay, WI', price: '$25', description: 'Laugh the night away with top comedians performing live!' },
@@ -20,7 +22,7 @@ export default function App() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://localhost:30001/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -46,11 +48,11 @@ export default function App() {
       return;
     }
     try {
-      const response = await fetch('http://localhost:30001/api/auth/register', {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           password,
           passwordConfirm: password,
           firstName,
@@ -102,7 +104,7 @@ export default function App() {
         <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid #ddd', padding: '30px', borderRadius: '8px' }}>
           <h1>{selectedEvent.title}</h1>
           <p style={{ fontSize: '18px', color: '#666' }}>{selectedEvent.description}</p>
-          
+
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
             <p><strong>📅 Date:</strong> {selectedEvent.date}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.city}</p>
@@ -110,12 +112,12 @@ export default function App() {
           </div>
 
           {loggedIn ? (
-            <button style={{ 
-              marginTop: '30px', 
-              padding: '15px 30px', 
-              fontSize: '16px', 
-              backgroundColor: '#4CAF50', 
-              color: 'white', 
+            <button style={{
+              marginTop: '30px',
+              padding: '15px 30px',
+              fontSize: '16px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
@@ -225,7 +227,7 @@ export default function App() {
 
       <div style={{ marginTop: '20px' }}>
         <h2>Status: {loggedIn ? '✅ Logged In' : '❌ Not Logged In'}</h2>
-        
+
         <h3>Featured Events</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
           {events.map((event) => (
@@ -234,7 +236,7 @@ export default function App() {
               <p>📅 {event.date}</p>
               <p>📍 {event.city}</p>
               <p>💰 {event.price}</p>
-              <button 
+              <button
                 onClick={() => setSelectedEvent(event)}
                 style={{ padding: '8px 16px', cursor: 'pointer', width: '100%' }}>
                 View Event
