@@ -63,6 +63,91 @@ function AffiliateDisclosure() {
   );
 }
 
+// Quick category filters shown between the search bar and the events list.
+// `category` values are matched against the events.category column (OR'd,
+// comma-joined); `keywords` are matched against title/artist/venue text
+// (also OR'd) for leagues/genres that aren't their own category in the data.
+// Both are ANDed with whatever the customer types in the main search box.
+const EVENT_CATEGORIES = [
+  {
+    id: 'nfl',
+    label: 'NFL',
+    emoji: '🏈',
+    keywords: ['NFL'],
+    background: 'linear-gradient(135deg, #013369, #1c3f7c)',
+  },
+  {
+    id: 'concerts',
+    label: 'Concerts',
+    emoji: '🎤',
+    category: ['Music', 'Concert'],
+    background: 'linear-gradient(135deg, #8e2de2, #e91e8c)',
+  },
+  {
+    id: 'nba',
+    label: 'NBA',
+    emoji: '🏀',
+    keywords: ['NBA', 'Basketball'],
+    background: 'linear-gradient(135deg, #1d428a, #c8102e)',
+  },
+  {
+    id: 'ncaaf',
+    label: 'NCAA Football',
+    emoji: '🎓',
+    keywords: ['NCAA Football', 'College Football', 'NCAA'],
+    background: 'linear-gradient(135deg, #002d62, #b08d2c)',
+  },
+  {
+    id: 'theater',
+    label: 'Theater',
+    emoji: '🎭',
+    category: ['Arts & Theatre'],
+    background: 'linear-gradient(135deg, #6a0dad, #a8781f)',
+  },
+  {
+    id: 'comedy',
+    label: 'Comedy',
+    emoji: '😂',
+    keywords: ['Comedy', 'Stand-Up', 'Stand Up'],
+    background: 'linear-gradient(135deg, #ff8c00, #ffb703)',
+  },
+];
+
+function CategoryTiles({ activeCategoryId, onSelect }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+        gap: '12px',
+        marginBottom: '20px',
+      }}>
+      {EVENT_CATEGORIES.map((cat) => {
+        const isActive = activeCategoryId === cat.id;
+        return (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => onSelect(isActive ? null : cat.id)}
+            style={{
+              background: cat.background,
+              border: isActive ? '3px solid #222' : '3px solid transparent',
+              borderRadius: '10px',
+              padding: '16px 8px',
+              color: 'white',
+              cursor: 'pointer',
+              textAlign: 'center',
+              boxShadow: isActive ? '0 0 0 2px white inset' : 'none',
+            }}>
+            <div style={{ fontSize: '26px', marginBottom: '6px' }}>{cat.emoji}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{cat.label}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Footer() {
   return (
     <footer style={{ marginTop: '40px', padding: '20px 0', borderTop: '1px solid #eee', fontSize: '12px', color: '#888' }}>
@@ -88,6 +173,7 @@ export default function App() {
   const [eventsHasMore, setEventsHasMore] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
+  const [activeCategoryId, setActiveCategoryId] = useState(null);
 
   // 'pending' | 'granted' | 'denied' | 'unavailable'. Events default to
   // nearest-first once we know the customer's location; we hold off on the
@@ -112,9 +198,12 @@ export default function App() {
     );
   }, []);
 
-  const fetchEvents = async (offset, search) => {
+  const fetchEvents = async (offset, search, categoryId) => {
     const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
     if (search) params.set('search', search);
+    const activeCategory = EVENT_CATEGORIES.find((c) => c.id === categoryId);
+    if (activeCategory?.category) params.set('category', activeCategory.category.join(','));
+    if (activeCategory?.keywords) params.set('keywords', activeCategory.keywords.join(','));
     if (locationStatus === 'granted' && userLat != null && userLng != null) {
       params.set('lat', String(userLat));
       params.set('lng', String(userLng));
@@ -124,8 +213,9 @@ export default function App() {
     return response.json();
   };
 
-  // Initial load, and reload from the top whenever the active search changes
-  // or the customer's location resolves (granted/denied/unavailable).
+  // Initial load, and reload from the top whenever the active search or
+  // category tile changes, or the customer's location resolves (granted/
+  // denied/unavailable).
   useEffect(() => {
     if (locationStatus === 'pending') return;
     let cancelled = false;
@@ -133,7 +223,7 @@ export default function App() {
       setEventsLoading(true);
       setEventsError('');
       try {
-        const data = await fetchEvents(0, activeSearch);
+        const data = await fetchEvents(0, activeSearch, activeCategoryId);
         if (cancelled) return;
         setEvents(data.events || []);
         setEventsTotal(data.total || 0);
@@ -147,7 +237,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch, locationStatus]);
+  }, [activeSearch, activeCategoryId, locationStatus]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -162,7 +252,7 @@ export default function App() {
   const handleLoadMore = async () => {
     setEventsLoadingMore(true);
     try {
-      const data = await fetchEvents(events.length, activeSearch);
+      const data = await fetchEvents(events.length, activeSearch, activeCategoryId);
       setEvents((prev) => [...prev, ...(data.events || [])]);
       setEventsTotal(data.total || 0);
       setEventsHasMore(Boolean(data.hasMore));
@@ -274,9 +364,13 @@ export default function App() {
           )}
         </form>
 
-        {activeSearch && !eventsLoading && !eventsError && (
+        <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
+
+        {(activeSearch || activeCategoryId) && !eventsLoading && !eventsError && (
           <p style={{ color: '#666' }}>
-            {eventsTotal} result{eventsTotal === 1 ? '' : 's'} for "{activeSearch}"
+            {eventsTotal} result{eventsTotal === 1 ? '' : 's'}
+            {activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}
+            {activeSearch ? ` for "${activeSearch}"` : ''}
           </p>
         )}
 
@@ -292,7 +386,11 @@ export default function App() {
         {eventsLoading && <p>Loading events...</p>}
         {!eventsLoading && eventsError && <p>{eventsError}</p>}
         {!eventsLoading && !eventsError && events.length === 0 && (
-          <p>{activeSearch ? `No events found for "${activeSearch}".` : 'No events available right now. Check back soon!'}</p>
+          <p>
+            {activeSearch || activeCategoryId
+              ? `No events found${activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}${activeSearch ? ` for "${activeSearch}"` : ''}.`
+              : 'No events available right now. Check back soon!'}
+          </p>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
