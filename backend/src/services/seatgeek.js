@@ -69,8 +69,12 @@ export const storeEvent = async (sgEvent) => {
     const latitude = venue?.location?.lat ?? null;
     const longitude = venue?.location?.lon ?? null;
 
-    const minPrice = stats?.lowest_price ?? 0;
-    const maxPrice = stats?.highest_price ?? (minPrice || 0);
+    // SeatGeek's free Platform API tier doesn't reliably return listing
+    // price stats (often an empty {} object) — leave pricing null rather
+    // than defaulting to a fake $0, which would otherwise look like a real
+    // (and very wrong) price on the event page.
+    const minPrice = stats?.lowest_price != null ? stats.lowest_price : null;
+    const maxPrice = stats?.highest_price != null ? stats.highest_price : (minPrice != null ? minPrice : null);
 
     const existingEvent = await pool.query(
       'SELECT id FROM events WHERE external_id = $1',
