@@ -2,6 +2,7 @@ import express from 'express';
 import { pool } from '../index.js';
 import { verifyToken, verifyAdmin, getUserInfo } from '../middleware/auth.js';
 import { syncSeatGeekEvents } from '../services/seatgeek.js';
+import { syncAllEvents as syncTicketmasterEvents } from '../services/ticketmaster.js';
 
 const router = express.Router();
 
@@ -27,6 +28,48 @@ router.post('/sync/seatgeek', async (req, res) => {
     return res.status(500).json(result);
   }
   res.json(result);
+});
+
+router.post('/sync/ticketmaster', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const result = await syncTicketmasterEvents();
+
+  if (!result.success) {
+    return res.status(500).json(result);
+  }
+  res.json(result);
+});
+
+// One-time schema migration: add venue coordinate columns used to sort
+// events by distance from the customer. Safe to call more than once.
+router.post('/schema/add-geo-columns', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION');
+    await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION');
+    res.json({ success: true, message: 'latitude/longitude columns present on events table' });
+  } catch (error) {
+    console.error('Error adding geo columns:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Dashboard Stats

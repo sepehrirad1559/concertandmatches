@@ -12,6 +12,13 @@ function formatDate(dateStr) {
   }
 }
 
+function formatDistance(distanceKm) {
+  if (distanceKm == null) return null;
+  const miles = distanceKm * 0.621371;
+  if (miles < 1) return 'Less than 1 mi away';
+  return `${miles.toFixed(0)} mi away`;
+}
+
 function formatPrice(event) {
   if (event.min_price == null && event.max_price == null) return 'Price TBA';
   if (event.min_price != null && event.max_price != null && event.min_price !== event.max_price) {
@@ -82,16 +89,45 @@ export default function App() {
   const [searchInput, setSearchInput] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
 
+  // 'pending' | 'granted' | 'denied' | 'unavailable'. Events default to
+  // nearest-first once we know the customer's location; we hold off on the
+  // first fetch until this settles so the list doesn't visibly re-sort.
+  const [locationStatus, setLocationStatus] = useState('pending');
+  const [userLat, setUserLat] = useState(null);
+  const [userLng, setUserLng] = useState(null);
+
+  useEffect(() => {
+    if (!('geolocation' in navigator)) {
+      setLocationStatus('unavailable');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLat(position.coords.latitude);
+        setUserLng(position.coords.longitude);
+        setLocationStatus('granted');
+      },
+      () => setLocationStatus('denied'),
+      { timeout: 8000, maximumAge: 5 * 60 * 1000 }
+    );
+  }, []);
+
   const fetchEvents = async (offset, search) => {
     const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
     if (search) params.set('search', search);
+    if (locationStatus === 'granted' && userLat != null && userLng != null) {
+      params.set('lat', String(userLat));
+      params.set('lng', String(userLng));
+    }
     const response = await fetch(`${API_URL}/events?${params.toString()}`);
     if (!response.ok) throw new Error('Request failed');
     return response.json();
   };
 
-  // Initial load, and reload from the top whenever the active search changes.
+  // Initial load, and reload from the top whenever the active search changes
+  // or the customer's location resolves (granted/denied/unavailable).
   useEffect(() => {
+    if (locationStatus === 'pending') return;
     let cancelled = false;
     const loadEvents = async () => {
       setEventsLoading(true);
@@ -111,7 +147,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch]);
+  }, [activeSearch, locationStatus]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -244,6 +280,15 @@ export default function App() {
           </p>
         )}
 
+        {locationStatus === 'granted' && (
+          <p style={{ color: '#666', fontSize: '13px' }}>📍 Showing events near you first</p>
+        )}
+        {(locationStatus === 'denied' || locationStatus === 'unavailable') && (
+          <p style={{ color: '#666', fontSize: '13px' }}>
+            Showing events by date. Enable location in your browser to see events near you first.
+          </p>
+        )}
+
         {eventsLoading && <p>Loading events...</p>}
         {!eventsLoading && eventsError && <p>{eventsError}</p>}
         {!eventsLoading && !eventsError && events.length === 0 && (
@@ -264,6 +309,9 @@ export default function App() {
                 <h4>{event.title}</h4>
                 <p>📅 {formatDate(event.date)}</p>
                 <p>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
+                {formatDistance(event.distance_km) && (
+                  <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>🚗 {formatDistance(event.distance_km)}</p>
+                )}
                 <p>💰 {formatPrice(event)}</p>
                 <button
                   onClick={() => setSelectedEvent(event)}
