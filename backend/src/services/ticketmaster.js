@@ -119,6 +119,13 @@ export const storeEvent = async (tmEvent) => {
     const state = venue?.state?.stateCode || 'Unknown';
     const country = venue?.country?.countryCode === 'CA' ? 'Canada' : 'USA';
 
+    // Venue coordinates, used to sort events by distance from the customer.
+    // Ticketmaster returns these as numeric strings, so coerce with Number().
+    const rawLat = venue?.location?.latitude;
+    const rawLng = venue?.location?.longitude;
+    const latitude = rawLat !== undefined ? Number(rawLat) : null;
+    const longitude = rawLng !== undefined ? Number(rawLng) : null;
+
     // Price range
     const minPrice = priceRanges?.[0]?.minPrice ? parseFloat(priceRanges[0].minPrice) : 0;
     const maxPrice = priceRanges?.[0]?.maxPrice ? parseFloat(priceRanges[0].maxPrice) : 500;
@@ -132,10 +139,10 @@ export const storeEvent = async (tmEvent) => {
     if (existingEvent.rows.length > 0) {
       // Update existing event
       await pool.query(
-        `UPDATE events SET 
-         min_price = $1, max_price = $2, updated_at = NOW()
-         WHERE external_id = $3`,
-        [minPrice, maxPrice, id]
+        `UPDATE events SET
+         min_price = $1, max_price = $2, latitude = $3, longitude = $4, updated_at = NOW()
+         WHERE external_id = $5`,
+        [minPrice, maxPrice, latitude, longitude, id]
       );
       return existingEvent.rows[0].id;
     } else {
@@ -143,11 +150,13 @@ export const storeEvent = async (tmEvent) => {
       const result = await pool.query(
         `INSERT INTO events (
           external_id, title, description, category, date, country, state, city,
-          venue_name, venue_address, image_url, source, source_url, min_price, max_price
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          venue_name, venue_address, image_url, source, source_url, min_price, max_price,
+          latitude, longitude
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING id`,
         [id, title, description || '', category, date, country, state, city,
-         venueName, venue?.address?.address1 || '', image, 'ticketmaster', sourceUrl, minPrice, maxPrice]
+         venueName, venue?.address?.address1 || '', image, 'ticketmaster', sourceUrl, minPrice, maxPrice,
+         latitude, longitude]
       );
       return result.rows[0].id;
     }
