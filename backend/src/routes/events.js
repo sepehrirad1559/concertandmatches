@@ -7,7 +7,14 @@ const router = express.Router();
 // Get All Events with Filters
 router.get('/', async (req, res) => {
   try {
-    const { city, state, country, category, minPrice, maxPrice, startDate, endDate, search, sort = 'date', limit = 20, offset = 0 } = req.query;
+    const { city, state, country, category, minPrice, maxPrice, startDate, endDate, search, sort, lat, lng, limit = 20, offset = 0 } = req.query;
+
+    // Customer location, if the browser shared it. When present, results
+    // default to nearest-first unless the caller asked for a different sort.
+    const customerLat = lat !== undefined ? parseFloat(lat) : null;
+    const customerLng = lng !== undefined ? parseFloat(lng) : null;
+    const hasLocation = Number.isFinite(customerLat) && Number.isFinite(customerLng);
+    const effectiveSort = sort || (hasLocation ? 'distance' : 'date');
 
     let whereClause = ' WHERE 1=1';
     const params = [];
@@ -72,13 +79,32 @@ router.get('/', async (req, res) => {
     const countResult = await pool.query(`SELECT COUNT(*) FROM events${whereClause}`, params);
     const total = parseInt(countResult.rows[0].count);
 
-    // Sorting
-    let query = `SELECT * FROM events${whereClause}`;
-    if (sort === 'price-low') {
+    // Distance from the customer's location, via the Haversine formula. Only
+    // events with stored venue coordinates get a real value; others come
+    // back NULL and sort to the end rather than being excluded.
+    const selectClause = hasLocation
+      ? `SELECT *, (
+           CASE WHEN latitude IS NULL OR longitude IS NULL THEN NULL ELSE
+             6371 * acos(
+               LEAST(1, GREATEST(-1,
+                 cos(radians($${paramCount})) * cos(radians(latitude)) * cos(radians(longitude) - radians($${paramCount + 1}))
+                 + sin(radians($${paramCount})) * sin(radians(latitude))
+               ))
+             )
+           END
+         ) AS distance_km FROM events`
+      : 'SELECT * FROM events';
+    const listParams = hasLocation ? [...params, customerLat, customerLng] : [...params];
+    if (hasLocation) paramCount += 2;
+
+    let query = `${selectClause}${whereClause}`;
+    if (effectiveSort === 'distance' && hasLocation) {
+      query += ' ORDER BY distance_km ASC NULLS LAST';
+    } else if (effectiveSort === 'price-low') {
       query += ' ORDER BY min_price ASC';
-    } else if (sort === 'price-high') {
+    } else if (effectiveSort === 'price-high') {
       query += ' ORDER BY min_price DESC';
-    } else if (sort === 'name') {
+    } else if (effectiveSort === 'name') {
       query += ' ORDER BY title ASC';
     } else {
       query += ' ORDER BY date ASC';
@@ -86,7 +112,7 @@ router.get('/', async (req, res) => {
 
     // Pagination
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    const listParams = [...params, parseInt(limit), parseInt(offset)];
+    listParams.push(parseInt(limit), parseInt(offset));
 
     const result = await pool.query(query, listParams);
 
