@@ -79,26 +79,71 @@ export default function App() {
   const [lastName, setLastName] = useState('');
   const [message, setMessage] = useState('');
 
+  const EVENTS_PAGE_SIZE = 24;
+
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsLoadingMore, setEventsLoadingMore] = useState(false);
   const [eventsError, setEventsError] = useState('');
+  const [eventsTotal, setEventsTotal] = useState(0);
+  const [eventsHasMore, setEventsHasMore] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
 
+  const fetchEvents = async (offset, search) => {
+    const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
+    if (search) params.set('search', search);
+    const response = await fetch(`${API_URL}/events?${params.toString()}`);
+    if (!response.ok) throw new Error('Request failed');
+    return response.json();
+  };
+
+  // Initial load, and reload from the top whenever the active search changes.
   useEffect(() => {
+    let cancelled = false;
     const loadEvents = async () => {
       setEventsLoading(true);
       setEventsError('');
       try {
-        const response = await fetch(`${API_URL}/events?limit=24`);
-        const data = await response.json();
+        const data = await fetchEvents(0, activeSearch);
+        if (cancelled) return;
         setEvents(data.events || []);
+        setEventsTotal(data.total || 0);
+        setEventsHasMore(Boolean(data.hasMore));
       } catch (error) {
+        if (cancelled) return;
         setEventsError('Could not load events right now. Please try again later.');
       } finally {
-        setEventsLoading(false);
+        if (!cancelled) setEventsLoading(false);
       }
     };
     loadEvents();
-  }, []);
+    return () => { cancelled = true; };
+  }, [activeSearch]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setActiveSearch(searchInput.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setActiveSearch('');
+  };
+
+  const handleLoadMore = async () => {
+    setEventsLoadingMore(true);
+    try {
+      const data = await fetchEvents(events.length, activeSearch);
+      setEvents((prev) => [...prev, ...(data.events || [])]);
+      setEventsTotal(data.total || 0);
+      setEventsHasMore(Boolean(data.hasMore));
+    } catch (error) {
+      setEventsError('Could not load more events right now. Please try again later.');
+    } finally {
+      setEventsLoadingMore(false);
+    }
+  };
 
   const handleLogin = async () => {
     try {
@@ -335,9 +380,35 @@ export default function App() {
 
         <h3>Featured Events</h3>
 
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Search by artist, event, or venue..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            style={{ flex: '1', minWidth: '220px', padding: '10px', boxSizing: 'border-box' }}
+          />
+          <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            Search
+          </button>
+          {activeSearch && (
+            <button type="button" onClick={handleClearSearch} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+              Clear
+            </button>
+          )}
+        </form>
+
+        {activeSearch && !eventsLoading && !eventsError && (
+          <p style={{ color: '#666' }}>
+            {eventsTotal} result{eventsTotal === 1 ? '' : 's'} for "{activeSearch}"
+          </p>
+        )}
+
         {eventsLoading && <p>Loading events...</p>}
         {!eventsLoading && eventsError && <p>{eventsError}</p>}
-        {!eventsLoading && !eventsError && events.length === 0 && <p>No events available right now. Check back soon!</p>}
+        {!eventsLoading && !eventsError && events.length === 0 && (
+          <p>{activeSearch ? `No events found for "${activeSearch}".` : 'No events available right now. Check back soon!'}</p>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
           {events.map((event) => (
@@ -363,6 +434,17 @@ export default function App() {
             </div>
           ))}
         </div>
+
+        {!eventsLoading && !eventsError && eventsHasMore && (
+          <div style={{ textAlign: 'center', marginTop: '24px' }}>
+            <button
+              onClick={handleLoadMore}
+              disabled={eventsLoadingMore}
+              style={{ padding: '10px 24px', cursor: eventsLoadingMore ? 'default' : 'pointer' }}>
+              {eventsLoadingMore ? 'Loading...' : `Load More (${events.length} of ${eventsTotal})`}
+            </button>
+          </div>
+        )}
 
         <Footer />
       </div>
