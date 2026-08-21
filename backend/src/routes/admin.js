@@ -1,8 +1,33 @@
 import express from 'express';
 import { pool } from '../index.js';
 import { verifyToken, verifyAdmin, getUserInfo } from '../middleware/auth.js';
+import { syncSeatGeekEvents } from '../services/seatgeek.js';
 
 const router = express.Router();
+
+// One-off / manually-triggered data sync endpoints.
+// Protected by a shared secret (SYNC_SECRET_KEY env var) rather than user
+// login, since these are meant to be triggered by the site owner directly
+// (e.g. via curl) rather than through the regular admin dashboard.
+router.post('/sync/seatgeek', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const totalWanted = Number(req.query.total) || 300;
+  const result = await syncSeatGeekEvents(totalWanted);
+
+  if (!result.success) {
+    return res.status(500).json(result);
+  }
+  res.json(result);
+});
 
 // Dashboard Stats
 router.get('/dashboard', verifyToken, verifyAdmin, getUserInfo, async (req, res) => {
