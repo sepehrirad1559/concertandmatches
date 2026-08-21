@@ -69,15 +69,7 @@ function Footer() {
 }
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [message, setMessage] = useState('');
 
   const EVENTS_PAGE_SIZE = 24;
 
@@ -145,71 +137,6 @@ export default function App() {
     }
   };
 
-  const handleLogin = async () => {
-    try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        setLoggedIn(true);
-        setShowLogin(false);
-        setMessage('✅ Login successful!');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('❌ Login failed: ' + (data.message || 'Invalid credentials'));
-      }
-    } catch (error) {
-      setMessage('❌ Error: ' + error.message);
-    }
-  };
-
-  const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !password) {
-      setMessage('❌ All fields required!');
-      return;
-    }
-    try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          passwordConfirm: password,
-          firstName,
-          lastName
-        })
-      });
-      const data = await response.json();
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        setLoggedIn(true);
-        setShowRegister(false);
-        setMessage('✅ Registration successful!');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('❌ Registration failed: ' + (data.error || 'Unknown error'));
-      }
-    } catch (error) {
-      setMessage('❌ Error: ' + error.message);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setLoggedIn(false);
-    setEmail('');
-    setPassword('');
-    setFirstName('');
-    setLastName('');
-    setMessage('✅ Logged out!');
-    setTimeout(() => setMessage(''), 3000);
-  };
-
   // EVENT DETAIL PAGE
   if (selectedEvent) {
     const findTicketsLinks = buildFindTicketsLinks(selectedEvent);
@@ -220,11 +147,6 @@ export default function App() {
           <button onClick={() => setSelectedEvent(null)} style={{ padding: '8px 16px', cursor: 'pointer' }}>
             ← Back to Events
           </button>
-          {loggedIn && (
-            <button onClick={handleLogout} style={{ padding: '8px 16px', cursor: 'pointer', marginLeft: 'auto' }}>
-              Logout
-            </button>
-          )}
         </nav>
 
         <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid #ddd', padding: '30px', borderRadius: '8px' }}>
@@ -293,91 +215,9 @@ export default function App() {
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
         <h2 style={{ margin: '0' }}>ConcertAndMatches.com</h2>
-        {loggedIn ? (
-          <button onClick={handleLogout} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-            Logout
-          </button>
-        ) : (
-          <>
-            <button onClick={() => { setShowLogin(!showLogin); setShowRegister(false); }} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-              {showLogin ? 'Close' : 'Login'}
-            </button>
-            <button onClick={() => { setShowRegister(!showRegister); setShowLogin(false); }} style={{ padding: '8px 16px', cursor: 'pointer', backgroundColor: '#4CAF50', color: 'white' }}>
-              {showRegister ? 'Close' : 'Sign Up'}
-            </button>
-          </>
-        )}
       </nav>
 
-      {message && (
-        <div style={{ padding: '10px', marginBottom: '20px', backgroundColor: '#f0f0f0', borderRadius: '4px', fontSize: '14px' }}>
-          {message}
-        </div>
-      )}
-
-      {showLogin && (
-        <div style={{ border: '1px solid #ccc', padding: '20px', maxWidth: '300px', marginBottom: '20px', borderRadius: '8px' }}>
-          <h3>Login</h3>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px', boxSizing: 'border-box' }}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px', boxSizing: 'border-box' }}
-          />
-          <button onClick={handleLogin} style={{ padding: '8px 16px', cursor: 'pointer', width: '100%' }}>
-            Login
-          </button>
-        </div>
-      )}
-
-      {showRegister && (
-        <div style={{ border: '1px solid #4CAF50', padding: '20px', maxWidth: '300px', marginBottom: '20px', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-          <h3>Create Account</h3>
-          <input
-            type="text"
-            placeholder="First Name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px', boxSizing: 'border-box' }}
-          />
-          <input
-            type="text"
-            placeholder="Last Name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px', boxSizing: 'border-box' }}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px', boxSizing: 'border-box' }}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px', boxSizing: 'border-box' }}
-          />
-          <button onClick={handleRegister} style={{ padding: '8px 16px', cursor: 'pointer', width: '100%', backgroundColor: '#4CAF50', color: 'white' }}>
-            Sign Up
-          </button>
-        </div>
-      )}
-
       <div style={{ marginTop: '20px' }}>
-        <h2>Status: {loggedIn ? '✅ Logged In' : '❌ Not Logged In'}</h2>
-
         <h3>Featured Events</h3>
 
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
