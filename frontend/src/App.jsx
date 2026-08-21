@@ -353,7 +353,7 @@ export default function App() {
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <input
             type="text"
-            placeholder="Search by artist, event, or venue..."
+            placeholder="Search by artist, event, venue or keyword..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             style={{ flex: '1', minWidth: '220px', padding: '10px', boxSizing: 'border-box' }}
