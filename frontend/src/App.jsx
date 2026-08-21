@@ -174,7 +174,7 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
               boxShadow: isActive ? '0 0 0 2px white inset' : 'none',
             }}>
             <div style={{ fontSize: '26px', marginBottom: '6px' }}>{cat.emoji}</div>
-            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{cat.label}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{cat.label}</div>
           </button>
         );
       })}
