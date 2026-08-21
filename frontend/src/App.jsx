@@ -19,6 +19,40 @@ function formatDistance(distanceKm) {
   return `${miles.toFixed(0)} mi away`;
 }
 
+// Returns every ticket price tier we know about for an event, sorted low to
+// high. Ticketmaster sometimes reports several tiers (e.g. Standard vs. VIP)
+// in `price_breakdown`; when that's not available we fall back to the single
+// min/max range already stored on the event. Returns [] if no pricing at all
+// is known (e.g. "Price TBA" events).
+function getTicketPriceTiers(event) {
+  let tiers = [];
+  if (event.price_breakdown) {
+    try {
+      const parsed = typeof event.price_breakdown === 'string'
+        ? JSON.parse(event.price_breakdown)
+        : event.price_breakdown;
+      if (Array.isArray(parsed)) tiers = parsed;
+    } catch {
+      tiers = [];
+    }
+  }
+  if (tiers.length === 0 && (event.min_price != null || event.max_price != null)) {
+    tiers = [{ type: 'Tickets', min: event.min_price, max: event.max_price }];
+  }
+  return tiers
+    .filter((t) => t.min != null || t.max != null)
+    .map((t) => ({
+      label: t.type || 'Tickets',
+      min: t.min != null ? Number(t.min) : null,
+      max: t.max != null ? Number(t.max) : null,
+    }))
+    .sort((a, b) => {
+      const aMin = a.min != null ? a.min : a.max;
+      const bMin = b.min != null ? b.min : b.max;
+      return aMin - bMin;
+    });
+}
+
 function formatPrice(event) {
   if (event.min_price == null && event.max_price == null) return 'Price TBA';
   if (event.min_price != null && event.max_price != null && event.min_price !== event.max_price) {
@@ -266,6 +300,7 @@ export default function App() {
   // EVENT DETAIL PAGE
   if (selectedEvent) {
     const findTicketsLinks = buildFindTicketsLinks(selectedEvent);
+    const priceTiers = getTicketPriceTiers(selectedEvent);
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -325,6 +360,30 @@ export default function App() {
                 </a>
               ))}
             </div>
+
+            {priceTiers.length > 0 && (
+              <div style={{ marginTop: '20px' }}>
+                <h4 style={{ marginBottom: '10px' }}>Available Ticket Prices</h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    {priceTiers.map((tier, i) => (
+                      <tr key={`${tier.label}-${i}`} style={{ borderTop: '1px solid #ddd' }}>
+                        <td style={{ padding: '8px 4px', color: '#444' }}>{tier.label}</td>
+                        <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 'bold' }}>
+                          {tier.min != null && tier.max != null && tier.min !== tier.max
+                            ? `$${tier.min.toFixed(0)} - $${tier.max.toFixed(0)}`
+                            : `$${(tier.min != null ? tier.min : tier.max).toFixed(0)}`}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
+                  Prices shown are as last reported by the ticket seller and may change — confirm the final price on their site before buying.
+                </p>
+              </div>
+            )}
+
             <AffiliateDisclosure />
           </div>
         </div>

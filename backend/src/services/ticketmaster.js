@@ -126,9 +126,29 @@ export const storeEvent = async (tmEvent) => {
     const latitude = rawLat !== undefined ? Number(rawLat) : null;
     const longitude = rawLng !== undefined ? Number(rawLng) : null;
 
-    // Price range
-    const minPrice = priceRanges?.[0]?.minPrice ? parseFloat(priceRanges[0].minPrice) : 0;
-    const maxPrice = priceRanges?.[0]?.maxPrice ? parseFloat(priceRanges[0].maxPrice) : 500;
+    // Price range. Ticketmaster's priceRanges entries use `min`/`max` (not
+    // `minPrice`/`maxPrice` — a field-name mismatch in earlier code meant
+    // most events fell through to a fake $0-$500 placeholder instead of
+    // their real price). When Ticketmaster doesn't report pricing at all,
+    // leave these null rather than guessing a placeholder range.
+    const minPrice = priceRanges?.[0]?.min != null ? parseFloat(priceRanges[0].min) : null;
+    const maxPrice = priceRanges?.[0]?.max != null ? parseFloat(priceRanges[0].max) : null;
+
+    // Full tier breakdown (e.g. Standard vs. VIP), so the event page can list
+    // every available price sorted low to high instead of just one range.
+    // Most events only report one tier, but some report several.
+    const priceBreakdown = Array.isArray(priceRanges) && priceRanges.length > 0
+      ? JSON.stringify(
+          priceRanges
+            .filter((pr) => pr.min != null || pr.max != null)
+            .map((pr) => ({
+              type: pr.type ? pr.type.charAt(0).toUpperCase() + pr.type.slice(1) : 'Standard',
+              min: pr.min != null ? parseFloat(pr.min) : null,
+              max: pr.max != null ? parseFloat(pr.max) : null,
+              currency: pr.currency || 'USD',
+            }))
+        )
+      : null;
 
     // Check if event already exists
     const existingEvent = await pool.query(
@@ -140,9 +160,9 @@ export const storeEvent = async (tmEvent) => {
       // Update existing event
       await pool.query(
         `UPDATE events SET
-         min_price = $1, max_price = $2, latitude = $3, longitude = $4, updated_at = NOW()
-         WHERE external_id = $5`,
-        [minPrice, maxPrice, latitude, longitude, id]
+         min_price = $1, max_price = $2, latitude = $3, longitude = $4, price_breakdown = $5, updated_at = NOW()
+         WHERE external_id = $6`,
+        [minPrice, maxPrice, latitude, longitude, priceBreakdown, id]
       );
       return existingEvent.rows[0].id;
     } else {
@@ -151,12 +171,12 @@ export const storeEvent = async (tmEvent) => {
         `INSERT INTO events (
           external_id, title, description, category, date, country, state, city,
           venue_name, venue_address, image_url, source, source_url, min_price, max_price,
-          latitude, longitude
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+          latitude, longitude, price_breakdown
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING id`,
         [id, title, description || '', category, date, country, state, city,
          venueName, venue?.address?.address1 || '', image, 'ticketmaster', sourceUrl, minPrice, maxPrice,
-         latitude, longitude]
+         latitude, longitude, priceBreakdown]
       );
       return result.rows[0].id;
     }
