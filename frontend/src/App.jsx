@@ -21,14 +21,24 @@ function formatPrice(event) {
   return `$${Number(p).toFixed(0)}`;
 }
 
-// Generic (non-tracked) search links for finding tickets on partner sites.
-// These are plain search URLs, not affiliate/tracked links. Once an
-// affiliate program approves us, swap the relevant entry for the tracked
-// deep link the network provides.
+// Impact.com tracked deep-link base for the approved Ticketmaster affiliate
+// program (account-specific campaign/media-partner/ad IDs). Wrapping any
+// ticketmaster.com URL in this base means clicks are tracked and referred
+// sales earn commission. Format: <base>?u=<url-encoded destination>.
+const TICKETMASTER_TRACKED_BASE = 'https://ticketmaster.evyy.net/c/7649497/264167/4272';
+
+function trackedTicketmasterLink(destinationUrl) {
+  return `${TICKETMASTER_TRACKED_BASE}?u=${encodeURIComponent(destinationUrl)}`;
+}
+
+// Ticketmaster is a live, tracked affiliate link (program approved). SeatGeek
+// and StubHub are still plain (non-tracked) search links — their affiliate
+// applications are pending. Swap each in for its network's tracked deep link
+// once approved.
 function buildFindTicketsLinks(event) {
   const q = encodeURIComponent(event.title || event.artist_name || '');
   return [
-    { name: 'Ticketmaster', url: `https://www.ticketmaster.com/search?q=${q}` },
+    { name: 'Ticketmaster', url: trackedTicketmasterLink(`https://www.ticketmaster.com/search?q=${q}`) },
     { name: 'SeatGeek', url: `https://seatgeek.com/search?search=${q}` },
     { name: 'StubHub', url: `https://www.stubhub.com/find/s/?q=${q}` },
   ];
@@ -50,6 +60,10 @@ function Footer() {
   return (
     <footer style={{ marginTop: '40px', padding: '20px 0', borderTop: '1px solid #eee', fontSize: '12px', color: '#888' }}>
       <p>ConcertAndMatches is an independent event discovery site and is not affiliated with any ticket seller. We may earn a commission when you buy tickets through links on this site.</p>
+      <p style={{ marginTop: '8px' }}>
+        <a href="/terms.html" style={{ color: '#888', marginRight: '16px' }}>Terms of Service</a>
+        <a href="/privacy.html" style={{ color: '#888' }}>Privacy Policy</a>
+      </p>
     </footer>
   );
 }
