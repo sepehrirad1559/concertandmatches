@@ -343,6 +343,10 @@ export default function App() {
         <h2 style={{ margin: '0' }}>ConcertAndMatches.com</h2>
       </nav>
 
+      <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 30px' }}>
+        Best Price For any Events
+      </h1>
+
       <div style={{ marginTop: '20px' }}>
         <h3>Featured Events</h3>
 
