@@ -77,6 +77,29 @@ router.post('/schema/add-geo-columns', async (req, res) => {
   }
 });
 
+// One-time cleanup: SeatGeek events synced before the pricing fix have a
+// fake $0.00 min/max price (the old code defaulted to 0 instead of leaving
+// price unknown as null) baked in from before this fix, and won't get
+// corrected by a normal re-sync unless SeatGeek's API happens to return
+// that exact event again. This directly clears the fake zeros so the event
+// page doesn't show a bogus "$0" price.
+router.post('/cleanup/zero-prices', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey || !providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE events SET min_price = NULL, max_price = NULL
+       WHERE source = 'seatgeek' AND min_price = 0 AND max_price = 0`
+    );
+    res.json({ success: true, cleared: result.rowCount });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Dashboard Stats
 router.get('/dashboard', verifyToken, verifyAdmin, getUserInfo, async (req, res) => {
   try {
