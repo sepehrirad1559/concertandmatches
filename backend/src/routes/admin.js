@@ -2,7 +2,7 @@ import express from 'express';
 import { pool } from '../index.js';
 import { verifyToken, verifyAdmin, getUserInfo } from '../middleware/auth.js';
 import { syncSeatGeekEvents } from '../services/seatgeek.js';
-import { syncAllEvents as syncTicketmasterEvents, fetchTicketmasterEvents } from '../services/ticketmaster.js';
+import { syncAllEvents as syncTicketmasterEvents } from '../services/ticketmaster.js';
 
 const router = express.Router();
 
@@ -74,32 +74,6 @@ router.post('/schema/add-geo-columns', async (req, res) => {
   } catch (error) {
     console.error('Error adding geo columns:', error);
     res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// TEMPORARY diagnostic route: inspect a raw page of Ticketmaster's API
-// response to check whether/how often priceRanges is actually present.
-// Safe to remove once the pricing feature is confirmed working correctly.
-router.get('/debug/tm-sample', async (req, res) => {
-  const providedKey = req.headers['x-sync-key'];
-  const expectedKey = process.env.SYNC_SECRET_KEY;
-  if (!expectedKey || !providedKey || providedKey !== expectedKey) {
-    return res.status(403).json({ error: 'Invalid or missing sync key' });
-  }
-  try {
-    const marketId = req.query.marketId || '1';
-    const events = await fetchTicketmasterEvents(marketId, 20);
-    const withPriceRanges = events.filter((e) => Array.isArray(e.priceRanges) && e.priceRanges.length > 0);
-    res.json({
-      fetched: events.length,
-      withPriceRanges: withPriceRanges.length,
-      sampleWithPrice: withPriceRanges[0] ? { name: withPriceRanges[0].name, priceRanges: withPriceRanges[0].priceRanges } : null,
-      sampleWithoutPrice: events.find((e) => !Array.isArray(e.priceRanges) || e.priceRanges.length === 0)
-        ? { name: events.find((e) => !Array.isArray(e.priceRanges) || e.priceRanges.length === 0).name, priceRanges: events.find((e) => !Array.isArray(e.priceRanges) || e.priceRanges.length === 0).priceRanges }
-        : null,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 });
 
