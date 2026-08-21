@@ -7,7 +7,7 @@ const router = express.Router();
 // Get All Events with Filters
 router.get('/', async (req, res) => {
   try {
-    const { city, state, country, category, minPrice, maxPrice, startDate, endDate, search, sort, lat, lng, limit = 20, offset = 0 } = req.query;
+    const { city, state, country, category, keywords, minPrice, maxPrice, startDate, endDate, search, sort, lat, lng, limit = 20, offset = 0 } = req.query;
 
     // Customer location, if the browser shared it. When present, results
     // default to nearest-first unless the caller asked for a different sort.
@@ -39,10 +39,16 @@ router.get('/', async (req, res) => {
       paramCount++;
     }
 
+    // category supports a comma-separated list (e.g. "Music,Concert") so a
+    // single UI filter (like a "Concerts" category tile) can match event
+    // rows that different data sources labeled differently.
     if (category) {
-      whereClause += ` AND category = $${paramCount}`;
-      params.push(category);
-      paramCount++;
+      const categoryList = category.split(',').map((c) => c.trim()).filter(Boolean);
+      if (categoryList.length > 0) {
+        whereClause += ` AND category = ANY($${paramCount}::text[])`;
+        params.push(categoryList);
+        paramCount++;
+      }
     }
 
     if (minPrice) {
@@ -73,6 +79,23 @@ router.get('/', async (req, res) => {
       whereClause += ` AND (title ILIKE $${paramCount} OR artist_name ILIKE $${paramCount} OR venue_name ILIKE $${paramCount})`;
       params.push(`%${search}%`);
       paramCount++;
+    }
+
+    // keywords: comma-separated OR terms matched across the same columns as
+    // `search`, but kept as a separate filter so a category tile's own
+    // keyword match (e.g. "NFL") can be ANDed with the customer's own
+    // search box text rather than overwriting it.
+    if (keywords) {
+      const keywordList = keywords.split(',').map((k) => k.trim()).filter(Boolean);
+      if (keywordList.length > 0) {
+        const orParts = keywordList.map((_, i) => {
+          const p = paramCount + i;
+          return `(title ILIKE $${p} OR artist_name ILIKE $${p} OR venue_name ILIKE $${p})`;
+        });
+        whereClause += ` AND (${orParts.join(' OR ')})`;
+        keywordList.forEach((kw) => params.push(`%${kw}%`));
+        paramCount += keywordList.length;
+      }
     }
 
     // Count matching rows (same filters, no limit/offset) so pagination reflects the actual result set.
