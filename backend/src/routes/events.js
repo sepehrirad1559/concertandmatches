@@ -84,16 +84,21 @@ router.get('/', async (req, res) => {
     // keywords: comma-separated OR terms matched across the same columns as
     // `search`, but kept as a separate filter so a category tile's own
     // keyword match (e.g. "NFL") can be ANDed with the customer's own
-    // search box text rather than overwriting it.
+    // search box text rather than overwriting it. Unlike `search` (a plain
+    // substring match, appropriate for free text a customer typed), these
+    // use word-boundary regex matching (Postgres \m...\M) so a short league
+    // acronym like "NFL" or "NBA" doesn't false-positive-match inside an
+    // unrelated word that happens to contain those letters in sequence
+    // (e.g. "NFL" inside "Inflatable" or "Confluence").
     if (keywords) {
       const keywordList = keywords.split(',').map((k) => k.trim()).filter(Boolean);
       if (keywordList.length > 0) {
         const orParts = keywordList.map((_, i) => {
           const p = paramCount + i;
-          return `(title ILIKE $${p} OR artist_name ILIKE $${p} OR venue_name ILIKE $${p})`;
+          return `(title ~* $${p} OR artist_name ~* $${p} OR venue_name ~* $${p})`;
         });
         whereClause += ` AND (${orParts.join(' OR ')})`;
-        keywordList.forEach((kw) => params.push(`%${kw}%`));
+        keywordList.forEach((kw) => params.push(`\\m${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\M`));
         paramCount += keywordList.length;
       }
     }
