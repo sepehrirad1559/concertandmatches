@@ -9,66 +9,71 @@ router.get('/', async (req, res) => {
   try {
     const { city, state, country, category, minPrice, maxPrice, startDate, endDate, search, sort = 'date', limit = 20, offset = 0 } = req.query;
 
-    let query = 'SELECT * FROM events WHERE 1=1';
+    let whereClause = ' WHERE 1=1';
     const params = [];
     let paramCount = 1;
 
     // Filters
     if (country) {
-      query += ` AND country = $${paramCount}`;
+      whereClause += ` AND country = $${paramCount}`;
       params.push(country);
       paramCount++;
     }
 
     if (state) {
-      query += ` AND state = $${paramCount}`;
+      whereClause += ` AND state = $${paramCount}`;
       params.push(state);
       paramCount++;
     }
 
     if (city) {
-      query += ` AND city = $${paramCount}`;
+      whereClause += ` AND city = $${paramCount}`;
       params.push(city);
       paramCount++;
     }
 
     if (category) {
-      query += ` AND category = $${paramCount}`;
+      whereClause += ` AND category = $${paramCount}`;
       params.push(category);
       paramCount++;
     }
 
     if (minPrice) {
-      query += ` AND min_price >= $${paramCount}`;
+      whereClause += ` AND min_price >= $${paramCount}`;
       params.push(parseFloat(minPrice));
       paramCount++;
     }
 
     if (maxPrice) {
-      query += ` AND max_price <= $${paramCount}`;
+      whereClause += ` AND max_price <= $${paramCount}`;
       params.push(parseFloat(maxPrice));
       paramCount++;
     }
 
     if (startDate) {
-      query += ` AND date >= $${paramCount}`;
+      whereClause += ` AND date >= $${paramCount}`;
       params.push(new Date(startDate));
       paramCount++;
     }
 
     if (endDate) {
-      query += ` AND date <= $${paramCount}`;
+      whereClause += ` AND date <= $${paramCount}`;
       params.push(new Date(endDate));
       paramCount++;
     }
 
     if (search) {
-      query += ` AND (title ILIKE $${paramCount} OR artist_name ILIKE $${paramCount} OR venue_name ILIKE $${paramCount})`;
+      whereClause += ` AND (title ILIKE $${paramCount} OR artist_name ILIKE $${paramCount} OR venue_name ILIKE $${paramCount})`;
       params.push(`%${search}%`);
       paramCount++;
     }
 
+    // Count matching rows (same filters, no limit/offset) so pagination reflects the actual result set.
+    const countResult = await pool.query(`SELECT COUNT(*) FROM events${whereClause}`, params);
+    const total = parseInt(countResult.rows[0].count);
+
     // Sorting
+    let query = `SELECT * FROM events${whereClause}`;
     if (sort === 'price-low') {
       query += ' ORDER BY min_price ASC';
     } else if (sort === 'price-high') {
@@ -81,11 +86,9 @@ router.get('/', async (req, res) => {
 
     // Pagination
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    params.push(parseInt(limit), parseInt(offset));
+    const listParams = [...params, parseInt(limit), parseInt(offset)];
 
-    const result = await pool.query(query, params);
-    const countResult = await pool.query('SELECT COUNT(*) FROM events WHERE 1=1');
-    const total = parseInt(countResult.rows[0].count);
+    const result = await pool.query(query, listParams);
 
     res.json({
       events: result.rows,
