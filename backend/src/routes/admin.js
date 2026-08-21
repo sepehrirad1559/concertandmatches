@@ -65,7 +65,12 @@ router.post('/schema/add-geo-columns', async (req, res) => {
   try {
     await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION');
     await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION');
-    res.json({ success: true, message: 'latitude/longitude columns present on events table' });
+    // price_breakdown holds the full set of ticket price tiers Ticketmaster
+    // reports for an event (e.g. Standard vs. VIP), so the event page can
+    // list every available price sorted low to high instead of just one
+    // min/max range. Null for events with only a single reported range.
+    await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS price_breakdown JSONB');
+    res.json({ success: true, message: 'latitude/longitude/price_breakdown columns present on events table' });
   } catch (error) {
     console.error('Error adding geo columns:', error);
     res.status(500).json({ success: false, error: error.message });
