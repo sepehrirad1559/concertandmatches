@@ -112,6 +112,14 @@ export const storeEvent = async (tmEvent) => {
     const image = images?.[0]?.url || null;
     const sourceUrl = url;
 
+    // Basic data-quality guard (spec §32): an event with no valid date is
+    // useless for a comparison site — it can't be shown, sorted, or matched
+    // against — so skip it rather than storing a broken row.
+    if (Number.isNaN(date.getTime())) {
+      console.warn(`Skipping Ticketmaster event ${id} — missing/invalid date`);
+      return null;
+    }
+
     // Extract venue info
     const venue = _embedded?.venues?.[0];
     const venueName = venue?.name || 'Unknown Venue';
@@ -131,8 +139,12 @@ export const storeEvent = async (tmEvent) => {
     // most events fell through to a fake $0-$500 placeholder instead of
     // their real price). When Ticketmaster doesn't report pricing at all,
     // leave these null rather than guessing a placeholder range.
-    const minPrice = priceRanges?.[0]?.min != null ? parseFloat(priceRanges[0].min) : null;
-    const maxPrice = priceRanges?.[0]?.max != null ? parseFloat(priceRanges[0].max) : null;
+    // Data-quality guard (spec §32): a negative price is never valid — treat
+    // it as unknown (null) rather than storing/displaying a nonsense value.
+    const rawMinPrice = priceRanges?.[0]?.min != null ? parseFloat(priceRanges[0].min) : null;
+    const rawMaxPrice = priceRanges?.[0]?.max != null ? parseFloat(priceRanges[0].max) : null;
+    const minPrice = rawMinPrice != null && rawMinPrice >= 0 ? rawMinPrice : null;
+    const maxPrice = rawMaxPrice != null && rawMaxPrice >= 0 ? rawMaxPrice : null;
 
     // Full tier breakdown (e.g. Standard vs. VIP), so the event page can list
     // every available price sorted low to high instead of just one range.
