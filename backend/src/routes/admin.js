@@ -165,6 +165,39 @@ router.post('/schema/add-provider-tables', async (req, res) => {
   }
 });
 
+// One-time schema migration: adds the affiliate URL template column to
+// `providers` (spec §16 — "Configure affiliate URL templates") and seeds it
+// with the real, currently-live Ticketmaster tracked-affiliate link (the
+// same Impact.com deep-link base the frontend already wraps ticketmaster.com
+// URLs in — see App.jsx's trackedTicketmasterLink/TICKETMASTER_TRACKED_BASE).
+// {url} is replaced with the URL-encoded destination. SeatGeek is left null
+// — its affiliate application is still pending, matching the frontend's own
+// comment on that. This makes the affiliate link config data-driven instead
+// of hardcoded, so routes/redirect.js (below) can build the correct outbound
+// URL per provider without needing its own copy of this logic.
+router.post('/schema/add-affiliate-templates', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query('ALTER TABLE providers ADD COLUMN IF NOT EXISTS affiliate_url_template TEXT');
+    await pool.query(
+      `UPDATE providers SET affiliate_url_template = $1 WHERE name = 'ticketmaster'`,
+      ['https://ticketmaster.evyy.net/c/7649497/264167/4272?u={url}']
+    );
+    res.json({ success: true, message: 'affiliate_url_template column added and seeded for ticketmaster' });
+  } catch (error) {
+    console.error('Error adding affiliate template column:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // One-time schema migration: click tracking (spec §15, §27, §48). Kept
 // deliberately independent of the canonical_events/ticket_offers tables
 // below — it logs against the existing `events` table's own row id, which

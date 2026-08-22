@@ -10,6 +10,7 @@ import { Pool } from 'pg';
 import eventsRoutes from './routes/events.js';
 import adminRoutes from './routes/admin.js';
 import clicksRoutes from './routes/clicks.js';
+import redirectRoutes from './routes/redirect.js';
 
 // Price backfill — see scheduled job below.
 import { backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
@@ -74,6 +75,7 @@ res.json({ status: 'OK', timestamp: new Date().toISOString() });
 app.use('/api/events', eventsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/clicks', clicksRoutes);
+app.use('/go', redirectRoutes);
 
 // 404 Handler
 app.use((req, res) => {
