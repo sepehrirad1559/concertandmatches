@@ -218,17 +218,27 @@ export const syncAllEvents = async () => {
   }
 };
 
-// Get event details from Ticketmaster
+// Get event details from Ticketmaster. Returns { data, errorInfo } instead of
+// throwing/nulling silently, so callers (specifically backfillMissingPrices)
+// can report WHY a price wasn't found instead of just "it wasn't" — this was
+// added after a backfill run came back "checked: 100, updated: 0" with no way
+// to tell whether that meant "API calls are failing" or "these events truly
+// have no price yet at the source".
 export const getTicketmasterEventDetails = async (eventId) => {
   try {
     const response = await axios.get(`${TICKETMASTER_BASE_URL}/events/${eventId}`, {
       params: { apikey: TICKETMASTER_API_KEY }
     });
 
-    return response.data;
+    return { data: response.data, errorInfo: null };
   } catch (error) {
-    console.error('Error fetching Ticketmaster event details:', error);
-    return null;
+    const status = error.response?.status;
+    const body = error.response?.data;
+    const errorInfo = status
+      ? `HTTP ${status}: ${JSON.stringify(body).slice(0, 300)}`
+      : error.message;
+    console.error('Error fetching Ticketmaster event details:', errorInfo);
+    return { data: null, errorInfo };
   }
 };
 
@@ -240,8 +250,18 @@ export const getTicketmasterEventDetails = async (eventId) => {
 // updates the row if a real price is now available. Limited per call and
 // rate-limited between requests since this hits the Ticketmaster API once
 // per event, unlike the bulk sync.
+//
+// Returns diagnostic counts/samples alongside `updated` so a "0 updated" run
+// is legible from the API response alone: apiErrors means calls are failing
+// (bad/missing API key, rate limiting, etc — a real bug); noPriceInResponse
+// means the calls succeeded but Ticketmaster itself has no price for that
+// event yet (not a bug, just data that isn't available yet at the source).
 export const backfillMissingPrices = async (limit = 100) => {
   try {
+    if (!TICKETMASTER_API_KEY) {
+      return { success: false, error: 'TICKETMASTER_API_KEY not configured' };
+    }
+
     const { rows } = await pool.query(
       `SELECT id, external_id FROM events
        WHERE source = 'ticketmaster' AND min_price IS NULL
@@ -251,8 +271,21 @@ export const backfillMissingPrices = async (limit = 100) => {
     );
 
     let updated = 0;
+    let apiErrors = 0;
+    let noPriceInResponse = 0;
+    const errorSamples = [];
+    const noPriceSamples = [];
+
     for (const row of rows) {
-      const detail = await getTicketmasterEventDetails(row.external_id);
+      const { data: detail, errorInfo } = await getTicketmasterEventDetails(row.external_id);
+
+      if (errorInfo) {
+        apiErrors++;
+        if (errorSamples.length < 3) {
+          errorSamples.push({ external_id: row.external_id, error: errorInfo });
+        }
+      }
+
       const priceRanges = detail?.priceRanges;
       const minPrice = priceRanges?.[0]?.min != null ? parseFloat(priceRanges[0].min) : null;
       const maxPrice = priceRanges?.[0]?.max != null ? parseFloat(priceRanges[0].max) : null;
@@ -276,13 +309,30 @@ export const backfillMissingPrices = async (limit = 100) => {
           [minPrice, maxPrice, priceBreakdown, row.id]
         );
         updated++;
+      } else if (!errorInfo) {
+        noPriceInResponse++;
+        if (noPriceSamples.length < 3) {
+          noPriceSamples.push({
+            external_id: row.external_id,
+            hasPriceRangesField: priceRanges !== undefined,
+            responseKeys: detail ? Object.keys(detail).slice(0, 15) : [],
+          });
+        }
       }
 
       // Rate limiting — one detail call per event, be polite to the API.
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
-    return { success: true, checked: rows.length, updated };
+    return {
+      success: true,
+      checked: rows.length,
+      updated,
+      apiErrors,
+      noPriceInResponse,
+      errorSamples,
+      noPriceSamples,
+    };
   } catch (error) {
     console.error('Ticketmaster price backfill failed:', error);
     return { success: false, error: error.message };
