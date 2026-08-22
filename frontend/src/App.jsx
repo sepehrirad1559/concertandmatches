@@ -741,7 +741,16 @@ export default function App() {
                 <p>💰 {formatPrice(event)}</p>
                 <button
                   onClick={() => setSelectedEvent(event)}
-                  style={{ padding: '8px 16px', cursor: 'pointer', width: '100%' }}>
+                  style={{
+                    padding: '8px 16px',
+                    cursor: 'pointer',
+                    width: '100%',
+                    border: '1px solid #8b0000',
+                    backgroundColor: '#8b0000',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    borderRadius: '8px',
+                  }}>
                   View Event
                 </button>
               </div>
