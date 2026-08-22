@@ -813,7 +813,7 @@ export default function App() {
                   )}
                 </p>
                 {formatOffersComparison(event) && (
-                  <p style={{ fontSize: '12px', color: '#666', marginTop: '-6px' }}>
+                  <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 10px' }}>
                     {formatOffersComparison(event)}
                   </p>
                 )}
