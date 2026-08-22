@@ -4,6 +4,39 @@ import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:30001/api';
 
+// Anonymous per-browser-session id for click analytics — not tied to any
+// account, just lets the backend tell "3 clicks from one visitor" apart
+// from "3 clicks from 3 visitors". Regenerates each tab session; nothing
+// personally identifying is collected (see routes/clicks.js).
+const CLICK_SESSION_ID = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+
+// Fire-and-forget click logging. Deliberately never blocks or interferes
+// with the outbound link it's attached to — no preventDefault, no await
+// before navigation, and any failure here (network hiccup, ad blocker) is
+// swallowed rather than surfaced, because a ticket purchase must never be
+// blocked by an analytics call failing.
+function logTicketClick(offer, event) {
+  try {
+    const payload = JSON.stringify({
+      eventRowId: offer?.event_row_id ?? null,
+      source: offer?.source ?? null,
+      title: event?.title ?? null,
+      city: event?.city ?? null,
+      state: event?.state ?? null,
+      landingPage: typeof window !== 'undefined' ? window.location.pathname : null,
+      sessionId: CLICK_SESSION_ID,
+    });
+    const url = `${API_URL}/clicks`;
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+    } else {
+      fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+    }
+  } catch (_err) {
+    // Analytics must never break the actual "take me to the seller" click.
+  }
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
@@ -130,6 +163,7 @@ function buildFindTicketsLinks(event) {
       minPrice: o.min_price,
       maxPrice: o.max_price,
       isBest: event.best_source ? o.source === event.best_source : false,
+      eventRowId: o.event_row_id ?? null,
     }))
     // Cheapest first when we know prices, so the best deal is the first
     // thing shown rather than something you have to scan for.
@@ -574,6 +608,7 @@ export default function App() {
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer sponsored"
+                          onClick={() => logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent)}
                           style={{
                             display: 'block',
                             padding: '12px 16px',
