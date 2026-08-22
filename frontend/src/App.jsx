@@ -455,13 +455,13 @@ export default function App() {
             <p style={{ fontSize: '15px', color: '#666' }}>{selectedEvent.description}</p>
           )}
 
-          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
             <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
             <p><strong>💰 Price:</strong> {formatPrice(selectedEvent)}</p>
           </div>
 
-          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
             <h3 style={{ marginTop: 0 }}>Find Tickets</h3>
             {findTicketsLinks.length === 0 ? (
               <p style={{ fontSize: '14px', color: '#666' }}>
