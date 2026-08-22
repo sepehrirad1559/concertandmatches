@@ -3,6 +3,7 @@ import { pool } from '../index.js';
 import { syncSeatGeekEvents, backfillMissingPrices as backfillSeatGeekPrices } from '../services/seatgeek.js';
 import { syncAllEvents as syncTicketmasterEvents, backfillMissingPrices as backfillTicketmasterPrices } from '../services/ticketmaster.js';
 import { rebuildCanonicalEvents } from '../services/canonicalize.js';
+import { logProviderSync } from '../utils/syncLog.js';
 
 const router = express.Router();
 
@@ -22,7 +23,12 @@ router.post('/sync/seatgeek', async (req, res) => {
   }
 
   const totalWanted = Number(req.query.total) || 300;
+  const startedAt = new Date();
   const result = await syncSeatGeekEvents(totalWanted);
+  await logProviderSync({
+    providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+  });
 
   if (!result.success) {
     return res.status(500).json(result);
@@ -41,7 +47,12 @@ router.post('/sync/ticketmaster', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
+  const startedAt = new Date();
   const result = await syncTicketmasterEvents();
+  await logProviderSync({
+    providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+  });
 
   if (!result.success) {
     return res.status(500).json(result);
@@ -378,7 +389,13 @@ router.post('/backfill/ticketmaster-prices', async (req, res) => {
   }
 
   const limit = Number(req.query.limit) || 100;
+  const startedAt = new Date();
   const result = await backfillTicketmasterPrices(limit);
+  await logProviderSync({
+    providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+    recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
+    status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+  });
 
   if (!result.success) {
     return res.status(500).json(result);
@@ -398,12 +415,83 @@ router.post('/backfill/seatgeek-prices', async (req, res) => {
   }
 
   const limit = Number(req.query.limit) || 100;
+  const startedAt = new Date();
   const result = await backfillSeatGeekPrices(limit);
+  await logProviderSync({
+    providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+    recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
+    status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+  });
 
   if (!result.success) {
     return res.status(500).json(result);
   }
   res.json(result);
+});
+
+// One-time schema migration: provider_sync_logs (spec §5, §35 — provider
+// health/observability). Every sync/backfill route above (and the
+// scheduled daily backfill in index.js) writes one row per run here once
+// this table exists; writes are best-effort and never block the sync they
+// describe (see utils/syncLog.js).
+router.post('/schema/add-sync-logs', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS provider_sync_logs (
+        id SERIAL PRIMARY KEY,
+        provider_name TEXT NOT NULL,
+        sync_type TEXT NOT NULL,
+        started_at TIMESTAMPTZ NOT NULL,
+        finished_at TIMESTAMPTZ,
+        records_received INTEGER,
+        records_updated INTEGER,
+        status TEXT NOT NULL,
+        error_message TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_provider_sync_logs_provider ON provider_sync_logs (provider_name, sync_type, created_at DESC);
+    `);
+    res.json({ success: true, message: 'provider_sync_logs table created (or already existed)' });
+  } catch (error) {
+    console.error('Error adding provider_sync_logs table:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Basic provider health view (spec §35): the most recent sync/backfill run
+// per provider + sync type, so a human (or future admin UI) can see at a
+// glance whether each provider is healthy, rate-limited, or failing —
+// without digging through Railway logs by hand.
+router.get('/health', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    const result = await pool.query(`
+      SELECT DISTINCT ON (provider_name, sync_type)
+        provider_name, sync_type, started_at, finished_at, records_received, records_updated, status, error_message
+      FROM provider_sync_logs
+      ORDER BY provider_name, sync_type, started_at DESC
+    `);
+    res.json({ success: true, providers: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 export default router;
