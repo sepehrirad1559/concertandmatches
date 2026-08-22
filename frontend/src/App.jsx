@@ -198,6 +198,57 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
   );
 }
 
+// Platform logo: a gradient ticket badge (reusing the same purple → pink →
+// orange gradient family as the category tiles above, so it reads as part
+// of the same brand) with a white ticket glyph — a perforated stub with a
+// small star accent. Works for both concerts and sporting-event tickets,
+// which is the whole point of the site.
+function Logo({ size = 36 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="cmLogoGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#8e2de2" />
+          <stop offset="0.55" stopColor="#e91e8c" />
+          <stop offset="1" stopColor="#ff8c00" />
+        </linearGradient>
+      </defs>
+      <rect width="48" height="48" rx="12" fill="url(#cmLogoGrad)" />
+      <path
+        d="M10 18a3 3 0 0 1 3-3h22a3 3 0 0 1 3 3v2a3 3 0 0 0 0 6v2a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3v-2a3 3 0 0 0 0-6v-2z"
+        fill="white"
+      />
+      <line x1="24" y1="16" x2="24" y2="32" stroke="#1a0733" strokeWidth="2" strokeDasharray="3 3" />
+      <path d="M31 20.5l1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.1-2.1 1.1.4-2.4-1.8-1.7 2.4-.3z" fill="#8e2de2" />
+    </svg>
+  );
+}
+
+// Logo + site name, clickable to return to the home page from anywhere.
+function BrandLink({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="ConcertAndMatches.com — go to home page"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        margin: 0,
+        cursor: 'pointer',
+        font: 'inherit',
+        color: 'inherit',
+      }}>
+      <Logo size={36} />
+      <h2 style={{ margin: 0 }}>ConcertAndMatches.com</h2>
+    </button>
+  );
+}
+
 function Footer() {
   return (
     <footer style={{ marginTop: '40px', padding: '20px 0', borderTop: '1px solid #eee', fontSize: '12px', color: '#888' }}>
@@ -381,8 +432,8 @@ export default function App() {
     const priceTiers = getTicketPriceTiers(selectedEvent);
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <h2 style={{ margin: '0' }}>ConcertAndMatches.com</h2>
+        <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <BrandLink onClick={() => setSelectedEvent(null)} />
           <button onClick={() => setSelectedEvent(null)} style={{ padding: '8px 16px', cursor: 'pointer' }}>
             ← Back to Events
           </button>
@@ -500,7 +551,7 @@ export default function App() {
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <h2 style={{ margin: '0' }}>ConcertAndMatches.com</h2>
+        <BrandLink onClick={() => setSelectedEvent(null)} />
       </nav>
 
       <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 30px' }}>
