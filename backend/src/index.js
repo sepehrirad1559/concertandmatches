@@ -9,10 +9,13 @@ import { Pool } from 'pg';
 // Routes
 import eventsRoutes from './routes/events.js';
 import adminRoutes from './routes/admin.js';
+import clicksRoutes from './routes/clicks.js';
+import redirectRoutes from './routes/redirect.js';
 
 // Price backfill — see scheduled job below.
 import { backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
 import { backfillMissingPrices as backfillSeatGeekPrices } from './services/seatgeek.js';
+import { logProviderSync } from './utils/syncLog.js';
 
 dotenv.config();
 
@@ -72,6 +75,8 @@ res.json({ status: 'OK', timestamp: new Date().toISOString() });
 // Routes
 app.use('/api/events', eventsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/clicks', clicksRoutes);
+app.use('/go', redirectRoutes);
 
 // 404 Handler
 app.use((req, res) => {
@@ -108,17 +113,31 @@ const BACKFILL_BATCH_SIZE = 300;
 
 async function runScheduledPriceBackfill() {
 console.log('🔄 Running scheduled price backfill...');
+let startedAt = new Date();
 try {
 const tmResult = await backfillTicketmasterPrices(BACKFILL_BATCH_SIZE);
 console.log('Ticketmaster backfill result:', tmResult);
+await logProviderSync({
+  providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+  recordsReceived: tmResult.checked ?? null, recordsUpdated: tmResult.updated ?? null,
+  status: tmResult.success ? 'success' : 'error', errorMessage: tmResult.error ?? null,
+});
 } catch (err) {
 console.error('Ticketmaster backfill failed:', err);
+await logProviderSync({ providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
+startedAt = new Date();
 try {
 const sgResult = await backfillSeatGeekPrices(BACKFILL_BATCH_SIZE);
 console.log('SeatGeek backfill result:', sgResult);
+await logProviderSync({
+  providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+  recordsReceived: sgResult.checked ?? null, recordsUpdated: sgResult.updated ?? null,
+  status: sgResult.success ? 'success' : 'error', errorMessage: sgResult.error ?? null,
+});
 } catch (err) {
 console.error('SeatGeek backfill failed:', err);
+await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
 }
 
