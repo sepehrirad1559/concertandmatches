@@ -7,12 +7,7 @@ import 'express-async-errors';
 import { Pool } from 'pg';
 
 // Routes
-import authRoutes from './routes/auth.js';
 import eventsRoutes from './routes/events.js';
-import ticketsRoutes from './routes/tickets.js';
-import ordersRoutes from './routes/orders.js';
-import paymentsRoutes from './routes/payments.js';
-import usersRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 
 dotenv.config();
@@ -71,12 +66,7 @@ res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
 app.use('/api/events', eventsRoutes);
-app.use('/api/tickets', ticketsRoutes);
-app.use('/api/orders', ordersRoutes);
-app.use('/api/payments', paymentsRoutes);
-app.use('/api/users', usersRoutes);
 app.use('/api/admin', adminRoutes);
 
 // 404 Handler
