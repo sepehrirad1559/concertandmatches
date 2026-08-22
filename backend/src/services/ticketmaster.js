@@ -232,6 +232,63 @@ export const getTicketmasterEventDetails = async (eventId) => {
   }
 };
 
+// Backfill pricing for Ticketmaster events that were stored with no price
+// (common: the bulk /events.json search Ticketmaster returns during sync
+// often omits priceRanges even when the single-event endpoint has it, e.g.
+// once tickets go on sale after the event was first synced). Re-fetches
+// each event's own detail page, which reports pricing more reliably, and
+// updates the row if a real price is now available. Limited per call and
+// rate-limited between requests since this hits the Ticketmaster API once
+// per event, unlike the bulk sync.
+export const backfillMissingPrices = async (limit = 100) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, external_id FROM events
+       WHERE source = 'ticketmaster' AND min_price IS NULL
+       ORDER BY date ASC
+       LIMIT $1`,
+      [limit]
+    );
+
+    let updated = 0;
+    for (const row of rows) {
+      const detail = await getTicketmasterEventDetails(row.external_id);
+      const priceRanges = detail?.priceRanges;
+      const minPrice = priceRanges?.[0]?.min != null ? parseFloat(priceRanges[0].min) : null;
+      const maxPrice = priceRanges?.[0]?.max != null ? parseFloat(priceRanges[0].max) : null;
+
+      if (minPrice != null) {
+        const priceBreakdown = Array.isArray(priceRanges)
+          ? JSON.stringify(
+              priceRanges
+                .filter((pr) => pr.min != null || pr.max != null)
+                .map((pr) => ({
+                  type: pr.type ? pr.type.charAt(0).toUpperCase() + pr.type.slice(1) : 'Standard',
+                  min: pr.min != null ? parseFloat(pr.min) : null,
+                  max: pr.max != null ? parseFloat(pr.max) : null,
+                  currency: pr.currency || 'USD',
+                }))
+            )
+          : null;
+
+        await pool.query(
+          `UPDATE events SET min_price = $1, max_price = $2, price_breakdown = $3, updated_at = NOW() WHERE id = $4`,
+          [minPrice, maxPrice, priceBreakdown, row.id]
+        );
+        updated++;
+      }
+
+      // Rate limiting — one detail call per event, be polite to the API.
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    return { success: true, checked: rows.length, updated };
+  } catch (error) {
+    console.error('Ticketmaster price backfill failed:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Create scheduled sync (runs every 24 hours)
 export const scheduleEventSync = (intervalMs = 24 * 60 * 60 * 1000) => {
   console.log('⏰ Scheduling automatic event sync every 24 hours');
@@ -250,5 +307,6 @@ export default {
   storeEvent,
   syncAllEvents,
   getTicketmasterEventDetails,
+  backfillMissingPrices,
   scheduleEventSync
 };
