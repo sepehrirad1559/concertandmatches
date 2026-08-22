@@ -225,6 +225,25 @@ export default function App() {
   const [activeSearch, setActiveSearch] = useState('');
   const [activeCategoryId, setActiveCategoryId] = useState(null);
 
+  // Filters panel: `draft*` holds what the customer is currently typing/
+  // picking, `active*` holds what's actually been applied (and sent to the
+  // API) — same pattern as searchInput/activeSearch, so editing a filter
+  // doesn't refetch until the customer hits "Apply Filters".
+  const [showFilters, setShowFilters] = useState(false);
+  const [draftMinPrice, setDraftMinPrice] = useState('');
+  const [draftMaxPrice, setDraftMaxPrice] = useState('');
+  const [draftStartDate, setDraftStartDate] = useState('');
+  const [draftEndDate, setDraftEndDate] = useState('');
+  const [draftSort, setDraftSort] = useState('');
+  const [activeMinPrice, setActiveMinPrice] = useState('');
+  const [activeMaxPrice, setActiveMaxPrice] = useState('');
+  const [activeStartDate, setActiveStartDate] = useState('');
+  const [activeEndDate, setActiveEndDate] = useState('');
+  const [activeSort, setActiveSort] = useState('');
+
+  const activeFilterCount = [activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort]
+    .filter((v) => v !== '' && v != null).length;
+
   // 'pending' | 'granted' | 'denied' | 'unavailable'. Events default to
   // nearest-first once we know the customer's location; we hold off on the
   // first fetch until this settles so the list doesn't visibly re-sort.
@@ -248,7 +267,7 @@ export default function App() {
     );
   }, []);
 
-  const fetchEvents = async (offset, search, categoryId) => {
+  const fetchEvents = async (offset, search, categoryId, filters) => {
     const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
     if (search) params.set('search', search);
     const activeCategory = EVENT_CATEGORIES.find((c) => c.id === categoryId);
@@ -258,9 +277,22 @@ export default function App() {
       params.set('lat', String(userLat));
       params.set('lng', String(userLng));
     }
+    if (filters?.minPrice) params.set('minPrice', filters.minPrice);
+    if (filters?.maxPrice) params.set('maxPrice', filters.maxPrice);
+    if (filters?.startDate) params.set('startDate', filters.startDate);
+    if (filters?.endDate) params.set('endDate', filters.endDate);
+    if (filters?.sort) params.set('sort', filters.sort);
     const response = await fetch(`${API_URL}/events?${params.toString()}`);
     if (!response.ok) throw new Error('Request failed');
     return response.json();
+  };
+
+  const activeFilters = {
+    minPrice: activeMinPrice,
+    maxPrice: activeMaxPrice,
+    startDate: activeStartDate,
+    endDate: activeEndDate,
+    sort: activeSort,
   };
 
   // Initial load, and reload from the top whenever the active search or
@@ -273,7 +305,7 @@ export default function App() {
       setEventsLoading(true);
       setEventsError('');
       try {
-        const data = await fetchEvents(0, activeSearch, activeCategoryId);
+        const data = await fetchEvents(0, activeSearch, activeCategoryId, activeFilters);
         if (cancelled) return;
         setEvents(data.events || []);
         setEventsTotal(data.total || 0);
@@ -287,7 +319,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch, activeCategoryId, locationStatus]);
+  }, [activeSearch, activeCategoryId, locationStatus, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -299,10 +331,40 @@ export default function App() {
     setActiveSearch('');
   };
 
+  const handleApplyFilters = (e) => {
+    e.preventDefault();
+    if (draftMinPrice !== '' && draftMaxPrice !== '' && Number(draftMinPrice) > Number(draftMaxPrice)) {
+      setEventsError('Minimum price cannot be greater than maximum price.');
+      return;
+    }
+    if (draftStartDate && draftEndDate && draftStartDate > draftEndDate) {
+      setEventsError('Start date cannot be after end date.');
+      return;
+    }
+    setActiveMinPrice(draftMinPrice);
+    setActiveMaxPrice(draftMaxPrice);
+    setActiveStartDate(draftStartDate);
+    setActiveEndDate(draftEndDate);
+    setActiveSort(draftSort);
+  };
+
+  const handleClearFilters = () => {
+    setDraftMinPrice('');
+    setDraftMaxPrice('');
+    setDraftStartDate('');
+    setDraftEndDate('');
+    setDraftSort('');
+    setActiveMinPrice('');
+    setActiveMaxPrice('');
+    setActiveStartDate('');
+    setActiveEndDate('');
+    setActiveSort('');
+  };
+
   const handleLoadMore = async () => {
     setEventsLoadingMore(true);
     try {
-      const data = await fetchEvents(events.length, activeSearch, activeCategoryId);
+      const data = await fetchEvents(events.length, activeSearch, activeCategoryId, activeFilters);
       setEvents((prev) => [...prev, ...(data.events || [])]);
       setEventsTotal(data.total || 0);
       setEventsHasMore(Boolean(data.hasMore));
@@ -464,15 +526,111 @@ export default function App() {
               Clear
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            style={{
+              padding: '10px 20px',
+              cursor: 'pointer',
+              backgroundColor: activeFilterCount > 0 ? '#1a73e8' : undefined,
+              color: activeFilterCount > 0 ? 'white' : undefined,
+              fontWeight: activeFilterCount > 0 ? 'bold' : undefined,
+            }}>
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''} {showFilters ? '▲' : '▼'}
+          </button>
         </form>
+
+        {showFilters && (
+          <form
+            onSubmit={handleApplyFilters}
+            style={{
+              display: 'flex',
+              gap: '16px',
+              flexWrap: 'wrap',
+              alignItems: 'flex-end',
+              padding: '16px',
+              marginBottom: '16px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '8px',
+              color: '#222',
+            }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Min Price ($)</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={draftMinPrice}
+                onChange={(e) => setDraftMinPrice(e.target.value)}
+                style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Price ($)</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Any"
+                value={draftMaxPrice}
+                onChange={(e) => setDraftMaxPrice(e.target.value)}
+                style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>From Date</label>
+              <input
+                type="date"
+                value={draftStartDate}
+                onChange={(e) => setDraftStartDate(e.target.value)}
+                style={{ padding: '8px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>To Date</label>
+              <input
+                type="date"
+                value={draftEndDate}
+                onChange={(e) => setDraftEndDate(e.target.value)}
+                style={{ padding: '8px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Sort By</label>
+              <select
+                value={draftSort}
+                onChange={(e) => setDraftSort(e.target.value)}
+                style={{ padding: '8px', boxSizing: 'border-box' }}>
+                <option value="">
+                  {locationStatus === 'granted' ? 'Nearest first (default)' : 'Date (default)'}
+                </option>
+                <option value="date">Date: Soonest first</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="name">Name: A to Z</option>
+                {locationStatus === 'granted' && <option value="distance">Distance: Nearest first</option>}
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
+                Apply Filters
+              </button>
+              {activeFilterCount > 0 && (
+                <button type="button" onClick={handleClearFilters} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </form>
+        )}
 
         <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
 
-        {(activeSearch || activeCategoryId) && !eventsLoading && !eventsError && (
+        {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
           <p style={{ color: '#666' }}>
             {eventsTotal} result{eventsTotal === 1 ? '' : 's'}
             {activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}
             {activeSearch ? ` for "${activeSearch}"` : ''}
+            {activeFilterCount > 0 ? ` (${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} applied)` : ''}
           </p>
         )}
 
@@ -489,8 +647,8 @@ export default function App() {
         {!eventsLoading && eventsError && <p>{eventsError}</p>}
         {!eventsLoading && !eventsError && events.length === 0 && (
           <p>
-            {activeSearch || activeCategoryId
-              ? `No events found${activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}${activeSearch ? ` for "${activeSearch}"` : ''}.`
+            {activeSearch || activeCategoryId || activeFilterCount > 0
+              ? `No events found${activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}${activeSearch ? ` for "${activeSearch}"` : ''}${activeFilterCount > 0 ? ' with the selected filters' : ''}. Try adjusting your filters.`
               : 'No events available right now. Check back soon!'}
           </p>
         )}
