@@ -1,7 +1,89 @@
 import express from 'express';
 import { pool } from '../index.js';
+import { isSameEvent } from '../utils/matching.js';
 
 const router = express.Router();
+
+// Safety cap on how many raw rows (pre-merge, across all sources) a single
+// request will fetch before merging/sorting/paginating in memory. The full
+// events table is a few thousand rows, so this comfortably covers real
+// traffic while bounding worst-case query cost if a filter is very loose.
+const MAX_RAW_ROWS = 5000;
+
+// Merge rows that represent the same real-world event (per isSameEvent)
+// into a single card with one `offers` entry per source — the actual
+// price-comparison feature. Preserves row order otherwise (each group's
+// position is wherever its first-seen row was).
+function mergeEventsAcrossSources(rows) {
+  const merged = [];
+  for (const row of rows) {
+    const offer = {
+      source: row.source,
+      source_url: row.source_url,
+      min_price: row.min_price,
+      max_price: row.max_price,
+      currency: row.currency,
+    };
+
+    const match = merged.find((m) => isSameEvent(m, row));
+    if (match) {
+      match.offers.push(offer);
+      // Backfill anything the primary row is missing from this duplicate.
+      if (!match.image_url && row.image_url) match.image_url = row.image_url;
+      if (!match.artist_name && row.artist_name) match.artist_name = row.artist_name;
+      if (!match.description && row.description) match.description = row.description;
+      if (match.distance_km == null && row.distance_km != null) match.distance_km = row.distance_km;
+    } else {
+      merged.push({ ...row, offers: [offer] });
+    }
+  }
+
+  // Compute the best (lowest) price across offers and flag its source, so
+  // the UI can badge it. Also mirror it onto the existing top-level
+  // min_price/max_price fields for backward compatibility with anything
+  // still reading those directly.
+  for (const event of merged) {
+    const priced = event.offers.filter((o) => o.min_price != null);
+    if (priced.length > 0) {
+      const best = priced.reduce((a, b) => (Number(a.min_price) <= Number(b.min_price) ? a : b));
+      event.best_price = best.min_price;
+      event.best_source = best.source;
+      event.min_price = best.min_price;
+      event.max_price = best.max_price;
+    } else {
+      event.best_price = null;
+      event.best_source = null;
+    }
+  }
+
+  return merged;
+}
+
+// Sort comparator matching the API's `sort` values, applied to merged
+// events (so e.g. "price-low" compares each event's best price across
+// sources, not one source's price in isolation). Events with no data for
+// the chosen sort key always sort last, regardless of direction.
+function compareEvents(a, b, effectiveSort) {
+  if (effectiveSort === 'distance') {
+    const da = a.distance_km, db = b.distance_km;
+    if (da == null && db == null) return 0;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return da - db;
+  }
+  if (effectiveSort === 'price-low' || effectiveSort === 'price-high') {
+    const pa = a.best_price, pb = b.best_price;
+    if (pa == null && pb == null) return 0;
+    if (pa == null) return 1;
+    if (pb == null) return -1;
+    return effectiveSort === 'price-low' ? pa - pb : pb - pa;
+  }
+  if (effectiveSort === 'name') {
+    return (a.title || '').localeCompare(b.title || '');
+  }
+  // default: date ascending
+  return new Date(a.date) - new Date(b.date);
+}
 
 // Get All Events with Filters
 router.get('/', async (req, res) => {
@@ -61,17 +143,10 @@ router.get('/', async (req, res) => {
       }
     }
 
-    if (minPrice) {
-      whereClause += ` AND min_price >= $${paramCount}`;
-      params.push(parseFloat(minPrice));
-      paramCount++;
-    }
-
-    if (maxPrice) {
-      whereClause += ` AND max_price <= $${paramCount}`;
-      params.push(parseFloat(maxPrice));
-      paramCount++;
-    }
+    // minPrice/maxPrice are applied AFTER merging (against each event's best
+    // price across sources — see below), not here, so an event doesn't get
+    // excluded just because one source's offer falls outside the range
+    // while a cheaper offer from the other source would be in range.
 
     if (startDate) {
       whereClause += ` AND date >= $${paramCount}`;
@@ -113,10 +188,6 @@ router.get('/', async (req, res) => {
       }
     }
 
-    // Count matching rows (same filters, no limit/offset) so pagination reflects the actual result set.
-    const countResult = await pool.query(`SELECT COUNT(*) FROM events${whereClause}`, params);
-    const total = parseInt(countResult.rows[0].count);
-
     // Distance from the customer's location, via the Haversine formula. Only
     // events with stored venue coordinates get a real value; others come
     // back NULL and sort to the end rather than being excluded.
@@ -135,27 +206,40 @@ router.get('/', async (req, res) => {
     const listParams = hasLocation ? [...params, customerLat, customerLng] : [...params];
     if (hasLocation) paramCount += 2;
 
-    let query = `${selectClause}${whereClause}`;
-    if (effectiveSort === 'distance' && hasLocation) {
-      query += ' ORDER BY distance_km ASC NULLS LAST';
-    } else if (effectiveSort === 'price-low') {
-      query += ' ORDER BY min_price ASC';
-    } else if (effectiveSort === 'price-high') {
-      query += ' ORDER BY min_price DESC';
-    } else if (effectiveSort === 'name') {
-      query += ' ORDER BY title ASC';
-    } else {
-      query += ' ORDER BY date ASC';
-    }
-
-    // Pagination
-    query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    listParams.push(parseInt(limit), parseInt(offset));
+    // No SQL-level sort matching the API's `sort` param, and no
+    // OFFSET/paging LIMIT — real sorting and pagination both happen after
+    // merging (below), since "cheapest offer" and "how many distinct
+    // events" only exist once same-event rows from different sources are
+    // combined. This ORDER BY + MAX_RAW_ROWS pair only exists so that IF a
+    // filtered result set is ever large enough to hit the cap, the rows
+    // kept are deterministic (earliest first) rather than whatever
+    // Postgres happens to return.
+    const query = `${selectClause}${whereClause} ORDER BY date ASC LIMIT $${paramCount}`;
+    listParams.push(MAX_RAW_ROWS);
 
     const result = await pool.query(query, listParams);
 
+    // Merge Ticketmaster + SeatGeek rows for the same real event into one
+    // card with an `offers` array — the actual price-comparison feature.
+    let merged = mergeEventsAcrossSources(result.rows);
+
+    // Price filters apply post-merge, against each event's best price.
+    if (minPrice) {
+      const min = parseFloat(minPrice);
+      merged = merged.filter((e) => e.best_price != null && Number(e.best_price) >= min);
+    }
+    if (maxPrice) {
+      const max = parseFloat(maxPrice);
+      merged = merged.filter((e) => e.best_price != null && Number(e.best_price) <= max);
+    }
+
+    merged.sort((a, b) => compareEvents(a, b, effectiveSort));
+
+    const total = merged.length;
+    const pageEvents = merged.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+
     res.json({
-      events: result.rows,
+      events: pageEvents,
       total,
       limit: parseInt(limit),
       offset: parseInt(offset),

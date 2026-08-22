@@ -109,6 +109,69 @@ export const storeEvent = async (sgEvent) => {
   }
 };
 
+// Fetch a single event by SeatGeek's own id (not our prefixed "sg-<id>").
+// Used for price backfill rather than the bulk sync, which pages through
+// the /events search endpoint.
+export const fetchSeatGeekEventById = async (seatgeekId) => {
+  try {
+    const response = await axios.get(`${SEATGEEK_BASE_URL}/events/${seatgeekId}`, {
+      params: { client_id: SEATGEEK_CLIENT_ID },
+    });
+    return response.data || null;
+  } catch (error) {
+    console.error('SeatGeek event detail error:', error.response?.data || error.message);
+    return null;
+  }
+};
+
+// Backfill pricing for SeatGeek events stored with no price. SeatGeek's
+// free Platform API tier often returns an empty `stats` object on the bulk
+// /events listing even when the same event's own detail endpoint reports
+// real numbers (e.g. once listings actually appear closer to the event
+// date) — this re-checks each event individually and updates it if pricing
+// is now available. Note: for some events this genuinely never fills in
+// on the free tier; that's a data-source limitation, not a bug here.
+export const backfillMissingPrices = async (limit = 100) => {
+  try {
+    if (!SEATGEEK_CLIENT_ID) {
+      return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
+    }
+
+    const { rows } = await pool.query(
+      `SELECT id, external_id FROM events
+       WHERE source = 'seatgeek' AND min_price IS NULL
+       ORDER BY date ASC
+       LIMIT $1`,
+      [limit]
+    );
+
+    let updated = 0;
+    for (const row of rows) {
+      const seatgeekId = row.external_id.replace(/^sg-/, '');
+      const detail = await fetchSeatGeekEventById(seatgeekId);
+      const stats = detail?.stats;
+      const minPrice = stats?.lowest_price != null ? stats.lowest_price : null;
+      const maxPrice = stats?.highest_price != null ? stats.highest_price : minPrice;
+
+      if (minPrice != null) {
+        await pool.query(
+          `UPDATE events SET min_price = $1, max_price = $2, updated_at = NOW() WHERE id = $3`,
+          [minPrice, maxPrice, row.id]
+        );
+        updated++;
+      }
+
+      // Rate limiting — one detail call per event, be polite to the API.
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    return { success: true, checked: rows.length, updated };
+  } catch (error) {
+    console.error('SeatGeek price backfill failed:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Sync SeatGeek concert events into the events table.
 export const syncSeatGeekEvents = async (totalWanted = 300) => {
   try {
@@ -148,7 +211,9 @@ export const scheduleSeatGeekSync = (intervalMs = 24 * 60 * 60 * 1000) => {
 export default {
   fetchSeatGeekEvents,
   fetchManySeatGeekEvents,
+  fetchSeatGeekEventById,
   storeEvent,
   syncSeatGeekEvents,
+  backfillMissingPrices,
   scheduleSeatGeekSync,
 };
