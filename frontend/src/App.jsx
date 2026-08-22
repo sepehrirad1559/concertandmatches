@@ -38,12 +38,12 @@ function getTicketPriceTiers(event) {
     }
   }
   if (tiers.length === 0 && (event.min_price != null || event.max_price != null)) {
-    tiers = [{ type: 'Tickets', min: event.min_price, max: event.max_price }];
+    tiers = [{ type: 'Price', min: event.min_price, max: event.max_price }];
   }
   return tiers
     .filter((t) => t.min != null || t.max != null)
     .map((t) => ({
-      label: t.type || 'Tickets',
+      label: t.type || 'Price',
       min: t.min != null ? Number(t.min) : null,
       max: t.max != null ? Number(t.max) : null,
     }))
@@ -351,25 +351,8 @@ export default function App() {
                 const showPrices = selectedEvent.source === linkSourceKey && priceTiers.length > 0;
                 return (
                   <div key={link.name}>
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer sponsored"
-                      style={{
-                        display: 'block',
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        border: '1px solid #ddd',
-                        backgroundColor: 'white',
-                        color: '#222',
-                        textDecoration: 'none',
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                      }}>
-                      Search on {link.name} ↗
-                    </a>
                     {showPrices && (
-                      <div style={{ padding: '8px 6px 0' }}>
+                      <div style={{ padding: '0 6px 8px' }}>
                         {priceTiers.map((tier, i) => (
                           <div
                             key={`${tier.label}-${i}`}
@@ -391,6 +374,23 @@ export default function App() {
                         ))}
                       </div>
                     )}
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      style={{
+                        display: 'block',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #ddd',
+                        backgroundColor: 'white',
+                        color: '#222',
+                        textDecoration: 'none',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                      }}>
+                      Search on {link.name} ↗
+                    </a>
                   </div>
                 );
               })}
