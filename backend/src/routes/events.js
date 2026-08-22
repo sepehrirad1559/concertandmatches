@@ -18,6 +18,11 @@ function mergeEventsAcrossSources(rows) {
   const merged = [];
   for (const row of rows) {
     const offer = {
+      // event_row_id/external_id are additive fields (not used by the
+      // existing frontend logic) so the click-tracking beacon can identify
+      // exactly which source-row was clicked. See routes/clicks.js.
+      event_row_id: row.id,
+      external_id: row.external_id,
       source: row.source,
       source_url: row.source_url,
       min_price: row.min_price,
