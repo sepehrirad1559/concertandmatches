@@ -72,18 +72,28 @@ export function isSameDay(dateA, dateB) {
 
 // Best-effort "is this the same real-world event" check across two rows
 // from DIFFERENT sources. Two listings are only merged when they're on the
-// same day, in the same city/state (cheap, exact, and reliable — this is
-// what keeps the fuzzy matching below from merging unrelated shows on the
-// same night), AND either the venue names or the artist/title strings are
-// a strong fuzzy match.
+// same day and in the same city/state (cheap, exact, and reliable), AND
+// the artist/title strings are a strong match on their own OR (a weaker
+// title match backed by a strong venue-name match).
 //
-// Thresholds (0.5 for venue, 0.6 for title) were picked to comfortably
-// match "Madison Square Garden" vs "Madison Square Garden Arena" and
-// "Bad Bunny" vs "Bad Bunny: World's Hottest Tour" while still requiring
-// real overlap — they're a starting point, not a guarantee, so this will
-// occasionally miss a real duplicate or (rarely) merge two different
-// events at the same venue on the same night. Worth revisiting with real
-// production data once both sources are syncing reliably.
+// Earlier this only required EITHER a venue match OR a title match, which
+// turned out to be unsafe in production: big multi-use venues (arenas,
+// residency venues like Sphere, amphitheaters) host a different act every
+// night, so "same venue, same day" alone merged completely unrelated shows
+// — e.g. a real case where a Ticketmaster "Chance The Rapper" listing got
+// merged with a SeatGeek "Jack Harlow" listing purely because they shared
+// a venue and date. Requiring at least SOME title/artist token overlap
+// even in the venue-match branch (TITLE_FLOOR) closes that hole — real
+// duplicates of the same show still share artist-name tokens even when
+// venue names are formatted differently, but two different artists never
+// do. The tradeoff is this will occasionally miss a genuine duplicate
+// where one source's title is a fully generic string with zero overlap;
+// that's the safer failure mode for a price-comparison feature than
+// showing two different concerts as if they were "offers" for one event.
+const TITLE_STRONG_MATCH = 0.6;
+const VENUE_STRONG_MATCH = 0.5;
+const TITLE_FLOOR_FOR_VENUE_MATCH = 0.15;
+
 export function isSameEvent(a, b) {
   if (!a || !b) return false;
   if (a.source === b.source) return false; // only merge ACROSS sources
@@ -94,5 +104,7 @@ export function isSameEvent(a, b) {
   const venueScore = tokenSimilarity(a.venue_name, b.venue_name);
   const titleScore = tokenSimilarity(a.artist_name || a.title, b.artist_name || b.title);
 
-  return venueScore >= 0.5 || titleScore >= 0.6;
+  if (titleScore >= TITLE_STRONG_MATCH) return true;
+  if (venueScore >= VENUE_STRONG_MATCH && titleScore >= TITLE_FLOOR_FOR_VENUE_MATCH) return true;
+  return false;
 }
