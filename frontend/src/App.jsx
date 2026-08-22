@@ -54,6 +54,21 @@ function getTicketPriceTiers(event) {
     });
 }
 
+// Compact "Ticketmaster from $45 · SeatGeek from $52" line for the event
+// card grid, cheapest first — the at-a-glance comparison. Returns null
+// when there's nothing to compare (a single offer, or no priced offers).
+const OFFER_SOURCE_NAMES = { ticketmaster: 'Ticketmaster', seatgeek: 'SeatGeek' };
+
+function formatOffersComparison(event) {
+  const offers = Array.isArray(event.offers) ? event.offers : [];
+  if (offers.length < 2) return null;
+  const parts = offers
+    .filter((o) => o.min_price != null)
+    .sort((a, b) => Number(a.min_price) - Number(b.min_price))
+    .map((o) => `${OFFER_SOURCE_NAMES[o.source] || o.source} from $${Number(o.min_price).toFixed(0)}`);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 function formatPrice(event) {
   if (event.min_price == null && event.max_price == null) return 'Price TBA';
   if (event.min_price != null && event.max_price != null && event.min_price !== event.max_price) {
@@ -77,28 +92,53 @@ function trackedTicketmasterLink(destinationUrl) {
 // is still a plain (non-tracked) link — its affiliate application is
 // pending. Swap it in for its network's tracked deep link once approved.
 //
-// We only ever know an event was actually found on the seller it came from
-// (event.source, either 'ticketmaster' or 'seatgeek') — that's literally how
-// it got into our database, and source_url is the direct listing page for
-// it. A link to a *different* seller would just be a blind keyword search
-// with no guarantee the event is even listed there, and StubHub has no
-// integration at all, so we never know it's there. Rather than send someone
-// to a search that might come back empty, we only ever show the one seller
-// link we can confirm actually has this event.
+// We only ever know an event was actually found on the seller(s) it came
+// from — that's literally how it got into our database — so we only ever
+// show links for sellers we can confirm actually have this event, never a
+// blind keyword search to a seller we don't know is listing it (and
+// StubHub has no integration at all, so it never appears here).
+//
+// When the same real-world event was found on more than one seller (see
+// the backend's cross-source merge), `event.offers` has one entry per
+// seller and this returns one link per offer — the actual price-comparison
+// list. Falls back to the older single-source shape (event.source /
+// event.source_url) if `offers` isn't present, so this keeps working
+// against any cached/older API response shape.
 function buildFindTicketsLinks(event) {
   const q = encodeURIComponent(event.title || event.artist_name || '');
-  const bySource = {
+  const sourceMeta = {
     ticketmaster: {
       name: 'Ticketmaster',
-      url: trackedTicketmasterLink(event.source_url || `https://www.ticketmaster.com/search?q=${q}`),
+      buildUrl: (url) => trackedTicketmasterLink(url || `https://www.ticketmaster.com/search?q=${q}`),
     },
     seatgeek: {
       name: 'SeatGeek',
-      url: event.source_url || `https://seatgeek.com/search?search=${q}`,
+      buildUrl: (url) => url || `https://seatgeek.com/search?search=${q}`,
     },
   };
-  const link = bySource[event.source];
-  return link ? [link] : [];
+
+  const offers = Array.isArray(event.offers) && event.offers.length > 0
+    ? event.offers
+    : (event.source ? [{ source: event.source, source_url: event.source_url, min_price: event.min_price, max_price: event.max_price }] : []);
+
+  return offers
+    .filter((o) => sourceMeta[o.source])
+    .map((o) => ({
+      source: o.source,
+      name: sourceMeta[o.source].name,
+      url: sourceMeta[o.source].buildUrl(o.source_url),
+      minPrice: o.min_price,
+      maxPrice: o.max_price,
+      isBest: event.best_source ? o.source === event.best_source : false,
+    }))
+    // Cheapest first when we know prices, so the best deal is the first
+    // thing shown rather than something you have to scan for.
+    .sort((a, b) => {
+      if (a.minPrice != null && b.minPrice != null) return a.minPrice - b.minPrice;
+      if (a.minPrice != null) return -1;
+      if (b.minPrice != null) return 1;
+      return 0;
+    });
 }
 
 // Shown wherever outbound ticket links appear. Required by the FTC whenever
@@ -465,7 +505,7 @@ export default function App() {
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
             <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
-            <p><strong>💰 Price:</strong> {formatPrice(selectedEvent)}</p>
+            <p><strong>{findTicketsLinks.length > 1 ? '💰 Best Price:' : '💰 Price:'}</strong> {formatPrice(selectedEvent)}</p>
           </div>
 
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
@@ -478,19 +518,26 @@ export default function App() {
             ) : (
               <>
                 <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
-                  ConcertAndMatches doesn't sell tickets directly. This event was found on the
-                  seller below — click through to see availability and complete your purchase:
+                  {findTicketsLinks.length > 1
+                    ? "ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — compare prices below and click through to buy:"
+                    : "ConcertAndMatches doesn't sell tickets directly. This event was found on the seller below — click through to see availability and complete your purchase:"}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {findTicketsLinks.map((link) => {
-                    // findTicketsLinks only ever contains the single seller we
-                    // can confirm this event is actually listed with (the one
-                    // it came from) — see buildFindTicketsLinks — so if there's
-                    // any price data at all, it belongs to this link.
-                    const showPrices = priceTiers.length > 0;
+                    // The full tier breakdown (e.g. Standard vs. VIP) only
+                    // makes sense to show when there's a single seller —
+                    // once there's more than one offer, a plain per-seller
+                    // price is what actually helps someone compare.
+                    const showTierBreakdown = findTicketsLinks.length === 1 && priceTiers.length > 0;
+                    const priceLabel = link.minPrice != null || link.maxPrice != null
+                      ? (link.minPrice != null && link.maxPrice != null && link.minPrice !== link.maxPrice
+                          ? `from $${Number(link.minPrice).toFixed(0)}`
+                          : `$${Number(link.minPrice != null ? link.minPrice : link.maxPrice).toFixed(0)}`)
+                      : null;
+                    const highlightBest = link.isBest && findTicketsLinks.length > 1;
                     return (
-                      <div key={link.name}>
-                        {showPrices && (
+                      <div key={link.source}>
+                        {showTierBreakdown && (
                           <div style={{ padding: '0 6px 8px' }}>
                             {priceTiers.map((tier, i) => (
                               <div
@@ -513,6 +560,16 @@ export default function App() {
                             ))}
                           </div>
                         )}
+                        {!showTierBreakdown && priceLabel && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 6px 8px' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>{priceLabel}</span>
+                            {highlightBest && (
+                              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white', backgroundColor: '#2e7d32', padding: '2px 8px', borderRadius: '10px' }}>
+                                BEST PRICE
+                              </span>
+                            )}
+                          </div>
+                        )}
                         <a
                           href={link.url}
                           target="_blank"
@@ -521,8 +578,8 @@ export default function App() {
                             display: 'block',
                             padding: '12px 16px',
                             borderRadius: '8px',
-                            border: '1px solid #8b0000',
-                            backgroundColor: '#8b0000',
+                            border: highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000',
+                            backgroundColor: highlightBest ? '#2e7d32' : '#8b0000',
                             color: 'white',
                             textDecoration: 'none',
                             fontWeight: 'bold',
@@ -535,9 +592,9 @@ export default function App() {
                   })}
                 </div>
 
-                {priceTiers.length > 0 && (
+                {(priceTiers.length > 0 || findTicketsLinks.some((l) => l.minPrice != null)) && (
                   <p style={{ fontSize: '12px', color: '#888', marginTop: '14px' }}>
-                    Prices shown (sorted low to high) are as last reported by the ticket seller and may change — confirm the final price on their site before buying.
+                    Prices shown are as last reported by each ticket seller and may change — confirm the final price on their site before buying.
                   </p>
                 )}
               </>
@@ -738,7 +795,28 @@ export default function App() {
                 {formatDistance(event.distance_km) && (
                   <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>🚗 {formatDistance(event.distance_km)}</p>
                 )}
-                <p>💰 {formatPrice(event)}</p>
+                <p>
+                  💰 {formatPrice(event)}
+                  {Array.isArray(event.offers) && event.offers.length > 1 && (
+                    <span style={{
+                      marginLeft: '8px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      color: 'white',
+                      backgroundColor: '#2e7d32',
+                      padding: '2px 6px',
+                      borderRadius: '8px',
+                      verticalAlign: 'middle',
+                    }}>
+                      BEST PRICE
+                    </span>
+                  )}
+                </p>
+                {formatOffersComparison(event) && (
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '-6px' }}>
+                    {formatOffersComparison(event)}
+                  </p>
+                )}
                 <button
                   onClick={() => setSelectedEvent(event)}
                   style={{
