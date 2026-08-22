@@ -59,6 +59,13 @@ export const storeEvent = async (sgEvent) => {
     const sourceUrl = url;
     const artistName = performers?.[0]?.name || null;
 
+    // Data-quality guard (spec §32): an event with no valid date is useless
+    // for a comparison site — skip it rather than storing a broken row.
+    if (Number.isNaN(date.getTime())) {
+      console.warn(`Skipping SeatGeek event ${id} — missing/invalid date`);
+      return null;
+    }
+
     const venueName = venue?.name || 'Unknown Venue';
     const city = venue?.city || 'Unknown';
     const state = venue?.state || 'Unknown';
@@ -73,8 +80,12 @@ export const storeEvent = async (sgEvent) => {
     // price stats (often an empty {} object) — leave pricing null rather
     // than defaulting to a fake $0, which would otherwise look like a real
     // (and very wrong) price on the event page.
-    const minPrice = stats?.lowest_price != null ? stats.lowest_price : null;
-    const maxPrice = stats?.highest_price != null ? stats.highest_price : (minPrice != null ? minPrice : null);
+    // Data-quality guard (spec §32): a negative price is never valid —
+    // treat it as unknown (null) rather than storing/displaying it.
+    const rawMinPrice = stats?.lowest_price != null ? stats.lowest_price : null;
+    const rawMaxPrice = stats?.highest_price != null ? stats.highest_price : (rawMinPrice != null ? rawMinPrice : null);
+    const minPrice = rawMinPrice != null && rawMinPrice >= 0 ? rawMinPrice : null;
+    const maxPrice = rawMaxPrice != null && rawMaxPrice >= 0 ? rawMaxPrice : null;
 
     const existingEvent = await pool.query(
       'SELECT id FROM events WHERE external_id = $1',
