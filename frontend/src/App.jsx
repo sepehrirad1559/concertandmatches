@@ -74,16 +74,31 @@ function trackedTicketmasterLink(destinationUrl) {
 }
 
 // Ticketmaster is a live, tracked affiliate link (program approved). SeatGeek
-// and StubHub are still plain (non-tracked) search links — their affiliate
-// applications are pending. Swap each in for its network's tracked deep link
-// once approved.
+// is still a plain (non-tracked) link — its affiliate application is
+// pending. Swap it in for its network's tracked deep link once approved.
+//
+// We only ever know an event was actually found on the seller it came from
+// (event.source, either 'ticketmaster' or 'seatgeek') — that's literally how
+// it got into our database, and source_url is the direct listing page for
+// it. A link to a *different* seller would just be a blind keyword search
+// with no guarantee the event is even listed there, and StubHub has no
+// integration at all, so we never know it's there. Rather than send someone
+// to a search that might come back empty, we only ever show the one seller
+// link we can confirm actually has this event.
 function buildFindTicketsLinks(event) {
   const q = encodeURIComponent(event.title || event.artist_name || '');
-  return [
-    { name: 'Ticketmaster', url: trackedTicketmasterLink(`https://www.ticketmaster.com/search?q=${q}`) },
-    { name: 'SeatGeek', url: `https://seatgeek.com/search?search=${q}` },
-    { name: 'StubHub', url: `https://www.stubhub.com/find/s/?q=${q}` },
-  ];
+  const bySource = {
+    ticketmaster: {
+      name: 'Ticketmaster',
+      url: trackedTicketmasterLink(event.source_url || `https://www.ticketmaster.com/search?q=${q}`),
+    },
+    seatgeek: {
+      name: 'SeatGeek',
+      url: event.source_url || `https://seatgeek.com/search?search=${q}`,
+    },
+  };
+  const link = bySource[event.source];
+  return link ? [link] : [];
 }
 
 // Shown wherever outbound ticket links appear. Required by the FTC whenever
@@ -335,71 +350,77 @@ export default function App() {
 
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
             <h3 style={{ marginTop: 0 }}>Find Tickets</h3>
-            <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
-              ConcertAndMatches doesn't sell tickets directly. Search for this event on a trusted
-              ticket seller to see availability and complete your purchase:
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {findTicketsLinks.map((link) => {
-                // We only ever have real per-tier pricing for the seller an
-                // event actually came from (event.source is 'ticketmaster'
-                // or 'seatgeek') — there's no StubHub price feed, and we
-                // don't have the *other* source's pricing for this specific
-                // event either. Rather than guess, we only show a sorted
-                // price list under the seller link it's actually true for.
-                const linkSourceKey = link.name.toLowerCase();
-                const showPrices = selectedEvent.source === linkSourceKey && priceTiers.length > 0;
-                return (
-                  <div key={link.name}>
-                    {showPrices && (
-                      <div style={{ padding: '0 6px 8px' }}>
-                        {priceTiers.map((tier, i) => (
-                          <div
-                            key={`${tier.label}-${i}`}
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              fontSize: '14px',
-                              color: '#1a73e8',
-                              fontWeight: 'bold',
-                              padding: '3px 2px',
-                            }}>
-                            <span>{tier.label}</span>
-                            <span>
-                              {tier.min != null && tier.max != null && tier.min !== tier.max
-                                ? `$${tier.min.toFixed(0)} - $${tier.max.toFixed(0)}`
-                                : `$${(tier.min != null ? tier.min : tier.max).toFixed(0)}`}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer sponsored"
-                      style={{
-                        display: 'block',
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        border: '1px solid #ddd',
-                        backgroundColor: 'white',
-                        color: '#222',
-                        textDecoration: 'none',
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                      }}>
-                      Search on {link.name} ↗
-                    </a>
-                  </div>
-                );
-              })}
-            </div>
-
-            {priceTiers.length > 0 && (
-              <p style={{ fontSize: '12px', color: '#888', marginTop: '14px' }}>
-                Prices shown (sorted low to high) are as last reported by the ticket seller and may change — confirm the final price on their site before buying.
+            {findTicketsLinks.length === 0 ? (
+              <p style={{ fontSize: '14px', color: '#666' }}>
+                We don't have a confirmed ticket seller link for this event yet. Check back later,
+                or search for it directly on your preferred ticket site.
               </p>
+            ) : (
+              <>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
+                  ConcertAndMatches doesn't sell tickets directly. This event was found on the
+                  seller below — click through to see availability and complete your purchase:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {findTicketsLinks.map((link) => {
+                    // findTicketsLinks only ever contains the single seller we
+                    // can confirm this event is actually listed with (the one
+                    // it came from) — see buildFindTicketsLinks — so if there's
+                    // any price data at all, it belongs to this link.
+                    const showPrices = priceTiers.length > 0;
+                    return (
+                      <div key={link.name}>
+                        {showPrices && (
+                          <div style={{ padding: '0 6px 8px' }}>
+                            {priceTiers.map((tier, i) => (
+                              <div
+                                key={`${tier.label}-${i}`}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  fontSize: '14px',
+                                  color: '#1a73e8',
+                                  fontWeight: 'bold',
+                                  padding: '3px 2px',
+                                }}>
+                                <span>{tier.label}</span>
+                                <span>
+                                  {tier.min != null && tier.max != null && tier.min !== tier.max
+                                    ? `$${tier.min.toFixed(0)} - $${tier.max.toFixed(0)}`
+                                    : `$${(tier.min != null ? tier.min : tier.max).toFixed(0)}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer sponsored"
+                          style={{
+                            display: 'block',
+                            padding: '12px 16px',
+                            borderRadius: '8px',
+                            border: '1px solid #ddd',
+                            backgroundColor: 'white',
+                            color: '#222',
+                            textDecoration: 'none',
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                          }}>
+                          Search on {link.name} ↗
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {priceTiers.length > 0 && (
+                  <p style={{ fontSize: '12px', color: '#888', marginTop: '14px' }}>
+                    Prices shown (sorted low to high) are as last reported by the ticket seller and may change — confirm the final price on their site before buying.
+                  </p>
+                )}
+              </>
             )}
 
             <AffiliateDisclosure />
