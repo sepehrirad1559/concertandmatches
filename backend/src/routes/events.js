@@ -7,7 +7,7 @@ const router = express.Router();
 // Get All Events with Filters
 router.get('/', async (req, res) => {
   try {
-    const { city, state, country, category, keywords, minPrice, maxPrice, startDate, endDate, search, sort, lat, lng, limit = 20, offset = 0 } = req.query;
+    const { city, state, country, category, keywords, minPrice, maxPrice, startDate, endDate, search, location, sort, lat, lng, limit = 20, offset = 0 } = req.query;
 
     // Customer location, if the browser shared it. When present, results
     // default to nearest-first unless the caller asked for a different sort.
@@ -36,6 +36,17 @@ router.get('/', async (req, res) => {
     if (city) {
       whereClause += ` AND city = $${paramCount}`;
       params.push(city);
+      paramCount++;
+    }
+
+    // location: free-text customer filter (e.g. "Milwaukee" or "WI"),
+    // matched case-insensitively against city, state, or venue name — unlike
+    // the exact-match `city`/`state` params above (used by structured
+    // lookups), this is meant for a customer typing into a "Location" filter
+    // box, so it's a partial, case-insensitive match across all three.
+    if (location) {
+      whereClause += ` AND (city ILIKE $${paramCount} OR state ILIKE $${paramCount} OR venue_name ILIKE $${paramCount})`;
+      params.push(`%${location}%`);
       paramCount++;
     }
 

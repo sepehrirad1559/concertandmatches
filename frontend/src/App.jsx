@@ -286,13 +286,15 @@ export default function App() {
   const [draftStartDate, setDraftStartDate] = useState('');
   const [draftEndDate, setDraftEndDate] = useState('');
   const [draftSort, setDraftSort] = useState('');
+  const [draftLocation, setDraftLocation] = useState('');
   const [activeMinPrice, setActiveMinPrice] = useState('');
   const [activeMaxPrice, setActiveMaxPrice] = useState('');
   const [activeStartDate, setActiveStartDate] = useState('');
   const [activeEndDate, setActiveEndDate] = useState('');
   const [activeSort, setActiveSort] = useState('');
+  const [activeLocation, setActiveLocation] = useState('');
 
-  const activeFilterCount = [activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort]
+  const activeFilterCount = [activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]
     .filter((v) => v !== '' && v != null).length;
 
   // 'pending' | 'granted' | 'denied' | 'unavailable'. Events default to
@@ -333,6 +335,7 @@ export default function App() {
     if (filters?.startDate) params.set('startDate', filters.startDate);
     if (filters?.endDate) params.set('endDate', filters.endDate);
     if (filters?.sort) params.set('sort', filters.sort);
+    if (filters?.location) params.set('location', filters.location);
     const response = await fetch(`${API_URL}/events?${params.toString()}`);
     if (!response.ok) throw new Error('Request failed');
     return response.json();
@@ -344,6 +347,7 @@ export default function App() {
     startDate: activeStartDate,
     endDate: activeEndDate,
     sort: activeSort,
+    location: activeLocation,
   };
 
   // Initial load, and reload from the top whenever the active search or
@@ -370,7 +374,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch, activeCategoryId, locationStatus, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort]);
+  }, [activeSearch, activeCategoryId, locationStatus, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -397,6 +401,7 @@ export default function App() {
     setActiveStartDate(draftStartDate);
     setActiveEndDate(draftEndDate);
     setActiveSort(draftSort);
+    setActiveLocation(draftLocation.trim());
   };
 
   const handleClearFilters = () => {
@@ -405,11 +410,13 @@ export default function App() {
     setDraftStartDate('');
     setDraftEndDate('');
     setDraftSort('');
+    setDraftLocation('');
     setActiveMinPrice('');
     setActiveMaxPrice('');
     setActiveStartDate('');
     setActiveEndDate('');
     setActiveSort('');
+    setActiveLocation('');
   };
 
   const handleLoadMore = async () => {
@@ -605,6 +612,16 @@ export default function App() {
               borderRadius: '8px',
               color: '#222',
             }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Location</label>
+              <input
+                type="text"
+                placeholder="City or state"
+                value={draftLocation}
+                onChange={(e) => setDraftLocation(e.target.value)}
+                style={{ padding: '8px', width: '160px', boxSizing: 'border-box' }}
+              />
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Min Price ($)</label>
               <input
