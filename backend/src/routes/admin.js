@@ -76,6 +76,94 @@ router.post('/schema/add-geo-columns', async (req, res) => {
   }
 });
 
+// One-time schema migration: create the formal provider/venue/performer
+// tables the metasearch-platform architecture needs (spec §2, §5). This is
+// step 1 of a multi-phase upgrade — additive only, doesn't touch the
+// existing `events` table or any current functionality, and is safe to run
+// more than once. Seeds `providers` with the two sources already live
+// (Ticketmaster, SeatGeek) so the provider-config system reflects reality
+// from day one instead of starting empty.
+router.post('/schema/add-provider-tables', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS providers (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        provider_type TEXT NOT NULL, -- e.g. 'official_api', 'affiliate_feed', 'licensed_database'
+        api_endpoint TEXT,
+        terms_url TEXT,
+        commercial_use_allowed BOOLEAN NOT NULL DEFAULT false,
+        redistribution_allowed BOOLEAN NOT NULL DEFAULT false,
+        affiliate_enabled BOOLEAN NOT NULL DEFAULT false,
+        attribution_required BOOLEAN NOT NULL DEFAULT false,
+        rate_limit TEXT,
+        active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS venues (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        normalized_name TEXT NOT NULL,
+        address TEXT,
+        city TEXT,
+        state TEXT,
+        country TEXT,
+        postal_code TEXT,
+        latitude DOUBLE PRECISION,
+        longitude DOUBLE PRECISION,
+        website TEXT,
+        capacity INTEGER,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_venues_normalized_name ON venues (normalized_name);
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS performers (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        normalized_name TEXT NOT NULL,
+        category TEXT,
+        image TEXT,
+        official_url TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_performers_normalized_name ON performers (normalized_name);
+    `);
+
+    // Seed providers with the two sources already live in production, so
+    // the config table reflects the real current state rather than being
+    // empty until someone fills it in by hand.
+    await pool.query(`
+      INSERT INTO providers (name, provider_type, api_endpoint, commercial_use_allowed, redistribution_allowed, affiliate_enabled, attribution_required, active)
+      VALUES
+        ('ticketmaster', 'official_api', 'https://app.ticketmaster.com/discovery/v2', true, true, true, false, true),
+        ('seatgeek', 'official_api', 'https://api.seatgeek.com/2', true, true, true, false, true)
+      ON CONFLICT (name) DO NOTHING;
+    `);
+
+    res.json({ success: true, message: 'providers/venues/performers tables created (or already existed) and providers seeded' });
+  } catch (error) {
+    console.error('Error adding provider tables:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // One-time cleanup: SeatGeek events synced before the pricing fix have a
 // fake $0.00 min/max price (the old code defaulted to 0 instead of leaving
 // price unknown as null) baked in from before this fix, and won't get
