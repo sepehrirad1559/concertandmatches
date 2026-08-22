@@ -1,7 +1,7 @@
 import express from 'express';
 import { pool } from '../index.js';
-import { syncSeatGeekEvents } from '../services/seatgeek.js';
-import { syncAllEvents as syncTicketmasterEvents } from '../services/ticketmaster.js';
+import { syncSeatGeekEvents, backfillMissingPrices as backfillSeatGeekPrices } from '../services/seatgeek.js';
+import { syncAllEvents as syncTicketmasterEvents, backfillMissingPrices as backfillTicketmasterPrices } from '../services/ticketmaster.js';
 
 const router = express.Router();
 
@@ -97,6 +97,56 @@ router.post('/cleanup/zero-prices', async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// Backfill missing prices for events that were stored with no price (see
+// backfillMissingPrices in each service for why this happens — mostly
+// bulk-listing endpoints under-reporting pricing compared to an event's
+// own detail endpoint). Comparison against a seller only means anything
+// once we actually have a price to compare, so this is what closes that
+// gap on the events that synced without one. Batched (default 100 events
+// per call, one API call per event) since it's much slower than a bulk
+// sync — call it repeatedly (e.g. from cron) to keep working through the
+// backlog, and again periodically since some prices genuinely don't exist
+// yet at sync time (on-sale dates, etc.) and appear only later.
+router.post('/backfill/ticketmaster-prices', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const limit = Number(req.query.limit) || 100;
+  const result = await backfillTicketmasterPrices(limit);
+
+  if (!result.success) {
+    return res.status(500).json(result);
+  }
+  res.json(result);
+});
+
+router.post('/backfill/seatgeek-prices', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const limit = Number(req.query.limit) || 100;
+  const result = await backfillSeatGeekPrices(limit);
+
+  if (!result.success) {
+    return res.status(500).json(result);
+  }
+  res.json(result);
 });
 
 export default router;
