@@ -10,6 +10,10 @@ import { Pool } from 'pg';
 import eventsRoutes from './routes/events.js';
 import adminRoutes from './routes/admin.js';
 
+// Price backfill — see scheduled job below.
+import { backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
+import { backfillMissingPrices as backfillSeatGeekPrices } from './services/seatgeek.js';
+
 dotenv.config();
 
 const app = express();
@@ -89,3 +93,36 @@ console.log(`✅ Server running on port ${PORT}`);
 console.log(`🌐 Allowed origins: ${allowedOrigins.join(', ')}`);
 console.log(`📦 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);
 });
+
+// Scheduled price backfill — many events get stored with min_price null
+// because the bulk Ticketmaster/SeatGeek listing endpoints don't reliably
+// report pricing (the price often only appears once you fetch the event's
+// own detail page, and even then only once the source itself has a price to
+// report — e.g. before an on-sale date, neither source has one yet). This
+// runs the same backfill the /api/admin/backfill/* endpoints expose, but
+// automatically, so pricing keeps filling in over time without anyone
+// needing to trigger it by hand. Batched (300 events per source per run) and
+// rate-limited internally, so each run only takes a couple of minutes.
+const BACKFILL_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
+const BACKFILL_BATCH_SIZE = 300;
+
+async function runScheduledPriceBackfill() {
+console.log('🔄 Running scheduled price backfill...');
+try {
+const tmResult = await backfillTicketmasterPrices(BACKFILL_BATCH_SIZE);
+console.log('Ticketmaster backfill result:', tmResult);
+} catch (err) {
+console.error('Ticketmaster backfill failed:', err);
+}
+try {
+const sgResult = await backfillSeatGeekPrices(BACKFILL_BATCH_SIZE);
+console.log('SeatGeek backfill result:', sgResult);
+} catch (err) {
+console.error('SeatGeek backfill failed:', err);
+}
+}
+
+// First run 5 minutes after boot (so it doesn't compete with startup
+// traffic), then every 24 hours after that.
+setTimeout(runScheduledPriceBackfill, 5 * 60 * 1000);
+setInterval(runScheduledPriceBackfill, BACKFILL_INTERVAL_MS);
