@@ -339,49 +339,66 @@ export default function App() {
               ticket seller to see availability and complete your purchase:
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {findTicketsLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  style={{
-                    display: 'block',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: '1px solid #ddd',
-                    backgroundColor: 'white',
-                    color: '#222',
-                    textDecoration: 'none',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                  }}>
-                  Search on {link.name} ↗
-                </a>
-              ))}
+              {findTicketsLinks.map((link) => {
+                // We only ever have real per-tier pricing for the seller an
+                // event actually came from (event.source is 'ticketmaster'
+                // or 'seatgeek') — there's no StubHub price feed, and we
+                // don't have the *other* source's pricing for this specific
+                // event either. Rather than guess, we only show a sorted
+                // price list under the seller link it's actually true for.
+                const linkSourceKey = link.name.toLowerCase();
+                const showPrices = selectedEvent.source === linkSourceKey && priceTiers.length > 0;
+                return (
+                  <div key={link.name}>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      style={{
+                        display: 'block',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #ddd',
+                        backgroundColor: 'white',
+                        color: '#222',
+                        textDecoration: 'none',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                      }}>
+                      Search on {link.name} ↗
+                    </a>
+                    {showPrices && (
+                      <div style={{ padding: '8px 6px 0' }}>
+                        {priceTiers.map((tier, i) => (
+                          <div
+                            key={`${tier.label}-${i}`}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              fontSize: '14px',
+                              color: '#1a73e8',
+                              fontWeight: 'bold',
+                              padding: '3px 2px',
+                            }}>
+                            <span>{tier.label}</span>
+                            <span>
+                              {tier.min != null && tier.max != null && tier.min !== tier.max
+                                ? `$${tier.min.toFixed(0)} - $${tier.max.toFixed(0)}`
+                                : `$${(tier.min != null ? tier.min : tier.max).toFixed(0)}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {priceTiers.length > 0 && (
-              <div style={{ marginTop: '20px' }}>
-                <h4 style={{ marginBottom: '10px' }}>Available Ticket Prices</h4>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <tbody>
-                    {priceTiers.map((tier, i) => (
-                      <tr key={`${tier.label}-${i}`} style={{ borderTop: '1px solid #ddd' }}>
-                        <td style={{ padding: '8px 4px', color: '#444' }}>{tier.label}</td>
-                        <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 'bold' }}>
-                          {tier.min != null && tier.max != null && tier.min !== tier.max
-                            ? `$${tier.min.toFixed(0)} - $${tier.max.toFixed(0)}`
-                            : `$${(tier.min != null ? tier.min : tier.max).toFixed(0)}`}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
-                  Prices shown are as last reported by the ticket seller and may change — confirm the final price on their site before buying.
-                </p>
-              </div>
+              <p style={{ fontSize: '12px', color: '#888', marginTop: '14px' }}>
+                Prices shown (sorted low to high) are as last reported by the ticket seller and may change — confirm the final price on their site before buying.
+              </p>
             )}
 
             <AffiliateDisclosure />
