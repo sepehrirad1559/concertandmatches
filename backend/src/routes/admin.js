@@ -91,7 +91,7 @@ router.post('/sync/seatgeek', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
-  const totalWanted = Number(req.query.total) || 300;
+  const totalWanted = Number(req.query.total) || 3000;
   const startedAt = new Date();
   const result = await getProvider('seatgeek').sync(totalWanted);
   await logProviderSync({
