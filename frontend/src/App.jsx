@@ -798,8 +798,33 @@ export default function App() {
                     const isOfficialLink = link.source === 'official';
                     return (
                       <div key={link.source}>
+                        <a
+                          href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
+                          target="_blank"
+                          rel="noopener noreferrer sponsored"
+                          onClick={() => {
+                            // The /go/event/:id redirect above logs the click
+                            // server-side. Only fall back to the client-side
+                            // beacon when we don't have a row id to redirect
+                            // through (so the link above is the raw seller
+                            // URL) — otherwise this would double-count.
+                            if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
+                          }}
+                          style={{
+                            display: 'block',
+                            padding: '12px 16px',
+                            borderRadius: showTierBreakdown || (!showTierBreakdown && priceLabel) ? '8px 8px 0 0' : '8px',
+                            border: isOfficialLink ? '1px solid #555' : (highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000'),
+                            backgroundColor: isOfficialLink ? '#444' : (highlightBest ? '#2e7d32' : '#8b0000'),
+                            color: 'white',
+                            textDecoration: 'none',
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                          }}>
+                          {isOfficialLink ? `Visit ${link.name} ↗` : `Search on ${link.name} ↗`}
+                        </a>
                         {showTierBreakdown && (
-                          <div style={{ padding: '0 6px 8px' }}>
+                          <div style={{ padding: '8px 6px 4px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
                             {priceTiers.map((tier, i) => (
                               <div
                                 key={`${tier.label}-${i}`}
@@ -822,7 +847,11 @@ export default function App() {
                           </div>
                         )}
                         {!showTierBreakdown && priceLabel && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 6px 8px' }}>
+                          <div style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px',
+                            backgroundColor: '#fff',
+                          }}>
                             <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>{priceLabel}</span>
                             {highlightBest && (
                               <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white', backgroundColor: '#2e7d32', padding: '2px 8px', borderRadius: '10px' }}>
@@ -831,31 +860,14 @@ export default function App() {
                             )}
                           </div>
                         )}
-                        <a
-                          href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
-                          target="_blank"
-                          rel="noopener noreferrer sponsored"
-                          onClick={() => {
-                            // The /go/event/:id redirect above logs the click
-                            // server-side. Only fall back to the client-side
-                            // beacon when we don't have a row id to redirect
-                            // through (so the link above is the raw seller
-                            // URL) — otherwise this would double-count.
-                            if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
-                          }}
-                          style={{
-                            display: 'block',
-                            padding: '12px 16px',
-                            borderRadius: '8px',
-                            border: isOfficialLink ? '1px solid #555' : (highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000'),
-                            backgroundColor: isOfficialLink ? '#444' : (highlightBest ? '#2e7d32' : '#8b0000'),
-                            color: 'white',
-                            textDecoration: 'none',
-                            fontWeight: 'bold',
-                            textAlign: 'center',
+                        {!showTierBreakdown && !priceLabel && !isOfficialLink && (
+                          <div style={{
+                            padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px',
+                            backgroundColor: '#fff', fontSize: '13px', color: '#888', textAlign: 'center',
                           }}>
-                          {isOfficialLink ? `Visit ${link.name} ↗` : `Search on ${link.name} ↗`}
-                        </a>
+                            Price not yet reported by this seller
+                          </div>
+                        )}
                       </div>
                     );
                   })}
