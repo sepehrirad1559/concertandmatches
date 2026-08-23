@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import { pool } from '../index.js';
 import { syncSeatGeekEvents, backfillMissingPrices as backfillSeatGeekPrices } from '../services/seatgeek.js';
 import { syncAllEvents as syncTicketmasterEvents, backfillMissingPrices as backfillTicketmasterPrices } from '../services/ticketmaster.js';
@@ -6,6 +7,71 @@ import { rebuildCanonicalEvents } from '../services/canonicalize.js';
 import { logProviderSync } from '../utils/syncLog.js';
 
 const router = express.Router();
+
+// --- Dashboard auth (spec §35 admin dashboard hardening) ---------------
+//
+// The dashboard previously required pasting the SAME shared secret used to
+// gate schema migrations and full-database rebuilds (SYNC_SECRET_KEY)
+// directly into a plain-text field in a public HTML page. That means
+// anyone who ever viewed the dashboard's network traffic — or read the
+// page's source while the key was typed in — had the same power as a curl
+// call to POST /admin/canonicalize/rebuild or any /schema/* migration.
+//
+// This introduces a SEPARATE, lower-privilege password (ADMIN_DASHBOARD_
+// PASSWORD) for dashboard viewing only. Logging in exchanges it for a
+// short-lived (24h), HMAC-signed bearer token — the token itself never
+// reveals the password, expires on its own, and (critically) only grants
+// access to the three read-only endpoints below, never the destructive
+// schema/rebuild/backfill routes, which still require the original
+// SYNC_SECRET_KEY exactly as before. A valid SYNC_SECRET_KEY still works
+// everywhere too (nothing that worked before stops working), so existing
+// curl-based workflows are unaffected.
+function verifyDashboardToken(token) {
+  const secret = process.env.ADMIN_DASHBOARD_PASSWORD;
+  if (!secret || !token) return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  const [payloadB64, signature] = parts;
+  try {
+    const expectedSignature = crypto.createHmac('sha256', secret).update(payloadB64).digest('hex');
+    const sigBuf = Buffer.from(signature, 'hex');
+    const expBuf = Buffer.from(expectedSignature, 'hex');
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) return false;
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    return typeof payload.exp === 'number' && Date.now() < payload.exp;
+  } catch (_err) {
+    return false;
+  }
+}
+
+// Accepts EITHER the full-power sync key OR a valid dashboard token.
+function requireAdminAccess(req, res, next) {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (expectedKey && providedKey === expectedKey) return next();
+
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (verifyDashboardToken(token)) return next();
+
+  return res.status(403).json({ error: 'Invalid or missing credentials' });
+}
+
+router.post('/auth/login', (req, res) => {
+  const dashboardPassword = process.env.ADMIN_DASHBOARD_PASSWORD;
+  if (!dashboardPassword) {
+    return res.status(503).json({ error: 'ADMIN_DASHBOARD_PASSWORD is not configured on the server' });
+  }
+  const { password } = req.body || {};
+  if (!password || password !== dashboardPassword) {
+    // Same message either way — don't reveal whether a password was even provided.
+    return res.status(403).json({ error: 'Incorrect password' });
+  }
+  const exp = Date.now() + 24 * 60 * 60 * 1000; // 24h
+  const payloadB64 = Buffer.from(JSON.stringify({ exp })).toString('base64url');
+  const signature = crypto.createHmac('sha256', dashboardPassword).update(payloadB64).digest('hex');
+  res.json({ success: true, token: `${payloadB64}.${signature}`, expiresAt: exp });
+});
 
 // One-off / manually-triggered data sync endpoints.
 // Protected by a shared secret (SYNC_SECRET_KEY env var) rather than user
@@ -471,16 +537,7 @@ router.post('/schema/add-sync-logs', async (req, res) => {
 // per provider + sync type, so a human (or future admin UI) can see at a
 // glance whether each provider is healthy, rate-limited, or failing —
 // without digging through Railway logs by hand.
-router.get('/health', async (req, res) => {
-  const providedKey = req.headers['x-sync-key'];
-  const expectedKey = process.env.SYNC_SECRET_KEY;
-  if (!expectedKey) {
-    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
-  }
-  if (!providedKey || providedKey !== expectedKey) {
-    return res.status(403).json({ error: 'Invalid or missing sync key' });
-  }
-
+router.get('/health', requireAdminAccess, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT DISTINCT ON (provider_name, sync_type)
@@ -498,16 +555,7 @@ router.get('/health', async (req, res) => {
 // deduplicated canonical events, and ticket offers exist, plus a rough
 // price-coverage figure so it's obvious at a glance how much of the catalog
 // actually has a comparable price yet. All read-only, no side effects.
-router.get('/stats', async (req, res) => {
-  const providedKey = req.headers['x-sync-key'];
-  const expectedKey = process.env.SYNC_SECRET_KEY;
-  if (!expectedKey) {
-    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
-  }
-  if (!providedKey || providedKey !== expectedKey) {
-    return res.status(403).json({ error: 'Invalid or missing sync key' });
-  }
-
+router.get('/stats', requireAdminAccess, async (req, res) => {
   try {
     const [events, priced, bySource, canonical, offers, providers] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS count FROM events'),
@@ -537,16 +585,7 @@ router.get('/stats', async (req, res) => {
 // breakdown by provider/source, clicks over the last 14 days, and the
 // most-clicked events. Read-only. Falls back gracefully if click_events
 // doesn't exist yet (migration not run).
-router.get('/analytics/clicks', async (req, res) => {
-  const providedKey = req.headers['x-sync-key'];
-  const expectedKey = process.env.SYNC_SECRET_KEY;
-  if (!expectedKey) {
-    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
-  }
-  if (!providedKey || providedKey !== expectedKey) {
-    return res.status(403).json({ error: 'Invalid or missing sync key' });
-  }
-
+router.get('/analytics/clicks', requireAdminAccess, async (req, res) => {
   try {
     const [total, bySource, byDay, topEvents] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS count FROM click_events'),

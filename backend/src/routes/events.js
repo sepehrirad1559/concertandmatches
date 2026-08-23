@@ -267,30 +267,36 @@ router.get('/', async (req, res) => {
 // assigned), NOT a canonical_events id from the derived/rebuildable layer
 // (those ids reset on every POST /admin/canonicalize/rebuild, which would
 // silently break any bookmarked or indexed URL built from them).
+// Shared by the /detail route below AND routes/prerender.js (bot-facing
+// server-rendered event pages need the exact same merged data a human
+// visitor sees — see prerender.js for why that route exists).
+async function getMergedEventById(eventRowId) {
+  const baseResult = await pool.query('SELECT * FROM events WHERE id = $1', [eventRowId]);
+  if (baseResult.rows.length === 0) return null;
+  const base = baseResult.rows[0];
+
+  // Candidates for cross-source merging: same calendar day + same
+  // city/state (the cheap, exact part of isSameEvent) — narrows a
+  // 3000+ row table down to a handful before running the more expensive
+  // token-similarity check in JS, same division of labor as the list
+  // endpoint above.
+  const candidatesResult = await pool.query(
+    `SELECT * FROM events
+     WHERE date::date = $1::date AND city = $2 AND state = $3 AND source != $4`,
+    [base.date, base.city, base.state, base.source]
+  );
+
+  const merged = mergeEventsAcrossSources([base, ...candidatesResult.rows]);
+  // mergeEventsAcrossSources always keeps the first row (base, here) as
+  // the primary/merged[0] since it's first in the input array.
+  return merged[0];
+}
+
 router.get('/detail/:eventRowId', async (req, res) => {
   try {
-    const { eventRowId } = req.params;
-    const baseResult = await pool.query('SELECT * FROM events WHERE id = $1', [eventRowId]);
-    if (baseResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Event not found' });
-    }
-    const base = baseResult.rows[0];
-
-    // Candidates for cross-source merging: same calendar day + same
-    // city/state (the cheap, exact part of isSameEvent) — narrows a
-    // 3000+ row table down to a handful before running the more expensive
-    // token-similarity check in JS, same division of labor as the list
-    // endpoint above.
-    const candidatesResult = await pool.query(
-      `SELECT * FROM events
-       WHERE date::date = $1::date AND city = $2 AND state = $3 AND source != $4`,
-      [base.date, base.city, base.state, base.source]
-    );
-
-    const merged = mergeEventsAcrossSources([base, ...candidatesResult.rows]);
-    // mergeEventsAcrossSources always keeps the first row (base, here) as
-    // the primary/merged[0] since it's first in the input array.
-    res.json({ event: merged[0] });
+    const event = await getMergedEventById(req.params.eventRowId);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    res.json({ event });
   } catch (error) {
     console.error('Error fetching merged event detail:', error);
     res.status(500).json({ error: 'Failed to fetch event' });
@@ -335,6 +341,6 @@ router.get('/search/advanced', async (req, res) => {
 // Exported for reuse by routes/sitemap.js, which needs the same
 // cross-source dedup so sitemap URLs correspond 1:1 with what customers
 // actually see as a single event card, not one URL per raw source row.
-export { mergeEventsAcrossSources };
+export { mergeEventsAcrossSources, getMergedEventById };
 
 export default router;
