@@ -1,8 +1,20 @@
 import axios from 'axios';
 import { pool } from '../index.js';
+import { US_STATES } from './ticketmaster.js';
 
 const SEATGEEK_CLIENT_ID = process.env.SEATGEEK_CLIENT_ID;
 const SEATGEEK_BASE_URL = 'https://api.seatgeek.com/2';
+
+// A handful of Canadian provinces, for the same reason Ticketmaster's sync
+// covers Canada separately (spec: discover events across the US AND
+// Canada). Confirmed against SeatGeek's own docs that `venue.state` is a
+// real filter (https://seatgeek.github.io/), but unlike the US state list
+// above (reused from Ticketmaster's own working code) this hasn't been
+// verified against real Canadian SeatGeek listings — if a code is wrong or
+// SeatGeek simply has no venues there, that state/province just contributes
+// 0 events, same as any other empty page. Not a failure mode worth guarding
+// against further.
+const CANADIAN_PROVINCES = ['ON', 'BC', 'QC', 'AB', 'MB', 'SK', 'NS', 'NB'];
 
 // Fetch a page of concert events from SeatGeek's Platform API.
 // Docs: https://platform.seatgeek.com/
@@ -25,18 +37,63 @@ export const fetchSeatGeekEvents = async (page = 1, perPage = 100) => {
   }
 };
 
-// Fetch multiple pages up to a total event count. Default raised from an
-// original 300 to 3000 (2026-08): SeatGeek's /events call has no geographic
-// segmentation like Ticketmaster's per-market-code fetch does — it just
-// returns the N soonest events globally — so a low total meant SeatGeek's
-// coverage was a tiny, essentially random slice of the calendar next to
-// Ticketmaster's ~2,800-event spread across 28 US/Canada markets. That
-// mismatch was the real reason almost no event ever showed offers from both
-// sources (measured: ~1% of rows merged into a multi-seller card). Matching
-// Ticketmaster's order of magnitude here doesn't guarantee overlap — the two
-// APIs still cover different inventories — but it removes the artificial
-// cap that was making overlap nearly impossible regardless of how good the
-// cross-source matching logic is.
+// Fetch events for one US state or Canadian province via SeatGeek's
+// documented `venue.state` filter (https://seatgeek.github.io/) — the same
+// per-region approach Ticketmaster's fetchAllUSEvents/fetchAllCanadianEvents
+// already use via market codes. Segmenting by region (instead of just
+// pulling more of a globally-sorted feed) means SeatGeek's coverage
+// actually spreads across the country the way Ticketmaster's does, rather
+// than clustering wherever the next few days happen to have the most
+// events — which is what was silently capping cross-source overlap before.
+export const fetchSeatGeekEventsByState = async (stateCode, perState = 100) => {
+  try {
+    const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+      params: {
+        client_id: SEATGEEK_CLIENT_ID,
+        'taxonomies.name': 'concert',
+        'venue.state': stateCode,
+        per_page: perState,
+        sort: 'datetime_local.asc',
+      },
+    });
+    return response.data?.events || [];
+  } catch (error) {
+    console.error(`SeatGeek API error (venue.state=${stateCode}):`, error.response?.data || error.message);
+    return [];
+  }
+};
+
+// Loops the same US state list Ticketmaster's sync uses, plus a handful of
+// Canadian provinces, pulling up to `perState` events from each. This is
+// now the primary strategy syncSeatGeekEvents uses (see below) — it
+// directly targets the same geographic footprint Ticketmaster covers,
+// rather than relying on a single global feed and hoping enough volume
+// happens to land in the same places.
+export const fetchSeatGeekEventsByRegion = async (perState = 100) => {
+  const events = [];
+  const regions = [...US_STATES, ...CANADIAN_PROVINCES];
+
+  for (const stateCode of regions) {
+    console.log(`📍 Fetching SeatGeek events for ${stateCode}...`);
+    const stateEvents = await fetchSeatGeekEventsByState(stateCode, perState);
+    events.push(...stateEvents);
+    // Politeness delay between requests, same rationale as the existing
+    // page-based fetch below.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  console.log(`✅ Total SeatGeek events fetched across ${regions.length} regions: ${events.length}`);
+  return events;
+};
+
+// Fetch multiple pages up to a total event count. Kept as a fallback/simpler
+// path (e.g. for callers that don't need regional segmentation) — the
+// primary sync now uses fetchSeatGeekEventsByRegion above instead, since a
+// low total here (originally 300) meant SeatGeek's coverage was a tiny,
+// essentially random slice of the calendar next to Ticketmaster's ~2,800-
+// event spread across 28 US/Canada markets, and even raising the total
+// alone doesn't fix the lack of geographic spread — see that function's
+// comment for the full story on why region-based fetching is the better fix.
 export const fetchManySeatGeekEvents = async (totalWanted = 3000) => {
   const perPage = 100;
   const pages = Math.ceil(totalWanted / perPage);
@@ -194,8 +251,12 @@ export const backfillMissingPrices = async (limit = 100) => {
   }
 };
 
-// Sync SeatGeek concert events into the events table.
-export const syncSeatGeekEvents = async (totalWanted = 3000) => {
+// Sync SeatGeek concert events into the events table. Now region-segmented
+// (see fetchSeatGeekEventsByRegion above) rather than one global
+// soonest-first feed — perState=100 mirrors Ticketmaster's own per-market
+// fetch size, so the two sources cover comparable geographic ground instead
+// of SeatGeek's data clustering whichever days happen to be busiest.
+export const syncSeatGeekEvents = async (perState = 100) => {
   try {
     console.log('🔄 Starting SeatGeek sync...');
 
@@ -204,7 +265,7 @@ export const syncSeatGeekEvents = async (totalWanted = 3000) => {
       return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
     }
 
-    const events = await fetchManySeatGeekEvents(totalWanted);
+    const events = await fetchSeatGeekEventsByRegion(perState);
     console.log(`Processing ${events.length} SeatGeek events...`);
 
     for (const event of events) {
