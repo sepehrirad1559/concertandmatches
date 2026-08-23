@@ -1,8 +1,41 @@
 // build-refresh marker 2
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:30001/api';
+
+// The backend's non-/api redirect/tracking endpoint lives at the same
+// origin as the API, just without the /api suffix (see backend/src/index.js
+// — app.use('/go', redirectRoutes) is mounted at the app root).
+const GO_BASE = API_URL.replace(/\/api\/?$/, '');
+
+// Slug used in the shareable per-event URL (/event/:id-:slug) — cosmetic
+// only. The leading numeric id (see buildEventPath) is what's actually
+// looked up; the slug just makes the URL readable and keyword-relevant.
+// Mirrors backend/src/routes/sitemap.js's slugify so sitemap URLs and
+// in-app-generated URLs agree (not that it matters for lookups, but it
+// avoids a confusing mismatch if anyone compares them).
+function slugify(text) {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'event';
+}
+
+function buildEventPath(event) {
+  const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
+  return `/event/${event.id}-${slug}`;
+}
+
+// Pulls the numeric event id back out of a /event/:id-:slug URL. Only the
+// leading digits matter — the rest is decorative.
+function parseEventIdFromPath(pathname) {
+  const match = /^\/event\/(\d+)/.exec(pathname || '');
+  return match ? match[1] : null;
+}
 
 // Anonymous per-browser-session id for click analytics — not tied to any
 // account, just lets the backend tell "3 clicks from one visitor" apart
@@ -336,7 +369,13 @@ function Footer() {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const eventIdFromUrl = parseEventIdFromPath(location.pathname);
+
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
 
   const EVENTS_PAGE_SIZE = 24;
 
@@ -393,6 +432,112 @@ export default function App() {
       { timeout: 8000, maximumAge: 5 * 60 * 1000 }
     );
   }, []);
+
+  // Keeps `selectedEvent` in sync with the URL. When a customer clicks
+  // "View Event" we already have the full merged object in hand (see the
+  // grid button below) and just navigate — no fetch needed, no flash of a
+  // loading state. But a direct visit, a page refresh, a shared link, or a
+  // search engine crawler only has the URL, with no event data in memory,
+  // so this fetches it from the merged single-event endpoint in that case.
+  // Also clears selectedEvent when navigating back to "/" (Back button,
+  // browser back/forward, or the logo).
+  useEffect(() => {
+    if (!eventIdFromUrl) {
+      setSelectedEvent(null);
+      setDetailError('');
+      return;
+    }
+    if (selectedEvent && String(selectedEvent.id) === String(eventIdFromUrl)) return;
+
+    let cancelled = false;
+    setDetailLoading(true);
+    setDetailError('');
+    fetch(`${API_URL}/events/detail/${eventIdFromUrl}`)
+      .then((response) => {
+        if (!response.ok) throw new Error('Event not found');
+        return response.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setSelectedEvent(data.event);
+      })
+      .catch(() => {
+        if (!cancelled) setDetailError("We couldn't find that event. It may have been removed or the link is incorrect.");
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [eventIdFromUrl]);
+
+  // SEO: page title, meta description, canonical URL, and Event structured
+  // data (JSON-LD, spec §21) for whichever event is currently shown —
+  // restored to the site defaults when leaving the detail view. This is a
+  // client-rendered SPA (no server-side rendering), so this mainly helps
+  // JS-executing crawlers (Googlebot does render JS) and social share
+  // previews fetched after the page has loaded, rather than a classic
+  // no-JS crawler — real SSR would be a further, separate upgrade.
+  useEffect(() => {
+    const defaultTitle = 'ConcertAndMatches.com — Compare Ticket Prices for Concerts, Sports & Theater';
+    const defaultDescription = 'Compare available ticket offers from multiple authorized sellers for concerts, sports, theater and events across the USA and Canada. See current prices side by side before you buy.';
+    const canonicalEl = document.querySelector('link[rel="canonical"]');
+    const descriptionEl = document.querySelector('meta[name="description"]');
+    let jsonLdEl = document.getElementById('event-jsonld');
+
+    if (selectedEvent) {
+      const title = `${selectedEvent.title} Tickets — ${formatDate(selectedEvent.date)} | ConcertAndMatches.com`;
+      const description = `Compare ticket prices for ${selectedEvent.title}${selectedEvent.venue_name ? ` at ${selectedEvent.venue_name}` : ''}${selectedEvent.city ? ` in ${selectedEvent.city}` : ''} on ${formatDate(selectedEvent.date)}. See offers from multiple authorized sellers.`;
+      const url = `https://www.concertandmatches.com${buildEventPath(selectedEvent)}`;
+
+      document.title = title;
+      if (descriptionEl) descriptionEl.setAttribute('content', description);
+      if (canonicalEl) canonicalEl.setAttribute('href', url);
+
+      const offersForLd = (Array.isArray(selectedEvent.offers) ? selectedEvent.offers : [])
+        .filter((o) => o.min_price != null)
+        .map((o) => ({
+          '@type': 'Offer',
+          price: Number(o.min_price).toFixed(2),
+          priceCurrency: o.currency || 'USD',
+          availability: 'https://schema.org/InStock',
+          url,
+        }));
+
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Event',
+        name: selectedEvent.title,
+        startDate: selectedEvent.date,
+        eventStatus: 'https://schema.org/EventScheduled',
+        ...(selectedEvent.image_url ? { image: [selectedEvent.image_url] } : {}),
+        location: {
+          '@type': 'Place',
+          name: selectedEvent.venue_name || undefined,
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: selectedEvent.city || undefined,
+            addressRegion: selectedEvent.state || undefined,
+            addressCountry: selectedEvent.country === 'Canada' ? 'CA' : 'US',
+          },
+        },
+        ...(selectedEvent.artist_name ? { performer: { '@type': 'PerformingGroup', name: selectedEvent.artist_name } } : {}),
+        ...(offersForLd.length > 0 ? { offers: offersForLd } : {}),
+      };
+
+      if (!jsonLdEl) {
+        jsonLdEl = document.createElement('script');
+        jsonLdEl.id = 'event-jsonld';
+        jsonLdEl.type = 'application/ld+json';
+        document.head.appendChild(jsonLdEl);
+      }
+      jsonLdEl.textContent = JSON.stringify(jsonLd);
+    } else {
+      document.title = defaultTitle;
+      if (descriptionEl) descriptionEl.setAttribute('content', defaultDescription);
+      if (canonicalEl) canonicalEl.setAttribute('href', 'https://www.concertandmatches.com/');
+      if (jsonLdEl) jsonLdEl.remove();
+    }
+  }, [selectedEvent]);
 
   const fetchEvents = async (offset, search, categoryId, filters) => {
     const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
@@ -507,6 +652,33 @@ export default function App() {
     }
   };
 
+  // EVENT DETAIL PAGE (direct load / refresh / shared link that hasn't
+  // resolved to a full event object yet)
+  if (eventIdFromUrl && detailLoading && !selectedEvent) {
+    return (
+      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+        <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <BrandLink onClick={() => navigate('/')} />
+        </nav>
+        <p style={{ textAlign: 'center', marginTop: '60px' }}>Loading event…</p>
+      </div>
+    );
+  }
+
+  if (eventIdFromUrl && detailError && !selectedEvent) {
+    return (
+      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+        <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <BrandLink onClick={() => navigate('/')} />
+          <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            ← Back to Events
+          </button>
+        </nav>
+        <p style={{ textAlign: 'center', marginTop: '60px' }}>{detailError}</p>
+      </div>
+    );
+  }
+
   // EVENT DETAIL PAGE
   if (selectedEvent) {
     const findTicketsLinks = buildFindTicketsLinks(selectedEvent);
@@ -514,8 +686,8 @@ export default function App() {
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <BrandLink onClick={() => setSelectedEvent(null)} />
-          <button onClick={() => setSelectedEvent(null)} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+          <BrandLink onClick={() => navigate('/')} />
+          <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
             ← Back to Events
           </button>
         </nav>
@@ -605,10 +777,17 @@ export default function App() {
                           </div>
                         )}
                         <a
-                          href={link.url}
+                          href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
                           target="_blank"
                           rel="noopener noreferrer sponsored"
-                          onClick={() => logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent)}
+                          onClick={() => {
+                            // The /go/event/:id redirect above logs the click
+                            // server-side. Only fall back to the client-side
+                            // beacon when we don't have a row id to redirect
+                            // through (so the link above is the raw seller
+                            // URL) — otherwise this would double-count.
+                            if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
+                          }}
                           style={{
                             display: 'block',
                             padding: '12px 16px',
@@ -650,7 +829,7 @@ export default function App() {
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <BrandLink onClick={() => setSelectedEvent(null)} />
+        <BrandLink onClick={() => navigate('/')} />
       </nav>
 
       <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 30px' }}>
@@ -853,7 +1032,7 @@ export default function App() {
                   </p>
                 )}
                 <button
-                  onClick={() => setSelectedEvent(event)}
+                  onClick={() => { setSelectedEvent(event); navigate(buildEventPath(event)); }}
                   style={{
                     padding: '8px 16px',
                     cursor: 'pointer',
