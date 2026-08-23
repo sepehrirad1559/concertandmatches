@@ -1,10 +1,12 @@
 import express from 'express';
 import crypto from 'crypto';
 import { pool } from '../index.js';
-import { syncSeatGeekEvents, backfillMissingPrices as backfillSeatGeekPrices } from '../services/seatgeek.js';
-import { syncAllEvents as syncTicketmasterEvents, backfillMissingPrices as backfillTicketmasterPrices } from '../services/ticketmaster.js';
 import { rebuildCanonicalEvents } from '../services/canonicalize.js';
 import { logProviderSync } from '../utils/syncLog.js';
+// Provider plugin interface (spec: formal provider abstraction) — routes
+// below call getProvider('ticketmaster').sync() etc. instead of importing
+// each service's functions directly. See ../providers/registry.js.
+import { getProvider } from '../providers/registry.js';
 
 const router = express.Router();
 
@@ -90,7 +92,7 @@ router.post('/sync/seatgeek', async (req, res) => {
 
   const totalWanted = Number(req.query.total) || 300;
   const startedAt = new Date();
-  const result = await syncSeatGeekEvents(totalWanted);
+  const result = await getProvider('seatgeek').sync(totalWanted);
   await logProviderSync({
     providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
     recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
@@ -114,7 +116,7 @@ router.post('/sync/ticketmaster', async (req, res) => {
   }
 
   const startedAt = new Date();
-  const result = await syncTicketmasterEvents();
+  const result = await getProvider('ticketmaster').sync();
   await logProviderSync({
     providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
     recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
@@ -456,7 +458,7 @@ router.post('/backfill/ticketmaster-prices', async (req, res) => {
 
   const limit = Number(req.query.limit) || 100;
   const startedAt = new Date();
-  const result = await backfillTicketmasterPrices(limit);
+  const result = await getProvider('ticketmaster').backfillPrices(limit);
   await logProviderSync({
     providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
     recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
@@ -482,7 +484,7 @@ router.post('/backfill/seatgeek-prices', async (req, res) => {
 
   const limit = Number(req.query.limit) || 100;
   const startedAt = new Date();
-  const result = await backfillSeatGeekPrices(limit);
+  const result = await getProvider('seatgeek').backfillPrices(limit);
   await logProviderSync({
     providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
     recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
