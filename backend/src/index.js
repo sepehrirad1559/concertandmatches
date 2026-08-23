@@ -12,6 +12,7 @@ import adminRoutes from './routes/admin.js';
 import clicksRoutes from './routes/clicks.js';
 import redirectRoutes from './routes/redirect.js';
 import sitemapRoutes from './routes/sitemap.js';
+import prerenderRoutes from './routes/prerender.js';
 
 // Price backfill — see scheduled job below.
 import { backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
@@ -79,6 +80,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/clicks', clicksRoutes);
 app.use('/go', redirectRoutes);
 app.use('/', sitemapRoutes);
+app.use('/prerender', prerenderRoutes);
 
 // 404 Handler
 app.use((req, res) => {
