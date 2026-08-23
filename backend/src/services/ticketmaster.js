@@ -10,8 +10,10 @@ const MARKET_CODES = {
   'Canada': [26, 27, 28]
 };
 
-// US States mapping
-const US_STATES = [
+// US States mapping — exported so other providers (e.g. seatgeek.js's
+// state-segmented sync) can cover the exact same geographic footprint
+// without maintaining a second, potentially-drifting copy of this list.
+export const US_STATES = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
   'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',

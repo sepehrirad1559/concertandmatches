@@ -91,9 +91,14 @@ router.post('/sync/seatgeek', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
-  const totalWanted = Number(req.query.total) || 3000;
+  // ?total= now means "events per US state/Canadian province" (region-
+  // segmented sync — see services/seatgeek.js), not a flat global total.
+  // Kept the same query param name for backward compatibility with any
+  // existing bookmarked/scripted calls; 100 mirrors Ticketmaster's own
+  // per-market fetch size.
+  const perState = Number(req.query.total) || 100;
   const startedAt = new Date();
-  const result = await getProvider('seatgeek').sync(totalWanted);
+  const result = await getProvider('seatgeek').sync(perState);
   await logProviderSync({
     providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
     recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,

@@ -8,8 +8,11 @@ export class SeatGeekProvider extends ProviderInterface {
     super('seatgeek');
   }
 
-  async sync(totalWanted = 3000) {
-    return syncSeatGeekEvents(totalWanted);
+  // perState mirrors Ticketmaster's own per-market fetch size (100) — see
+  // services/seatgeek.js's syncSeatGeekEvents comment for why region-
+  // segmented fetching replaced the old flat totalWanted approach.
+  async sync(perState = 100) {
+    return syncSeatGeekEvents(perState);
   }
 
   async backfillPrices(limit = 100) {

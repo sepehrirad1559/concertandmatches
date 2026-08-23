@@ -221,16 +221,17 @@ setInterval(runScheduledOfficialSitesJob, OFFICIAL_SITES_INTERVAL_MS);
 
 // Ticketmaster + SeatGeek event discovery — keeps the actual event catalog
 // (and therefore the cross-source price-comparison coverage) fresh without
-// anyone needing to remember to trigger it by hand. SeatGeek's totalWanted
-// is intentionally the same order of magnitude as Ticketmaster's ~2,800
-// (28 markets x 100) — see services/seatgeek.js's fetchManySeatGeekEvents
-// comment for why that matters: a low SeatGeek volume was the main reason
-// almost no event ever showed offers from both sources. Rebuilds the
+// anyone needing to remember to trigger it by hand. SeatGeek's sync is now
+// region-segmented (venue.state, one call per US state + Canadian province —
+// see services/seatgeek.js's fetchSeatGeekEventsByRegion) instead of a
+// single globally-sorted feed, so its coverage actually spreads across the
+// country the way Ticketmaster's per-market fetch does. SEATGEEK_PER_STATE
+// mirrors Ticketmaster's own per-market fetch size (100). Rebuilds the
 // canonical_events/ticket_offers tables afterward so the admin-facing
 // derived tables reflect the new data immediately rather than only on the
 // next manual /admin/canonicalize/rebuild call.
 const EVENT_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
-const SEATGEEK_SYNC_TOTAL = 3000;
+const SEATGEEK_PER_STATE = 100;
 
 async function runScheduledEventSync() {
 console.log('🔄 Running scheduled Ticketmaster sync...');
@@ -251,7 +252,7 @@ await logProviderSync({ providerName: 'ticketmaster', syncType: 'discovery', sta
 console.log('🔄 Running scheduled SeatGeek sync...');
 startedAt = new Date();
 try {
-const sgResult = await syncSeatGeekEvents(SEATGEEK_SYNC_TOTAL);
+const sgResult = await syncSeatGeekEvents(SEATGEEK_PER_STATE);
 console.log('SeatGeek sync result:', sgResult);
 await logProviderSync({
   providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
