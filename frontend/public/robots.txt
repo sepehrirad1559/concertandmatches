@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://concertandmatches-production.up.railway.app/sitemap.xml
