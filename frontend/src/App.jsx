@@ -181,6 +181,19 @@ function buildFindTicketsLinks(event) {
       name: 'SeatGeek',
       buildUrl: (url) => url || `https://seatgeek.com/search?search=${q}`,
     },
+    // Official festival/venue/artist/band sites (see services/officialSites.js
+    // on the backend) — these are NOT a seller and have no affiliate
+    // relationship, so this deliberately never wraps the URL in a tracked
+    // link, never claims a price/BEST PRICE badge (min/maxPrice are forced
+    // null below regardless of what the scraper found, since a JSON-LD
+    // price here is often a festival pass rather than a directly comparable
+    // per-ticket price), and never routes through /go (that redirect's
+    // domain whitelist is intentionally limited to known ticket sellers).
+    // It's purely "here's the event's own official page" for the visitor.
+    official: {
+      name: 'Official Site',
+      buildUrl: (url) => url || null,
+    },
   };
 
   const offers = Array.isArray(event.offers) && event.offers.length > 0
@@ -193,13 +206,18 @@ function buildFindTicketsLinks(event) {
       source: o.source,
       name: sourceMeta[o.source].name,
       url: sourceMeta[o.source].buildUrl(o.source_url),
-      minPrice: o.min_price,
-      maxPrice: o.max_price,
+      minPrice: o.source === 'official' ? null : o.min_price,
+      maxPrice: o.source === 'official' ? null : o.max_price,
       isBest: event.best_source ? o.source === event.best_source : false,
-      eventRowId: o.event_row_id ?? null,
+      // Official links never route through the /go affiliate redirect — see
+      // the comment above — so they always use their own url directly.
+      eventRowId: o.source === 'official' ? null : (o.event_row_id ?? null),
     }))
+    .filter((link) => link.url)
     // Cheapest first when we know prices, so the best deal is the first
-    // thing shown rather than something you have to scan for.
+    // thing shown rather than something you have to scan for. Unpriced
+    // offers (including official-site links, which are never priced here)
+    // sort after every priced seller offer.
     .sort((a, b) => {
       if (a.minPrice != null && b.minPrice != null) return a.minPrice - b.minPrice;
       if (a.minPrice != null) return -1;
@@ -777,6 +795,7 @@ export default function App() {
                           : `$${Number(link.minPrice != null ? link.minPrice : link.maxPrice).toFixed(0)}`)
                       : null;
                     const highlightBest = link.isBest && findTicketsLinks.length > 1;
+                    const isOfficialLink = link.source === 'official';
                     return (
                       <div key={link.source}>
                         {showTierBreakdown && (
@@ -828,14 +847,14 @@ export default function App() {
                             display: 'block',
                             padding: '12px 16px',
                             borderRadius: '8px',
-                            border: highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000',
-                            backgroundColor: highlightBest ? '#2e7d32' : '#8b0000',
+                            border: isOfficialLink ? '1px solid #555' : (highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000'),
+                            backgroundColor: isOfficialLink ? '#444' : (highlightBest ? '#2e7d32' : '#8b0000'),
                             color: 'white',
                             textDecoration: 'none',
                             fontWeight: 'bold',
                             textAlign: 'center',
                           }}>
-                          Search on {link.name} ↗
+                          {isOfficialLink ? `Visit ${link.name} ↗` : `Search on ${link.name} ↗`}
                         </a>
                       </div>
                     );
