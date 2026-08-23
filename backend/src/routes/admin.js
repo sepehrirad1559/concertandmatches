@@ -7,6 +7,7 @@ import { logProviderSync } from '../utils/syncLog.js';
 // below call getProvider('ticketmaster').sync() etc. instead of importing
 // each service's functions directly. See ../providers/registry.js.
 import { getProvider } from '../providers/registry.js';
+import { discoverArtistOfficialSites } from '../services/officialSiteDiscovery.js';
 
 const router = express.Router();
 
@@ -253,6 +254,34 @@ router.post('/sync/official-sites', async (req, res) => {
     providerName: 'official', syncType: 'discovery', startedAt, finishedAt: new Date(),
     recordsReceived: result.totalEventsFound ?? null, recordsUpdated: result.totalEventsStored ?? null,
     status: result.success ? 'success' : 'error', errorMessage: result.sitesWithErrors ? `${result.sitesWithErrors} site(s) failed` : null,
+  });
+
+  res.json(result);
+});
+
+// Automatically discovers new official_sources rows by looking up artists
+// already in our events table against Ticketmaster's Attractions API
+// (externalLinks.homepage) — no manual URL research required. Also runs on
+// a schedule (see index.js), this route exists for an on-demand run and for
+// visibility into what got added/skipped on a given pass.
+router.post('/discover/artist-sites', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const startedAt = new Date();
+  const result = await discoverArtistOfficialSites(
+    req.body?.batchSize ? Number(req.body.batchSize) : undefined
+  );
+  await logProviderSync({
+    providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(),
+    recordsReceived: result.candidatesChecked ?? null, recordsUpdated: result.discovered ?? null,
+    status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
   });
 
   res.json(result);
