@@ -41,6 +41,84 @@ function buildDestination(sellerUrl, affiliateUrlTemplate) {
   return affiliateUrlTemplate.replace('{url}', encodeURIComponent(sellerUrl));
 }
 
+// Same Impact.com tracked-affiliate base the frontend wraps ticketmaster.com
+// links in (see App.jsx's TICKETMASTER_TRACKED_BASE) — duplicated here
+// rather than shared across the frontend/backend boundary, since it's a
+// single constant and this route needs to build the exact same tracked
+// link server-side so clicking through here doesn't lose affiliate credit.
+const TICKETMASTER_TRACKED_BASE = 'https://ticketmaster.evyy.net/c/7649497/264167/4272';
+
+function detectDeviceType(userAgent) {
+  if (/Tablet|iPad/i.test(userAgent || '')) return 'tablet';
+  if (/Mobi|Android|iPhone/i.test(userAgent || '')) return 'mobile';
+  return 'desktop';
+}
+
+// Stable per-event-row redirect, keyed by events.id (a raw source row's own
+// id — assigned once, updated in place by the sync jobs, never deleted, so
+// it never changes) rather than a ticket_offers id from the derived,
+// rebuildable canonical layer (see routes/events.js's /detail endpoint for
+// why that distinction matters — canonical_events/ticket_offers ids reset
+// on every POST /admin/canonicalize/rebuild, which would silently break any
+// link built from them). This is what the frontend's outbound "Search on
+// Ticketmaster/SeatGeek" links now go through (spec §14), giving real
+// server-side click tracking without depending on the rebuildable tables.
+router.get('/event/:eventRowId', async (req, res) => {
+  try {
+    const eventRowId = Number(req.params.eventRowId);
+    if (!Number.isInteger(eventRowId)) {
+      return res.status(400).json({ error: 'Invalid event id' });
+    }
+
+    const result = await pool.query(
+      'SELECT id, source, source_url, title, city, state FROM events WHERE id = $1',
+      [eventRowId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const row = result.rows[0];
+    if (!row.source_url) {
+      return res.status(404).json({ error: 'No seller link on file for this event' });
+    }
+
+    const destination = row.source === 'ticketmaster'
+      ? `${TICKETMASTER_TRACKED_BASE}?u=${encodeURIComponent(row.source_url)}`
+      : row.source_url;
+
+    if (!isAllowedDestination(destination)) {
+      console.warn(`Rejected redirect for event ${eventRowId}: destination not on provider whitelist`);
+      return res.status(400).json({ error: 'Destination not permitted' });
+    }
+
+    try {
+      await pool.query(
+        `INSERT INTO click_events (event_row_id, source, event_title, city, state, landing_page, device_type, referrer, session_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [
+          row.id,
+          row.source,
+          row.title,
+          row.city,
+          row.state,
+          req.query.from || null,
+          detectDeviceType(req.get('user-agent')),
+          req.get('referer') || null,
+          req.query.sid || null,
+        ]
+      );
+    } catch (logError) {
+      console.error('Redirect click logging failed:', logError.message);
+    }
+
+    res.redirect(302, destination);
+  } catch (error) {
+    console.error('Redirect failed:', error);
+    res.status(500).json({ error: 'Redirect failed' });
+  }
+});
+
 router.get('/:offerId', async (req, res) => {
   try {
     const offerId = Number(req.params.offerId);
