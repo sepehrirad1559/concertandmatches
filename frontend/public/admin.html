@@ -124,6 +124,11 @@
   </section>
 
   <section>
+    <h2>Official sites (festival/venue/artist/band structured-data sources)</h2>
+    <table id="officialSourcesTable"><tbody></tbody></table>
+  </section>
+
+  <section>
     <h2>Events by source</h2>
     <table id="sourceTable"><tbody></tbody></table>
   </section>
@@ -318,6 +323,21 @@
       ], 'No sync runs logged yet — has POST /admin/schema/add-sync-logs been run?');
     } catch (e) {
       el('globalErr').textContent += ` | Health: ${e.message}`;
+    }
+
+    try {
+      const sources = await fetchJson('/admin/official-sources');
+      if (!sources.success) throw new Error(sources.error || sources.hint || 'Failed to load official sources');
+      renderTable('officialSourcesTable', sources.sources, [
+        { label: 'Source', render: r => `<a href="${r.url}" target="_blank" rel="noopener">${r.label || r.url}</a>` },
+        { key: 'category', label: 'Category' },
+        { label: 'Active', render: r => r.active ? 'Yes' : 'No' },
+        { label: 'Last synced', render: r => fmtDate(r.last_synced_at) },
+        { label: 'Status', render: r => `<span class="status-${r.last_status === 'success' ? 'success' : r.last_status === 'error' ? 'error' : 'unknown'}">${r.last_status || 'never synced'}</span>` },
+        { key: 'last_error', label: 'Error' },
+      ], 'No official sites configured yet — add one via POST /admin/official-sources {url, label, category}.');
+    } catch (e) {
+      el('globalErr').textContent += ` | Official sources: ${e.message}`;
     }
 
     try {
