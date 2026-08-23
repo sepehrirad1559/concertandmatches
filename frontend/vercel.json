@@ -1,5 +1,16 @@
 {
   "rewrites": [
+    {
+      "source": "/event/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|Bot|BOT|facebookexternalhit|Slackbot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Applebot|Pinterest|Googlebot|bingbot|DuckDuckBot|YandexBot|redditbot|SkypeUriPreview|facebot|ia_archiver).*"
+        }
+      ],
+      "destination": "https://concertandmatches-production.up.railway.app/prerender/event/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

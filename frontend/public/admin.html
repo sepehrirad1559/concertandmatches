@@ -16,25 +16,38 @@
   }
   h1 { font-size: 1.4rem; margin-bottom: 4px; }
   .sub { color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px; }
-  .keybar { display: flex; gap: 8px; margin-bottom: 24px; }
-  .keybar input {
-    flex: 1;
-    padding: 8px 10px;
+  .login-box {
+    max-width: 360px;
+    margin: 80px auto;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .login-box h2 { margin-top: 0; font-size: 1.1rem; }
+  .login-box input {
+    width: 100%;
+    padding: 10px;
     border-radius: 6px;
     border: 1px solid #334155;
-    background: #1e293b;
+    background: #0f172a;
     color: #e2e8f0;
+    box-sizing: border-box;
+    margin-bottom: 12px;
   }
-  .keybar button {
-    padding: 8px 16px;
+  .login-box button, .topbar button {
+    padding: 10px 16px;
     border-radius: 6px;
     border: none;
     background: #6366f1;
     color: white;
     cursor: pointer;
     font-weight: 600;
+    width: 100%;
   }
-  .keybar button:hover { background: #4f46e5; }
+  .login-box button:hover, .topbar button:hover { background: #4f46e5; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .topbar button { width: auto; padding: 8px 14px; font-size: 0.8rem; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 28px; }
   .card {
     background: #1e293b;
@@ -54,19 +67,49 @@
   .status-unknown { color: #94a3b8; }
   .empty { color: #64748b; font-style: italic; padding: 8px 0; }
   .err { color: #f87171; font-size: 0.85rem; margin-top: 8px; }
+  .chart { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding: 8px 0; }
+  .chart-bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+  .chart-bar { width: 100%; background: linear-gradient(180deg, #818cf8, #6366f1); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .chart-label { font-size: 0.65rem; color: #94a3b8; margin-top: 4px; white-space: nowrap; }
+  .chart-value { font-size: 0.7rem; color: #e2e8f0; margin-bottom: 2px; }
+  .hbar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .hbar-label { width: 110px; font-size: 0.8rem; flex-shrink: 0; }
+  .hbar-track { flex: 1; background: #0f172a; border-radius: 4px; overflow: hidden; height: 18px; }
+  .hbar-fill { background: linear-gradient(90deg, #6366f1, #818cf8); height: 100%; }
+  .hbar-value { width: 40px; text-align: right; font-size: 0.8rem; color: #94a3b8; }
 </style>
 </head>
 <body>
-  <h1>ConcertAndMatches — Admin Dashboard</h1>
-  <div class="sub">Read-only view over the live API. Nothing here writes to the database.</div>
 
-  <div class="keybar">
-    <input id="syncKey" type="password" placeholder="x-sync-key" />
-    <button onclick="loadAll()">Load</button>
+<div id="loginView" class="login-box">
+  <h2>Admin sign in</h2>
+  <p style="font-size:0.8rem;color:#94a3b8;">Dashboard password (not the sync key)</p>
+  <input id="passwordInput" type="password" placeholder="Password" />
+  <button onclick="login()">Sign in</button>
+  <p id="loginErr" class="err"></p>
+</div>
+
+<div id="dashboardView" style="display:none;">
+  <div class="topbar">
+    <div>
+      <h1>ConcertAndMatches — Admin Dashboard</h1>
+      <div class="sub">Read-only view over the live API. Nothing here writes to the database.</div>
+    </div>
+    <button onclick="logout()">Sign out</button>
   </div>
   <div id="globalErr" class="err"></div>
 
   <div class="grid" id="statsGrid"></div>
+
+  <section>
+    <h2>Clicks, last 14 days</h2>
+    <div class="chart" id="clicksByDayChart"></div>
+  </section>
+
+  <section>
+    <h2>Clicks by provider</h2>
+    <div id="clicksBySourceChart"></div>
+  </section>
 
   <section>
     <h2>Provider health (most recent sync per type)</h2>
@@ -79,29 +122,19 @@
   </section>
 
   <section>
-    <h2>Clicks by provider</h2>
-    <table id="clicksBySourceTable"><tbody></tbody></table>
-  </section>
-
-  <section>
     <h2>Top clicked events (last 10)</h2>
     <table id="topEventsTable"><tbody></tbody></table>
   </section>
-
-  <section>
-    <h2>Clicks, last 14 days</h2>
-    <table id="clicksByDayTable"><tbody></tbody></table>
-  </section>
+</div>
 
 <script>
   // Same-origin API base assumption: this file is served from the same
   // domain as the frontend, which talks to the backend at API_URL. Since
   // this is a static file with no build step, the API base is read from a
-  // query param (?api=https://...) with a sensible default, so it works
-  // both on concertandmatches.com (via a reverse-proxied /api) and when
-  // opened directly against the Railway backend URL for convenience.
+  // query param (?api=https://...) with a sensible default.
   const params = new URLSearchParams(location.search);
   const API_BASE = params.get('api') || 'https://concertandmatches-production.up.railway.app/api';
+  const TOKEN_STORAGE_KEY = 'cm_admin_token';
 
   function el(id) { return document.getElementById(id); }
 
@@ -110,11 +143,70 @@
     return new Date(d).toLocaleString();
   }
 
-  async function fetchJson(path, key) {
-    const res = await fetch(`${API_BASE}${path}`, { headers: { 'x-sync-key': key } });
+  function getToken() {
+    try { return sessionStorage.getItem(TOKEN_STORAGE_KEY); } catch { return null; }
+  }
+  function setToken(token) {
+    try { sessionStorage.setItem(TOKEN_STORAGE_KEY, token); } catch { /* ignore */ }
+  }
+  function clearToken() {
+    try { sessionStorage.removeItem(TOKEN_STORAGE_KEY); } catch { /* ignore */ }
+  }
+
+  async function fetchJson(path) {
+    const token = getToken();
+    const res = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json().catch(() => ({}));
+    if (res.status === 403) {
+      // Token expired or invalid — bounce back to login.
+      clearToken();
+      showLogin();
+      throw new Error('Session expired — please sign in again.');
+    }
     if (!res.ok && res.status !== 200) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
+  }
+
+  async function login() {
+    const password = el('passwordInput').value;
+    el('loginErr').textContent = '';
+    if (!password) {
+      el('loginErr').textContent = 'Enter the dashboard password.';
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/admin/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.token) {
+        el('loginErr').textContent = data.error || 'Sign-in failed.';
+        return;
+      }
+      setToken(data.token);
+      showDashboard();
+    } catch (e) {
+      el('loginErr').textContent = 'Could not reach the server.';
+    }
+  }
+
+  function logout() {
+    clearToken();
+    showLogin();
+  }
+
+  function showLogin() {
+    el('loginView').style.display = '';
+    el('dashboardView').style.display = 'none';
+    el('passwordInput').value = '';
+  }
+
+  function showDashboard() {
+    el('loginView').style.display = 'none';
+    el('dashboardView').style.display = '';
+    loadAll();
   }
 
   function renderStats(stats) {
@@ -140,16 +232,51 @@
     table.innerHTML = thead + tbody;
   }
 
-  async function loadAll() {
-    const key = el('syncKey').value.trim();
-    el('globalErr').textContent = '';
-    if (!key) {
-      el('globalErr').textContent = 'Enter the x-sync-key first.';
+  // Lightweight dependency-free vertical bar chart (no charting library —
+  // this environment can't install one — just proportional div heights).
+  function renderBarChart(id, rows, labelFn, valueFn, emptyMsg) {
+    const container = el(id);
+    if (!rows || rows.length === 0) {
+      container.innerHTML = `<p class="empty">${emptyMsg}</p>`;
       return;
     }
+    const max = Math.max(...rows.map(valueFn), 1);
+    container.innerHTML = rows.map((r) => {
+      const v = valueFn(r);
+      const pct = Math.max((v / max) * 100, 2);
+      return `<div class="chart-bar-wrap">
+        <div class="chart-value">${v}</div>
+        <div class="chart-bar" style="height:${pct}%"></div>
+        <div class="chart-label">${labelFn(r)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Horizontal bar chart — better for category comparisons (provider names
+  // can be longer than a vertical chart's label space comfortably fits).
+  function renderHBarChart(id, rows, labelFn, valueFn, emptyMsg) {
+    const container = el(id);
+    if (!rows || rows.length === 0) {
+      container.innerHTML = `<p class="empty">${emptyMsg}</p>`;
+      return;
+    }
+    const max = Math.max(...rows.map(valueFn), 1);
+    container.innerHTML = rows.map((r) => {
+      const v = valueFn(r);
+      const pct = Math.max((v / max) * 100, 2);
+      return `<div class="hbar-row">
+        <div class="hbar-label">${labelFn(r)}</div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%"></div></div>
+        <div class="hbar-value">${v}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function loadAll() {
+    el('globalErr').textContent = '';
 
     try {
-      const stats = await fetchJson('/admin/stats', key);
+      const stats = await fetchJson('/admin/stats');
       if (!stats.success) throw new Error(stats.error || 'Failed to load stats');
       renderStats(stats);
       renderTable('sourceTable', stats.eventsBySource, [
@@ -161,7 +288,7 @@
     }
 
     try {
-      const health = await fetchJson('/admin/health', key);
+      const health = await fetchJson('/admin/health');
       if (!health.success) throw new Error(health.error || 'Failed to load health');
       renderTable('healthTable', health.providers, [
         { key: 'provider_name', label: 'Provider' },
@@ -177,25 +304,30 @@
     }
 
     try {
-      const clicks = await fetchJson('/admin/analytics/clicks', key);
+      const clicks = await fetchJson('/admin/analytics/clicks');
       if (!clicks.success) throw new Error(clicks.error || clicks.hint || 'Failed to load click analytics');
-      renderTable('clicksBySourceTable', clicks.clicksBySource, [
-        { key: 'source', label: 'Provider' },
-        { key: 'count', label: 'Clicks' },
-      ], 'No clicks logged yet.');
+      renderBarChart('clicksByDayChart', clicks.clicksByDay,
+        (r) => new Date(r.day).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }),
+        (r) => r.count, 'No clicks in the last 14 days.');
+      renderHBarChart('clicksBySourceChart', clicks.clicksBySource,
+        (r) => r.source, (r) => r.count, 'No clicks logged yet.');
       renderTable('topEventsTable', clicks.topEvents, [
         { key: 'event_title', label: 'Event' },
         { key: 'city', label: 'City' },
         { key: 'state', label: 'State' },
         { key: 'count', label: 'Clicks' },
       ], 'No clicks logged yet.');
-      renderTable('clicksByDayTable', clicks.clicksByDay, [
-        { label: 'Day', render: r => new Date(r.day).toLocaleDateString() },
-        { key: 'count', label: 'Clicks' },
-      ], 'No clicks in the last 14 days.');
     } catch (e) {
       el('globalErr').textContent += ` | Clicks: ${e.message}`;
     }
+  }
+
+  el('passwordInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+  if (getToken()) {
+    showDashboard();
+  } else {
+    showLogin();
   }
 </script>
 </body>

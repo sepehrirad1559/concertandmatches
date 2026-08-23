@@ -178,4 +178,10 @@ router.get('/:offerId', async (req, res) => {
   }
 });
 
+// Exported for the automated test suite (test/redirect.test.js) — these are
+// the security-critical pieces (open-redirect prevention, affiliate URL
+// construction) and are worth covering directly rather than only through
+// the full HTTP route.
+export { isAllowedDestination, buildDestination, detectDeviceType };
+
 export default router;
