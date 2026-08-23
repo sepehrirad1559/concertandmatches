@@ -19,6 +19,10 @@ import { backfillMissingPrices as backfillTicketmasterPrices } from './services/
 import { backfillMissingPrices as backfillSeatGeekPrices } from './services/seatgeek.js';
 import { logProviderSync } from './utils/syncLog.js';
 
+// Official-sites discovery + sync — see scheduled job below.
+import { discoverArtistOfficialSites } from './services/officialSiteDiscovery.js';
+import { syncOfficialSites } from './services/officialSites.js';
+
 dotenv.config();
 
 const app = express();
@@ -149,3 +153,57 @@ await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', st
 // traffic), then every 24 hours after that.
 setTimeout(runScheduledPriceBackfill, 5 * 60 * 1000);
 setInterval(runScheduledPriceBackfill, BACKFILL_INTERVAL_MS);
+
+// Official-sites discovery + sync — makes the "obtain offers from official
+// concert websites" feature fully automatic instead of requiring someone to
+// hand-research and POST new URLs. Each run: (1) looks up artists already in
+// our own events table against Ticketmaster's Attractions API to find any
+// new official homepages, adding them to official_sources, then (2) syncs
+// every active official_sources row (old and newly-discovered) for
+// schema.org/JSON-LD events, same as the manual /admin/sync/official-sites
+// endpoint. Runs daily — new artists show up gradually as Ticketmaster/
+// SeatGeek syncs bring in new events, so there's no need to run more often.
+const OFFICIAL_SITES_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
+const OFFICIAL_SITES_DISCOVERY_BATCH = 15;
+
+async function runScheduledOfficialSitesJob() {
+console.log('🔎 Running scheduled official-sites discovery...');
+let startedAt = new Date();
+try {
+const discoverResult = await discoverArtistOfficialSites(OFFICIAL_SITES_DISCOVERY_BATCH);
+console.log('Official-sites discovery result:', discoverResult);
+await logProviderSync({
+  providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(),
+  recordsReceived: discoverResult.candidatesChecked ?? null, recordsUpdated: discoverResult.discovered ?? null,
+  status: discoverResult.success ? 'success' : 'error', errorMessage: discoverResult.error ?? null,
+});
+} catch (err) {
+console.error('Official-sites discovery failed:', err);
+await logProviderSync({ providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Running scheduled official-sites sync...');
+startedAt = new Date();
+try {
+const { rows } = await pool.query(
+  'SELECT id, url, label, category FROM official_sources WHERE active = true ORDER BY id'
+);
+const syncResult = rows.length > 0
+  ? await syncOfficialSites(rows)
+  : { success: true, sitesProcessed: 0, totalEventsFound: 0, totalEventsStored: 0, sitesWithErrors: 0 };
+console.log('Official-sites sync result:', syncResult);
+await logProviderSync({
+  providerName: 'official', syncType: 'discovery', startedAt, finishedAt: new Date(),
+  recordsReceived: syncResult.totalEventsFound ?? null, recordsUpdated: syncResult.totalEventsStored ?? null,
+  status: syncResult.success ? 'success' : 'error', errorMessage: syncResult.sitesWithErrors ? `${syncResult.sitesWithErrors} site(s) failed` : null,
+});
+} catch (err) {
+console.error('Official-sites sync failed:', err);
+await logProviderSync({ providerName: 'official', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+}
+
+// Staggered 10 minutes after boot (after price backfill's 5-minute slot),
+// then daily after that — same pattern as the price backfill job above.
+setTimeout(runScheduledOfficialSitesJob, 10 * 60 * 1000);
+setInterval(runScheduledOfficialSitesJob, OFFICIAL_SITES_INTERVAL_MS);
