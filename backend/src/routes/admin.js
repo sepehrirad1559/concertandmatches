@@ -494,4 +494,92 @@ router.get('/health', async (req, res) => {
   }
 });
 
+// Aggregate counts for the admin dashboard (spec §35): how many raw events,
+// deduplicated canonical events, and ticket offers exist, plus a rough
+// price-coverage figure so it's obvious at a glance how much of the catalog
+// actually has a comparable price yet. All read-only, no side effects.
+router.get('/stats', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    const [events, priced, bySource, canonical, offers, providers] = await Promise.all([
+      pool.query('SELECT COUNT(*)::int AS count FROM events'),
+      pool.query('SELECT COUNT(*)::int AS count FROM events WHERE min_price IS NOT NULL'),
+      pool.query('SELECT source, COUNT(*)::int AS count FROM events GROUP BY source ORDER BY source'),
+      pool.query('SELECT COUNT(*)::int AS count FROM canonical_events').catch(() => ({ rows: [{ count: null }] })),
+      pool.query('SELECT COUNT(*)::int AS count FROM ticket_offers').catch(() => ({ rows: [{ count: null }] })),
+      pool.query('SELECT name, active, affiliate_enabled FROM providers ORDER BY name').catch(() => ({ rows: [] })),
+    ]);
+
+    res.json({
+      success: true,
+      totalEvents: events.rows[0].count,
+      eventsWithPrice: priced.rows[0].count,
+      eventsBySource: bySource.rows,
+      canonicalEvents: canonical.rows[0].count,
+      ticketOffers: offers.rows[0].count,
+      providers: providers.rows,
+    });
+  } catch (error) {
+    console.error('Error computing admin stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Click analytics for the admin dashboard (spec §15, §35): totals, a
+// breakdown by provider/source, clicks over the last 14 days, and the
+// most-clicked events. Read-only. Falls back gracefully if click_events
+// doesn't exist yet (migration not run).
+router.get('/analytics/clicks', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    const [total, bySource, byDay, topEvents] = await Promise.all([
+      pool.query('SELECT COUNT(*)::int AS count FROM click_events'),
+      pool.query('SELECT source, COUNT(*)::int AS count FROM click_events GROUP BY source ORDER BY count DESC'),
+      pool.query(`
+        SELECT DATE(created_at) AS day, COUNT(*)::int AS count
+        FROM click_events
+        WHERE created_at > NOW() - INTERVAL '14 days'
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+      `),
+      pool.query(`
+        SELECT event_title, city, state, COUNT(*)::int AS count
+        FROM click_events
+        WHERE event_title IS NOT NULL
+        GROUP BY event_title, city, state
+        ORDER BY count DESC
+        LIMIT 10
+      `),
+    ]);
+
+    res.json({
+      success: true,
+      totalClicks: total.rows[0].count,
+      clicksBySource: bySource.rows,
+      clicksByDay: byDay.rows,
+      topEvents: topEvents.rows,
+    });
+  } catch (error) {
+    console.error('Error computing click analytics:', error);
+    // click_events may not exist yet — report that plainly rather than a raw 500.
+    res.status(200).json({ success: false, error: error.message, hint: 'Has POST /admin/schema/add-click-tracking been run?' });
+  }
+});
+
 export default router;
