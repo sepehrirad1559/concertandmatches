@@ -320,6 +320,81 @@ router.get('/:eventId', async (req, res) => {
   }
 });
 
+// Autocomplete suggestions for the search box (spec: search/autocomplete
+// engine). Returns a short, ranked list of distinct artists, event titles,
+// venues, and cities matching the customer's in-progress query — meant to
+// be called on every keystroke (debounced client-side), so this stays
+// intentionally cheap: one ILIKE query per field, capped results, no
+// cross-source merge (that only matters for the full results list, not a
+// suggestions dropdown). Matches starting with the query are ranked above
+// matches containing it elsewhere, since "starts with" is what a person
+// scanning a dropdown expects to see first.
+router.get('/autocomplete', async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (q.length < 2) {
+      return res.json({ suggestions: [] });
+    }
+
+    const like = `%${q}%`;
+    const startsWith = `${q}%`;
+
+    const [artists, titles, venues, cities] = await Promise.all([
+      pool.query(
+        `SELECT DISTINCT artist_name AS value FROM events
+         WHERE artist_name ILIKE $1 AND artist_name IS NOT NULL AND artist_name != ''
+         ORDER BY (artist_name ILIKE $2) DESC, artist_name ASC LIMIT 5`,
+        [like, startsWith]
+      ),
+      pool.query(
+        `SELECT DISTINCT title AS value FROM events
+         WHERE title ILIKE $1 AND title IS NOT NULL AND title != ''
+         ORDER BY (title ILIKE $2) DESC, title ASC LIMIT 5`,
+        [like, startsWith]
+      ),
+      pool.query(
+        `SELECT DISTINCT venue_name AS value FROM events
+         WHERE venue_name ILIKE $1 AND venue_name IS NOT NULL AND venue_name != ''
+         ORDER BY (venue_name ILIKE $2) DESC, venue_name ASC LIMIT 5`,
+        [like, startsWith]
+      ),
+      pool.query(
+        `SELECT DISTINCT city AS value, state FROM events
+         WHERE city ILIKE $1 AND city IS NOT NULL AND city != ''
+         ORDER BY (city ILIKE $2) DESC, city ASC LIMIT 5`,
+        [like, startsWith]
+      ),
+    ]);
+
+    // Tag each suggestion with a type so the UI can show a small label
+    // ("Artist", "Venue", ...) and dedupe identical strings across
+    // categories (e.g. an event titled the same as its headlining artist).
+    const seen = new Set();
+    const suggestions = [];
+    const pushAll = (rows, type, format = (v) => v.value) => {
+      for (const row of rows) {
+        const label = format(row);
+        const key = `${type}:${label.toLowerCase()}`;
+        if (!label || seen.has(key)) continue;
+        seen.add(key);
+        suggestions.push({ type, label });
+      }
+    };
+    pushAll(artists.rows, 'Artist');
+    pushAll(titles.rows, 'Event');
+    pushAll(venues.rows, 'Venue');
+    pushAll(cities.rows, 'City', (r) => (r.state ? `${r.value}, ${r.state}` : r.value));
+
+    // Cap the combined list — a dropdown longer than ~10 items stops being
+    // scannable, and the per-field LIMIT 5s above already keep the pool
+    // this trims from small.
+    res.json({ suggestions: suggestions.slice(0, 10) });
+  } catch (error) {
+    console.error('Error fetching autocomplete suggestions:', error);
+    res.status(500).json({ suggestions: [], error: 'Autocomplete failed' });
+  }
+});
+
 // Search Events (Enhanced)
 router.get('/search/advanced', async (req, res) => {
   try {

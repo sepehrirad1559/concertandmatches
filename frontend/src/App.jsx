@@ -389,6 +389,14 @@ export default function App() {
   const [activeSearch, setActiveSearch] = useState('');
   const [activeCategoryId, setActiveCategoryId] = useState(null);
 
+  // Autocomplete dropdown for the search box (spec: search/autocomplete
+  // engine). Debounced so we don't hit the API on every keystroke; the
+  // dropdown is dismissed on blur (with a short delay so a click on a
+  // suggestion registers before the input loses focus) and after a
+  // suggestion is picked or the search is submitted.
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+
   // Filters panel: `draft*` holds what the customer is currently typing/
   // picking, `active*` holds what's actually been applied (and sent to the
   // API) — same pattern as searchInput/activeSearch, so editing a filter
@@ -598,12 +606,40 @@ export default function App() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setActiveSearch(searchInput.trim());
+    setShowAutocomplete(false);
   };
 
   const handleClearSearch = () => {
     setSearchInput('');
     setActiveSearch('');
+    setAutocompleteSuggestions([]);
+    setShowAutocomplete(false);
   };
+
+  const handleSuggestionClick = (label) => {
+    setSearchInput(label);
+    setActiveSearch(label);
+    setShowAutocomplete(false);
+  };
+
+  // Debounced fetch of autocomplete suggestions as the customer types.
+  useEffect(() => {
+    const query = searchInput.trim();
+    if (query.length < 2) {
+      setAutocompleteSuggestions([]);
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      fetch(`${API_URL}/events/autocomplete?q=${encodeURIComponent(query)}`)
+        .then((res) => (res.ok ? res.json() : { suggestions: [] }))
+        .then((data) => {
+          setAutocompleteSuggestions(data.suggestions || []);
+          setShowAutocomplete(true);
+        })
+        .catch(() => setAutocompleteSuggestions([]));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const handleApplyFilters = (e) => {
     e.preventDefault();
@@ -840,13 +876,55 @@ export default function App() {
         <h3>Featured Events</h3>
 
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            placeholder="Search by artist, event, venue or keyword..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            style={{ flex: '1', minWidth: '220px', padding: '10px', boxSizing: 'border-box' }}
-          />
+          <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
+            <input
+              type="text"
+              placeholder="Search by artist, event, venue or keyword..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
+              onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
+              style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+              autoComplete="off"
+            />
+            {showAutocomplete && autocompleteSuggestions.length > 0 && (
+              <ul
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 2px)',
+                  left: 0,
+                  right: 0,
+                  zIndex: 20,
+                  margin: 0,
+                  padding: '4px 0',
+                  listStyle: 'none',
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                  maxHeight: '280px',
+                  overflowY: 'auto',
+                }}
+              >
+                {autocompleteSuggestions.map((s, i) => (
+                  <li
+                    key={`${s.type}-${s.label}-${i}`}
+                    onMouseDown={() => handleSuggestionClick(s.label)}
+                    style={{
+                      padding: '8px 12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                    }}
+                  >
+                    <span>{s.label}</span>
+                    <span style={{ color: '#888', fontSize: '0.8em' }}>{s.type}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
             Search
           </button>
