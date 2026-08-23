@@ -8,7 +8,7 @@ export class SeatGeekProvider extends ProviderInterface {
     super('seatgeek');
   }
 
-  async sync(totalWanted = 300) {
+  async sync(totalWanted = 3000) {
     return syncSeatGeekEvents(totalWanted);
   }
 

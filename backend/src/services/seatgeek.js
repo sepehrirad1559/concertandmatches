@@ -25,8 +25,19 @@ export const fetchSeatGeekEvents = async (page = 1, perPage = 100) => {
   }
 };
 
-// Fetch multiple pages up to a total event count.
-export const fetchManySeatGeekEvents = async (totalWanted = 300) => {
+// Fetch multiple pages up to a total event count. Default raised from an
+// original 300 to 3000 (2026-08): SeatGeek's /events call has no geographic
+// segmentation like Ticketmaster's per-market-code fetch does — it just
+// returns the N soonest events globally — so a low total meant SeatGeek's
+// coverage was a tiny, essentially random slice of the calendar next to
+// Ticketmaster's ~2,800-event spread across 28 US/Canada markets. That
+// mismatch was the real reason almost no event ever showed offers from both
+// sources (measured: ~1% of rows merged into a multi-seller card). Matching
+// Ticketmaster's order of magnitude here doesn't guarantee overlap — the two
+// APIs still cover different inventories — but it removes the artificial
+// cap that was making overlap nearly impossible regardless of how good the
+// cross-source matching logic is.
+export const fetchManySeatGeekEvents = async (totalWanted = 3000) => {
   const perPage = 100;
   const pages = Math.ceil(totalWanted / perPage);
   const events = [];
@@ -184,7 +195,7 @@ export const backfillMissingPrices = async (limit = 100) => {
 };
 
 // Sync SeatGeek concert events into the events table.
-export const syncSeatGeekEvents = async (totalWanted = 300) => {
+export const syncSeatGeekEvents = async (totalWanted = 3000) => {
   try {
     console.log('🔄 Starting SeatGeek sync...');
 

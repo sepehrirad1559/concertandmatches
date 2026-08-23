@@ -23,6 +23,17 @@ import { logProviderSync } from './utils/syncLog.js';
 import { discoverArtistOfficialSites } from './services/officialSiteDiscovery.js';
 import { syncOfficialSites } from './services/officialSites.js';
 
+// Ticketmaster/SeatGeek event discovery — see scheduled job below. Until
+// 2026-08 these only ever ran when someone manually POSTed to
+// /admin/sync/ticketmaster or /admin/sync/seatgeek — meaning both the event
+// catalog itself AND the cross-source price comparison (which depends on
+// having enough overlapping coverage from both sources) went stale unless a
+// human remembered to trigger a sync. This closes that gap the same way the
+// price backfill and official-sites jobs already do.
+import { syncAllEvents as syncTicketmasterEvents } from './services/ticketmaster.js';
+import { syncSeatGeekEvents } from './services/seatgeek.js';
+import { rebuildCanonicalEvents } from './services/canonicalize.js';
+
 dotenv.config();
 
 const app = express();
@@ -207,3 +218,62 @@ await logProviderSync({ providerName: 'official', syncType: 'discovery', started
 // then daily after that — same pattern as the price backfill job above.
 setTimeout(runScheduledOfficialSitesJob, 10 * 60 * 1000);
 setInterval(runScheduledOfficialSitesJob, OFFICIAL_SITES_INTERVAL_MS);
+
+// Ticketmaster + SeatGeek event discovery — keeps the actual event catalog
+// (and therefore the cross-source price-comparison coverage) fresh without
+// anyone needing to remember to trigger it by hand. SeatGeek's totalWanted
+// is intentionally the same order of magnitude as Ticketmaster's ~2,800
+// (28 markets x 100) — see services/seatgeek.js's fetchManySeatGeekEvents
+// comment for why that matters: a low SeatGeek volume was the main reason
+// almost no event ever showed offers from both sources. Rebuilds the
+// canonical_events/ticket_offers tables afterward so the admin-facing
+// derived tables reflect the new data immediately rather than only on the
+// next manual /admin/canonicalize/rebuild call.
+const EVENT_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
+const SEATGEEK_SYNC_TOTAL = 3000;
+
+async function runScheduledEventSync() {
+console.log('🔄 Running scheduled Ticketmaster sync...');
+let startedAt = new Date();
+try {
+const tmResult = await syncTicketmasterEvents();
+console.log('Ticketmaster sync result:', tmResult);
+await logProviderSync({
+  providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+  recordsReceived: tmResult.totalEvents ?? null,
+  status: tmResult.success ? 'success' : 'error', errorMessage: tmResult.error ?? null,
+});
+} catch (err) {
+console.error('Ticketmaster sync failed:', err);
+await logProviderSync({ providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Running scheduled SeatGeek sync...');
+startedAt = new Date();
+try {
+const sgResult = await syncSeatGeekEvents(SEATGEEK_SYNC_TOTAL);
+console.log('SeatGeek sync result:', sgResult);
+await logProviderSync({
+  providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
+  recordsReceived: sgResult.totalEvents ?? null,
+  status: sgResult.success ? 'success' : 'error', errorMessage: sgResult.error ?? null,
+});
+} catch (err) {
+console.error('SeatGeek sync failed:', err);
+await logProviderSync({ providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Rebuilding canonical events after event sync...');
+try {
+const rebuildResult = await rebuildCanonicalEvents();
+console.log('Canonicalize rebuild result:', rebuildResult);
+} catch (err) {
+console.error('Canonicalize rebuild failed:', err);
+}
+}
+
+// Staggered 20 minutes after boot (after the official-sites job's 10-minute
+// slot — this is the heaviest of the three jobs, so it goes last), then
+// daily after that.
+setTimeout(runScheduledEventSync, 20 * 60 * 1000);
+setInterval(runScheduledEventSync, EVENT_SYNC_INTERVAL_MS);
