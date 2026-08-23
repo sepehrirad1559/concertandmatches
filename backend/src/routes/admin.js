@@ -98,16 +98,28 @@ router.post('/sync/seatgeek', async (req, res) => {
   // per-market fetch size.
   const perState = Number(req.query.total) || 100;
   const startedAt = new Date();
-  const result = await getProvider('seatgeek').sync(perState);
-  await logProviderSync({
-    providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
-    recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
-  });
 
-  if (!result.success) {
-    return res.status(500).json(result);
-  }
-  res.json(result);
+  // Region-segmented sync loops through ~58 US states/Canadian provinces
+  // with polite delays between calls plus a per-event store delay — it can
+  // take several minutes for a full run, which exceeds Railway's proxy
+  // timeout if we make the caller wait for it synchronously (that showed up
+  // as a client-side "upstream error" even though the sync kept running on
+  // the server). Respond immediately once the sync is kicked off instead;
+  // check GET /admin/health or the Railway logs for completion/results.
+  res.json({ success: true, message: `SeatGeek sync started in the background (perState=${perState}). Check GET /admin/health or Railway logs for completion.` });
+
+  getProvider('seatgeek').sync(perState)
+    .then((result) => logProviderSync({
+      providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
+      recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+    }))
+    .catch((error) => {
+      console.error('Background SeatGeek sync failed:', error);
+      return logProviderSync({
+        providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
+        recordsReceived: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 router.post('/sync/ticketmaster', async (req, res) => {
