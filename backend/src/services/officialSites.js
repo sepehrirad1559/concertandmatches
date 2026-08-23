@@ -73,7 +73,11 @@ export function normalizeJsonLdEvent(raw, sourceUrl, category) {
   const city = (typeof address === 'object' ? address.addressLocality : null) || 'Unknown';
   const state = (typeof address === 'object' ? address.addressRegion : null) || 'Unknown';
   const countryRaw = (typeof address === 'object' ? address.addressCountry : null);
-  const countryCode = typeof countryRaw === 'object' ? countryRaw.name : countryRaw;
+  // `typeof null === 'object'` in JS, so a naive typeof check treats an
+  // explicit `addressCountry: null` (seen in the wild, e.g. EDC Las Vegas'
+  // JSON-LD) as an object and crashes reading `.name` off it. Guard against
+  // null explicitly rather than relying on typeof alone.
+  const countryCode = countryRaw && typeof countryRaw === 'object' ? countryRaw.name : countryRaw;
   const country = countryCode && /^CA$|canada/i.test(countryCode) ? 'Canada' : 'USA';
 
   const geo = location.geo || {};
