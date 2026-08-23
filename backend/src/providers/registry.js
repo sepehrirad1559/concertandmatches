@@ -1,6 +1,7 @@
 import { TicketmasterProvider } from './TicketmasterProvider.js';
 import { SeatGeekProvider } from './SeatGeekProvider.js';
 import { StubHubProvider } from './StubHubProvider.js';
+import { OfficialSiteProvider } from './OfficialSiteProvider.js';
 
 // Single shared instance per provider — these wrappers are stateless
 // (they just delegate to the underlying service functions), so there's no
@@ -9,6 +10,7 @@ const providers = {
   ticketmaster: new TicketmasterProvider(),
   seatgeek: new SeatGeekProvider(),
   stubhub: new StubHubProvider(),
+  official: new OfficialSiteProvider(),
 };
 
 // Look up a provider by name (case-insensitive). Returns undefined for an

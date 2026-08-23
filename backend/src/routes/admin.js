@@ -128,6 +128,136 @@ router.post('/sync/ticketmaster', async (req, res) => {
   res.json(result);
 });
 
+// One-time schema migration: official_sources (spec: obtain offers/prices/
+// URLs from official festival/event-organizer/venue/artist/band websites).
+// Each row is one site the user has explicitly added to scrape for
+// schema.org/JSON-LD Event structured data — see services/officialSites.js
+// for why that's the approach (no shared API exists for "official
+// websites" as a category, and JSON-LD is the one thing many such sites
+// publish specifically for aggregators to read). Safe to call more than once.
+router.post('/schema/add-official-sources', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS official_sources (
+        id SERIAL PRIMARY KEY,
+        url TEXT NOT NULL UNIQUE,
+        label TEXT,
+        category TEXT, -- 'festival' | 'organizer' | 'venue' | 'artist' | 'band'
+        active BOOLEAN NOT NULL DEFAULT true,
+        last_synced_at TIMESTAMPTZ,
+        last_status TEXT,
+        last_error TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    res.json({ success: true, message: 'official_sources table created (or already existed)' });
+  } catch (error) {
+    console.error('Error adding official_sources table:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Add one official site to scrape. Body: { url, label?, category? }.
+// category is a free-text hint (festival/organizer/venue/artist/band) used
+// only to tag the events it produces — not validated against a fixed list,
+// since the spec names five kinds and more may come up.
+router.post('/official-sources', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const { url, label, category } = req.body || {};
+  if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+    return res.status(400).json({ success: false, error: 'A valid http(s) url is required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO official_sources (url, label, category) VALUES ($1, $2, $3)
+       ON CONFLICT (url) DO UPDATE SET label = EXCLUDED.label, category = EXCLUDED.category, active = true
+       RETURNING id, url, label, category, active`,
+      [url, label || null, category || null]
+    );
+    res.json({ success: true, source: result.rows[0] });
+  } catch (error) {
+    console.error('Error adding official source:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// List configured official sources — read-only, dashboard-facing.
+router.get('/official-sources', requireAdminAccess, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, url, label, category, active, last_synced_at, last_status, last_error, created_at
+       FROM official_sources ORDER BY id`
+    );
+    res.json({ success: true, sources: result.rows });
+  } catch (error) {
+    console.error('Error listing official sources:', error);
+    res.status(200).json({ success: false, error: error.message, hint: 'Has POST /admin/schema/add-official-sources been run?' });
+  }
+});
+
+// Deactivate (soft-delete) an official source — kept for history/audit
+// rather than hard-deleted, and easy to re-activate via POST /official-sources.
+router.delete('/official-sources/:id', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query('UPDATE official_sources SET active = false WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deactivating official source:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Sync all active official sources — fetches each page, extracts any
+// schema.org/JSON-LD Event markup, and stores/updates matching rows in the
+// shared events table (source: 'official').
+router.post('/sync/official-sites', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const startedAt = new Date();
+  const result = await getProvider('official').sync();
+  await logProviderSync({
+    providerName: 'official', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: result.totalEventsFound ?? null, recordsUpdated: result.totalEventsStored ?? null,
+    status: result.success ? 'success' : 'error', errorMessage: result.sitesWithErrors ? `${result.sitesWithErrors} site(s) failed` : null,
+  });
+
+  res.json(result);
+});
+
 // One-time schema migration: add venue coordinate columns used to sort
 // events by distance from the customer. Safe to call more than once.
 router.post('/schema/add-geo-columns', async (req, res) => {
