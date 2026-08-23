@@ -587,7 +587,18 @@ router.get('/stats', requireAdminAccess, async (req, res) => {
 // doesn't exist yet (migration not run).
 router.get('/analytics/clicks', requireAdminAccess, async (req, res) => {
   try {
-    const [total, bySource, byDay, topEvents] = await Promise.all([
+    const [
+      total,
+      bySource,
+      byDay,
+      topEvents,
+      byDevice,
+      topCities,
+      topStates,
+      uniqueSessions,
+      thisWeek,
+      lastWeek,
+    ] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS count FROM click_events'),
       pool.query('SELECT source, COUNT(*)::int AS count FROM click_events GROUP BY source ORDER BY count DESC'),
       pool.query(`
@@ -605,7 +616,55 @@ router.get('/analytics/clicks', requireAdminAccess, async (req, res) => {
         ORDER BY count DESC
         LIMIT 10
       `),
+      // Device-type breakdown (mobile vs desktop vs tablet, as recorded by
+      // the click-tracking redirect) — helps gauge where traffic actually
+      // comes from beyond raw totals.
+      pool.query(`
+        SELECT COALESCE(NULLIF(device_type, ''), 'unknown') AS device_type, COUNT(*)::int AS count
+        FROM click_events
+        GROUP BY 1
+        ORDER BY count DESC
+      `),
+      pool.query(`
+        SELECT city, state, COUNT(*)::int AS count
+        FROM click_events
+        WHERE city IS NOT NULL AND city != ''
+        GROUP BY city, state
+        ORDER BY count DESC
+        LIMIT 10
+      `),
+      pool.query(`
+        SELECT state, COUNT(*)::int AS count
+        FROM click_events
+        WHERE state IS NOT NULL AND state != ''
+        GROUP BY state
+        ORDER BY count DESC
+        LIMIT 10
+      `),
+      // Unique sessions overall and in the last 14 days — a rough proxy for
+      // distinct visitors, since click_events has no user/account concept.
+      pool.query(`
+        SELECT
+          COUNT(DISTINCT session_id)::int AS all_time,
+          COUNT(DISTINCT session_id) FILTER (WHERE created_at > NOW() - INTERVAL '14 days')::int AS last_14_days
+        FROM click_events
+        WHERE session_id IS NOT NULL
+      `),
+      // Week-over-week trend: clicks in the last 7 days vs the 7 days before
+      // that. Computed as two scalar counts so the frontend can derive a
+      // percent change without doing date math itself.
+      pool.query(`SELECT COUNT(*)::int AS count FROM click_events WHERE created_at > NOW() - INTERVAL '7 days'`),
+      pool.query(`
+        SELECT COUNT(*)::int AS count FROM click_events
+        WHERE created_at > NOW() - INTERVAL '14 days' AND created_at <= NOW() - INTERVAL '7 days'
+      `),
     ]);
+
+    const thisWeekCount = thisWeek.rows[0].count;
+    const lastWeekCount = lastWeek.rows[0].count;
+    const weekOverWeekChangePct = lastWeekCount > 0
+      ? Math.round(((thisWeekCount - lastWeekCount) / lastWeekCount) * 1000) / 10
+      : null; // no baseline to compare against — leave unset rather than fabricate a percentage
 
     res.json({
       success: true,
@@ -613,6 +672,22 @@ router.get('/analytics/clicks', requireAdminAccess, async (req, res) => {
       clicksBySource: bySource.rows,
       clicksByDay: byDay.rows,
       topEvents: topEvents.rows,
+      clicksByDevice: byDevice.rows,
+      topCities: topCities.rows,
+      topStates: topStates.rows,
+      uniqueSessions: {
+        allTime: uniqueSessions.rows[0].all_time,
+        last14Days: uniqueSessions.rows[0].last_14_days,
+      },
+      weekOverWeek: {
+        thisWeek: thisWeekCount,
+        lastWeek: lastWeekCount,
+        changePct: weekOverWeekChangePct,
+      },
+      // No per-click price/revenue data exists in click_events (see schema),
+      // so this endpoint intentionally reports engagement metrics only — it
+      // does not fabricate a revenue figure. Real revenue reporting would
+      // need actual affiliate-network payout data, which isn't available yet.
     });
   } catch (error) {
     console.error('Error computing click analytics:', error);

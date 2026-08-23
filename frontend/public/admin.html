@@ -101,6 +101,8 @@
 
   <div class="grid" id="statsGrid"></div>
 
+  <div class="grid" id="engagementGrid"></div>
+
   <section>
     <h2>Clicks, last 14 days</h2>
     <div class="chart" id="clicksByDayChart"></div>
@@ -109,6 +111,11 @@
   <section>
     <h2>Clicks by provider</h2>
     <div id="clicksBySourceChart"></div>
+  </section>
+
+  <section>
+    <h2>Clicks by device type</h2>
+    <div id="clicksByDeviceChart"></div>
   </section>
 
   <section>
@@ -124,6 +131,16 @@
   <section>
     <h2>Top clicked events (last 10)</h2>
     <table id="topEventsTable"><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Top cities (all-time clicks)</h2>
+    <table id="topCitiesTable"><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Top states (all-time clicks)</h2>
+    <table id="topStatesTable"><tbody></tbody></table>
   </section>
 </div>
 
@@ -311,12 +328,40 @@
         (r) => r.count, 'No clicks in the last 14 days.');
       renderHBarChart('clicksBySourceChart', clicks.clicksBySource,
         (r) => r.source, (r) => r.count, 'No clicks logged yet.');
+      renderHBarChart('clicksByDeviceChart', clicks.clicksByDevice,
+        (r) => r.device_type, (r) => r.count, 'No clicks logged yet.');
       renderTable('topEventsTable', clicks.topEvents, [
         { key: 'event_title', label: 'Event' },
         { key: 'city', label: 'City' },
         { key: 'state', label: 'State' },
         { key: 'count', label: 'Clicks' },
       ], 'No clicks logged yet.');
+      renderTable('topCitiesTable', clicks.topCities, [
+        { key: 'city', label: 'City' },
+        { key: 'state', label: 'State' },
+        { key: 'count', label: 'Clicks' },
+      ], 'No clicks logged yet.');
+      renderTable('topStatesTable', clicks.topStates, [
+        { key: 'state', label: 'State' },
+        { key: 'count', label: 'Clicks' },
+      ], 'No clicks logged yet.');
+
+      // Engagement summary cards: unique sessions + week-over-week trend.
+      // No revenue card here on purpose — click_events has no price data,
+      // so a "revenue" number would have to be fabricated. See admin.js.
+      const wow = clicks.weekOverWeek || {};
+      const wowLabel = wow.changePct === null || wow.changePct === undefined
+        ? `${wow.thisWeek ?? '—'} (no prior week to compare)`
+        : `${wow.thisWeek ?? '—'} (${wow.changePct > 0 ? '+' : ''}${wow.changePct}% vs prior week)`;
+      const sessions = clicks.uniqueSessions || {};
+      const cards = [
+        ['Unique sessions (14d)', sessions.last14Days ?? '—'],
+        ['Unique sessions (all-time)', sessions.allTime ?? '—'],
+        ['Clicks this week', wowLabel],
+      ];
+      el('engagementGrid').innerHTML = cards.map(([label, value]) => `
+        <div class="card"><div class="label">${label}</div><div class="value" style="font-size:1.1rem;">${value}</div></div>
+      `).join('');
     } catch (e) {
       el('globalErr').textContent += ` | Clicks: ${e.message}`;
     }
