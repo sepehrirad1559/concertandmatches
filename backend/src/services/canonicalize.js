@@ -60,7 +60,11 @@ export async function rebuildCanonicalEvents() {
       const imageRow = group.rows.find((r) => r.image_url) || primary;
       const artistRow = group.rows.find((r) => r.artist_name) || primary;
 
-      const priced = group.rows.filter((r) => r.min_price != null);
+      // Excludes 'official' rows from the best-price comparison for the same
+      // reason routes/events.js's live merge does — see that file's comment.
+      // A festival/artist site's own JSON-LD price isn't a like-for-like
+      // seller price, so it shouldn't be able to win best_price/best_source.
+      const priced = group.rows.filter((r) => r.min_price != null && r.source !== 'official');
       const best = priced.length > 0
         ? priced.reduce((a, b) => (Number(a.min_price) <= Number(b.min_price) ? a : b))
         : null;
