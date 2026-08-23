@@ -256,6 +256,47 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get a single event MERGED with any same-event offers from other sources
+// (spec §12, §20-22 — real per-event pages need the same price-comparison
+// data the list view has, not just one source's raw row). Used by the
+// frontend's /event/:id-:slug detail route on a direct load or refresh,
+// when the event object isn't already sitting in memory from a click.
+//
+// :eventRowId is a specific row's own id (stable — rows are updated in
+// place by the sync jobs, never deleted, so this id never changes once
+// assigned), NOT a canonical_events id from the derived/rebuildable layer
+// (those ids reset on every POST /admin/canonicalize/rebuild, which would
+// silently break any bookmarked or indexed URL built from them).
+router.get('/detail/:eventRowId', async (req, res) => {
+  try {
+    const { eventRowId } = req.params;
+    const baseResult = await pool.query('SELECT * FROM events WHERE id = $1', [eventRowId]);
+    if (baseResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    const base = baseResult.rows[0];
+
+    // Candidates for cross-source merging: same calendar day + same
+    // city/state (the cheap, exact part of isSameEvent) — narrows a
+    // 3000+ row table down to a handful before running the more expensive
+    // token-similarity check in JS, same division of labor as the list
+    // endpoint above.
+    const candidatesResult = await pool.query(
+      `SELECT * FROM events
+       WHERE date::date = $1::date AND city = $2 AND state = $3 AND source != $4`,
+      [base.date, base.city, base.state, base.source]
+    );
+
+    const merged = mergeEventsAcrossSources([base, ...candidatesResult.rows]);
+    // mergeEventsAcrossSources always keeps the first row (base, here) as
+    // the primary/merged[0] since it's first in the input array.
+    res.json({ event: merged[0] });
+  } catch (error) {
+    console.error('Error fetching merged event detail:', error);
+    res.status(500).json({ error: 'Failed to fetch event' });
+  }
+});
+
 // Get Single Event
 router.get('/:eventId', async (req, res) => {
   try {
@@ -290,5 +331,10 @@ router.get('/search/advanced', async (req, res) => {
     res.status(500).json({ error: 'Search failed' });
   }
 });
+
+// Exported for reuse by routes/sitemap.js, which needs the same
+// cross-source dedup so sitemap URLs correspond 1:1 with what customers
+// actually see as a single event card, not one URL per raw source row.
+export { mergeEventsAcrossSources };
 
 export default router;
