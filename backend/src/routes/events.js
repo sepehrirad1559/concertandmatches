@@ -47,8 +47,18 @@ function mergeEventsAcrossSources(rows) {
   // the UI can badge it. Also mirror it onto the existing top-level
   // min_price/max_price fields for backward compatibility with anything
   // still reading those directly.
+  //
+  // Deliberately excludes source === 'official' from this comparison: those
+  // rows come from a festival/venue/artist/band's own site, not a ticket
+  // seller, and any price their JSON-LD publishes (often a general festival
+  // pass) isn't a like-for-like comparison with an actual per-ticket price
+  // from Ticketmaster/SeatGeek. Counting it here would risk the "Best
+  // Price" figure and BEST PRICE badge pointing at an unbuyable, non-
+  // affiliate link. The official offer still appears in `offers` (the
+  // frontend shows it as its own unpriced "Visit Official Site" link) —
+  // it's just never eligible to win the price comparison.
   for (const event of merged) {
-    const priced = event.offers.filter((o) => o.min_price != null);
+    const priced = event.offers.filter((o) => o.min_price != null && o.source !== 'official');
     if (priced.length > 0) {
       const best = priced.reduce((a, b) => (Number(a.min_price) <= Number(b.min_price) ? a : b));
       event.best_price = best.min_price;
