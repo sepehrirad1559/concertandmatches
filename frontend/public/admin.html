@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>ConcertAndMatches — Admin Dashboard</title>
+<meta name="robots" content="noindex, nofollow" />
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .sub { color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px; }
+  .keybar { display: flex; gap: 8px; margin-bottom: 24px; }
+  .keybar input {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+  .keybar button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    background: #6366f1;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .keybar button:hover { background: #4f46e5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card .label { color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card .value { font-size: 1.8rem; font-weight: 700; margin-top: 4px; }
+  section { margin-bottom: 32px; }
+  h2 { font-size: 1rem; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #1e293b; }
+  th { color: #94a3b8; font-weight: 600; }
+  .status-success { color: #4ade80; }
+  .status-error { color: #f87171; }
+  .status-unknown { color: #94a3b8; }
+  .empty { color: #64748b; font-style: italic; padding: 8px 0; }
+  .err { color: #f87171; font-size: 0.85rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <h1>ConcertAndMatches — Admin Dashboard</h1>
+  <div class="sub">Read-only view over the live API. Nothing here writes to the database.</div>
+
+  <div class="keybar">
+    <input id="syncKey" type="password" placeholder="x-sync-key" />
+    <button onclick="loadAll()">Load</button>
+  </div>
+  <div id="globalErr" class="err"></div>
+
+  <div class="grid" id="statsGrid"></div>
+
+  <section>
+    <h2>Provider health (most recent sync per type)</h2>
+    <table id="healthTable"><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Events by source</h2>
+    <table id="sourceTable"><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Clicks by provider</h2>
+    <table id="clicksBySourceTable"><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Top clicked events (last 10)</h2>
+    <table id="topEventsTable"><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Clicks, last 14 days</h2>
+    <table id="clicksByDayTable"><tbody></tbody></table>
+  </section>
+
+<script>
+  // Same-origin API base assumption: this file is served from the same
+  // domain as the frontend, which talks to the backend at API_URL. Since
+  // this is a static file with no build step, the API base is read from a
+  // query param (?api=https://...) with a sensible default, so it works
+  // both on concertandmatches.com (via a reverse-proxied /api) and when
+  // opened directly against the Railway backend URL for convenience.
+  const params = new URLSearchParams(location.search);
+  const API_BASE = params.get('api') || 'https://concertandmatches-production.up.railway.app/api';
+
+  function el(id) { return document.getElementById(id); }
+
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString();
+  }
+
+  async function fetchJson(path, key) {
+    const res = await fetch(`${API_BASE}${path}`, { headers: { 'x-sync-key': key } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 200) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  function renderStats(stats) {
+    const cards = [
+      ['Total events', stats.totalEvents ?? '—'],
+      ['With price', stats.eventsWithPrice ?? '—'],
+      ['Canonical events', stats.canonicalEvents ?? '—'],
+      ['Ticket offers', stats.ticketOffers ?? '—'],
+    ];
+    el('statsGrid').innerHTML = cards.map(([label, value]) => `
+      <div class="card"><div class="label">${label}</div><div class="value">${value}</div></div>
+    `).join('');
+  }
+
+  function renderTable(id, rows, columns, emptyMsg) {
+    const table = el(id);
+    if (!rows || rows.length === 0) {
+      table.innerHTML = `<tbody><tr><td class="empty">${emptyMsg}</td></tr></tbody>`;
+      return;
+    }
+    const thead = `<thead><tr>${columns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>`;
+    const tbody = `<tbody>${rows.map(r => `<tr>${columns.map(c => `<td>${c.render ? c.render(r) : (r[c.key] ?? '—')}</td>`).join('')}</tr>`).join('')}</tbody>`;
+    table.innerHTML = thead + tbody;
+  }
+
+  async function loadAll() {
+    const key = el('syncKey').value.trim();
+    el('globalErr').textContent = '';
+    if (!key) {
+      el('globalErr').textContent = 'Enter the x-sync-key first.';
+      return;
+    }
+
+    try {
+      const stats = await fetchJson('/admin/stats', key);
+      if (!stats.success) throw new Error(stats.error || 'Failed to load stats');
+      renderStats(stats);
+      renderTable('sourceTable', stats.eventsBySource, [
+        { key: 'source', label: 'Source' },
+        { key: 'count', label: 'Events' },
+      ], 'No events yet.');
+    } catch (e) {
+      el('globalErr').textContent = `Stats: ${e.message}`;
+    }
+
+    try {
+      const health = await fetchJson('/admin/health', key);
+      if (!health.success) throw new Error(health.error || 'Failed to load health');
+      renderTable('healthTable', health.providers, [
+        { key: 'provider_name', label: 'Provider' },
+        { key: 'sync_type', label: 'Type' },
+        { label: 'Status', render: r => `<span class="status-${r.status === 'success' ? 'success' : r.status === 'error' ? 'error' : 'unknown'}">${r.status}</span>` },
+        { label: 'Started', render: r => fmtDate(r.started_at) },
+        { key: 'records_received', label: 'Received' },
+        { key: 'records_updated', label: 'Updated' },
+        { key: 'error_message', label: 'Error' },
+      ], 'No sync runs logged yet — has POST /admin/schema/add-sync-logs been run?');
+    } catch (e) {
+      el('globalErr').textContent += ` | Health: ${e.message}`;
+    }
+
+    try {
+      const clicks = await fetchJson('/admin/analytics/clicks', key);
+      if (!clicks.success) throw new Error(clicks.error || clicks.hint || 'Failed to load click analytics');
+      renderTable('clicksBySourceTable', clicks.clicksBySource, [
+        { key: 'source', label: 'Provider' },
+        { key: 'count', label: 'Clicks' },
+      ], 'No clicks logged yet.');
+      renderTable('topEventsTable', clicks.topEvents, [
+        { key: 'event_title', label: 'Event' },
+        { key: 'city', label: 'City' },
+        { key: 'state', label: 'State' },
+        { key: 'count', label: 'Clicks' },
+      ], 'No clicks logged yet.');
+      renderTable('clicksByDayTable', clicks.clicksByDay, [
+        { label: 'Day', render: r => new Date(r.day).toLocaleDateString() },
+        { key: 'count', label: 'Clicks' },
+      ], 'No clicks in the last 14 days.');
+    } catch (e) {
+      el('globalErr').textContent += ` | Clicks: ${e.message}`;
+    }
+  }
+</script>
+</body>
+</html>
