@@ -172,10 +172,23 @@ setInterval(runScheduledPriceBackfill, BACKFILL_INTERVAL_MS);
 // new official homepages, adding them to official_sources, then (2) syncs
 // every active official_sources row (old and newly-discovered) for
 // schema.org/JSON-LD events, same as the manual /admin/sync/official-sites
-// endpoint. Runs daily — new artists show up gradually as Ticketmaster/
-// SeatGeek syncs bring in new events, so there's no need to run more often.
+// endpoint.
+//
+// OFFICIAL_SITES_DISCOVERY_BATCH was 15 — with the catalog now covering
+// thousands of unique artists (17k+ raw events after the SeatGeek volume
+// work), checking only 15 new artists/day meant it would take months to
+// years to work through the backlog even once, which is the actual reason
+// official-site events stayed a tiny sliver of the catalog (6 out of ~4.8k
+// visible via the public API) despite the discovery job running every day
+// as designed. Raised to 300/day — this job runs as a background scheduled
+// task (not an HTTP request with a proxy timeout), so a larger batch here
+// is safe; it adds roughly 300 * 300ms ≈ 90s to the daily run, well within
+// Ticketmaster's free-tier rate limit (5 req/sec) since callers already
+// wait 300ms between Attractions API lookups. Kept at once/day rather than
+// more frequent, to leave headroom in Ticketmaster's daily quota alongside
+// the existing Ticketmaster/SeatGeek event syncs that share the same key.
 const OFFICIAL_SITES_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
-const OFFICIAL_SITES_DISCOVERY_BATCH = 15;
+const OFFICIAL_SITES_DISCOVERY_BATCH = 300;
 
 async function runScheduledOfficialSitesJob() {
 console.log('🔎 Running scheduled official-sites discovery...');
