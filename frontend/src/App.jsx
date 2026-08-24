@@ -863,7 +863,7 @@ export default function App() {
                         {!showTierBreakdown && !priceLabel && !isOfficialLink && (
                           <div style={{
                             padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px',
-                            backgroundColor: '#fff', fontSize: '13px', color: '#888', textAlign: 'center',
+                            backgroundColor: '#fff', fontSize: '13px', color: '#888', textAlign: 'center', fontWeight: 'bold',
                           }}>
                             Price not yet reported by this seller
                           </div>
