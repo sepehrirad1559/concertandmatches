@@ -73,14 +73,14 @@ export const fetchAllUSEvents = async () => {
 export const fetchAllCanadianEvents = async () => {
   try {
     console.log('🍁 Fetching events from Ticketmaster for Canada...');
-    
+
     const events = [];
-    
+
     for (let marketId = 26; marketId <= 28; marketId++) {
       console.log(`📍 Fetching Canadian market ${marketId}...`);
       const marketEvents = await fetchTicketmasterEvents(marketId, 100);
       events.push(...marketEvents);
-      
+
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
@@ -88,6 +88,87 @@ export const fetchAllCanadianEvents = async () => {
     return events;
   } catch (error) {
     console.error('Error fetching Canadian events:', error);
+    return [];
+  }
+};
+
+// Fetch a page of events restricted to Ticketmaster's "Sports" classification
+// for one market. The generic per-market fetch above (fetchTicketmasterEvents)
+// is capped at `size` results sorted by date and mixes every segment together
+// (Music, Arts & Theatre, Sports, Film, ...) — since concerts vastly
+// outnumber games in most markets, that cap meant NFL/NBA/NCAA Football
+// events were getting crowded out and rarely synced even though Ticketmaster
+// has them. Querying classificationName=Sports directly guarantees each
+// market's sports slate is fetched on its own budget instead of competing
+// with concerts for the same 100-result page.
+export const fetchTicketmasterSportsEvents = async (marketCode = '1', limit = 200) => {
+  try {
+    const response = await axios.get(`${TICKETMASTER_BASE_URL}/events.json`, {
+      params: {
+        apikey: TICKETMASTER_API_KEY,
+        marketId: marketCode,
+        classificationName: 'Sports',
+        size: limit,
+        sort: 'date,asc'
+      }
+    });
+
+    if (!response.data._embedded || !response.data._embedded.events) {
+      return [];
+    }
+
+    return response.data._embedded.events;
+  } catch (error) {
+    console.error('Ticketmaster Sports API error:', error.message);
+    return [];
+  }
+};
+
+// Sports counterpart to fetchAllUSEvents/fetchAllCanadianEvents — same
+// per-market loop, but against the dedicated Sports-classification fetch
+// above so NFL/NBA/NCAA Football (and every other sport Ticketmaster
+// tracks) get full, dedicated coverage across every US market.
+export const fetchAllUSSportsEvents = async () => {
+  try {
+    console.log('🏈 Fetching Sports events from Ticketmaster for all US markets...');
+
+    const events = [];
+
+    for (let marketId = 1; marketId <= 25; marketId++) {
+      console.log(`📍 Fetching Sports events for market ${marketId}...`);
+      const marketEvents = await fetchTicketmasterSportsEvents(marketId, 200);
+      events.push(...marketEvents);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`✅ Total US Sports events fetched: ${events.length}`);
+    return events;
+  } catch (error) {
+    console.error('Error fetching all US Sports events:', error);
+    return [];
+  }
+};
+
+// Sports counterpart to fetchAllCanadianEvents.
+export const fetchAllCanadianSportsEvents = async () => {
+  try {
+    console.log('🏈 Fetching Sports events from Ticketmaster for Canada...');
+
+    const events = [];
+
+    for (let marketId = 26; marketId <= 28; marketId++) {
+      console.log(`📍 Fetching Canadian Sports events for market ${marketId}...`);
+      const marketEvents = await fetchTicketmasterSportsEvents(marketId, 200);
+      events.push(...marketEvents);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`✅ Total Canadian Sports events fetched: ${events.length}`);
+    return events;
+  } catch (error) {
+    console.error('Error fetching Canadian Sports events:', error);
     return [];
   }
 };
@@ -109,7 +190,24 @@ export const storeEvent = async (tmEvent) => {
 
     // Extract data
     const title = name;
-    const category = classifications?.[0]?.segment?.name || 'Other';
+    // For Sports, prefer the most specific league/sport name Ticketmaster
+    // gives us over the generic "Sports" segment name — subGenre is usually
+    // the league itself ("NFL", "NBA", "NCAA Football"), genre the broader
+    // sport ("Football", "Basketball") when no league-level subGenre is
+    // present. Without this, every game synced under the Sports
+    // classification would land in the catch-all "Sports" category instead
+    // of being distinguishable as NFL/NBA/NCAA Football on the site.
+    const segmentName = classifications?.[0]?.segment?.name;
+    const genreName = classifications?.[0]?.genre?.name;
+    const subGenreName = classifications?.[0]?.subGenre?.name;
+    let category = segmentName || 'Other';
+    if (segmentName === 'Sports') {
+      if (subGenreName && !/^undefined$/i.test(subGenreName)) {
+        category = subGenreName;
+      } else if (genreName && !/^undefined$/i.test(genreName)) {
+        category = genreName;
+      }
+    }
     const date = new Date(dates.start.dateTime);
     const image = images?.[0]?.url || null;
     const sourceUrl = url;
@@ -218,14 +316,29 @@ export const syncAllEvents = async () => {
     // Fetch Canadian events
     const caEvents = await fetchAllCanadianEvents();
     console.log(`Processing ${caEvents.length} Canadian events...`);
-    
+
     for (const event of caEvents) {
       await storeEvent(event);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    // Dedicated Sports-classification pull (see fetchAllUSSportsEvents/
+    // fetchAllCanadianSportsEvents above) — the generic per-market fetches
+    // above are capped and dominated by concerts, so NFL/NBA/NCAA Football
+    // events need their own fetch budget to get full coverage.
+    console.log('🏈 Fetching Sports events from Ticketmaster...');
+    const usSportsEvents = await fetchAllUSSportsEvents();
+    const caSportsEvents = await fetchAllCanadianSportsEvents();
+    const sportsEvents = [...usSportsEvents, ...caSportsEvents];
+    console.log(`Processing ${sportsEvents.length} Sports events...`);
+
+    for (const event of sportsEvents) {
+      await storeEvent(event);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     console.log('✅ Sync complete!');
-    return { success: true, totalEvents: usEvents.length + caEvents.length };
+    return { success: true, totalEvents: usEvents.length + caEvents.length + sportsEvents.length };
   } catch (error) {
     console.error('Sync failed:', error);
     return { success: false, error: error.message };
@@ -368,6 +481,9 @@ export default {
   fetchTicketmasterEvents,
   fetchAllUSEvents,
   fetchAllCanadianEvents,
+  fetchTicketmasterSportsEvents,
+  fetchAllUSSportsEvents,
+  fetchAllCanadianSportsEvents,
   storeEvent,
   syncAllEvents,
   getTicketmasterEventDetails,
