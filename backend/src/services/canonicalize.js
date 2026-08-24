@@ -64,16 +64,28 @@ export async function rebuildCanonicalEvents() {
       // reason routes/events.js's live merge does — see that file's comment.
       // A festival/artist site's own JSON-LD price isn't a like-for-like
       // seller price, so it shouldn't be able to win best_price/best_source.
+      // 'official' rows are historical leftovers from the removed
+      // JSON-LD-scraping source (see DATA_SOURCES.md) — excluded from both
+      // ends of the price range for the same reason the live merge
+      // excludes them from best_price (routes/events.js), and because that
+      // scraper no longer runs, so treating its old data as a current,
+      // comparable seller price would be actively misleading. Run
+      // POST /admin/cleanup/official-source-data to remove these rows
+      // outright rather than just excluding them here.
       const priced = group.rows.filter((r) => r.min_price != null && r.source !== 'official');
       const best = priced.length > 0
         ? priced.reduce((a, b) => (Number(a.min_price) <= Number(b.min_price) ? a : b))
+        : null;
+      const worst = priced.length > 0
+        ? priced.reduce((a, b) => (Number(a.min_price) >= Number(b.min_price) ? a : b))
         : null;
 
       const canonicalResult = await client.query(
         `INSERT INTO canonical_events
            (title, normalized_title, category, event_date, venue_name, city, state, country,
-            latitude, longitude, image_url, artist_name, best_price, best_source)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+            latitude, longitude, image_url, artist_name, best_price, best_source,
+            performer, highest_price)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          RETURNING id`,
         [
           primary.title,
@@ -90,6 +102,8 @@ export async function rebuildCanonicalEvents() {
           artistRow.artist_name,
           best ? best.min_price : null,
           best ? best.source : null,
+          artistRow.artist_name, // performer — same value as artist_name under the spec's field name
+          worst ? worst.min_price : null,
         ]
       );
       const canonicalId = canonicalResult.rows[0].id;
@@ -103,19 +117,48 @@ export async function rebuildCanonicalEvents() {
           skippedNoProvider++;
           continue;
         }
+        // Neither Ticketmaster's nor SeatGeek's bulk sync endpoint tells us
+        // whether min_price includes fees, so total_price is left equal to
+        // price (the only honest default) and price_type stays 'unknown'
+        // rather than claiming 'base' or 'all_in' — see the migration
+        // route's comment and DATA_SOURCES.md. fees/ticket_section/
+        // ticket_row/ticket_quantity stay NULL for the same reason: the
+        // bulk endpoints return an event-level price range, not individual
+        // seat-level listings.
+        const totalPrice = row.min_price;
         await client.query(
           `INSERT INTO ticket_offers
-             (canonical_event_id, provider_id, provider_offer_id, source_event_row_id, price, max_price, currency, seller_url, last_updated)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             (canonical_event_id, provider_id, provider_offer_id, source_event_row_id, price, max_price, currency, seller_url,
+              last_updated, source_event_id, total_price, price_type, availability, affiliate_url)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
            ON CONFLICT (provider_id, provider_offer_id) DO UPDATE SET
              canonical_event_id = EXCLUDED.canonical_event_id,
              price = EXCLUDED.price,
              max_price = EXCLUDED.max_price,
              seller_url = EXCLUDED.seller_url,
-             last_updated = EXCLUDED.last_updated`,
-          [canonicalId, providerId, row.external_id, row.id, row.min_price, row.max_price, 'USD', row.source_url, row.updated_at || new Date()]
+             last_updated = EXCLUDED.last_updated,
+             total_price = EXCLUDED.total_price,
+             availability = EXCLUDED.availability,
+             affiliate_url = EXCLUDED.affiliate_url`,
+          [
+            canonicalId, providerId, row.external_id, row.id, row.min_price, row.max_price, 'USD', row.source_url,
+            row.updated_at || new Date(), row.external_id, totalPrice, 'unknown',
+            row.min_price != null ? 'available' : 'unknown', row.source_url,
+          ]
         );
         offerCount++;
+
+        // Log a price_history snapshot. Cheap and simple beats clever here:
+        // one row per offer per rebuild rather than trying to detect "did
+        // it actually change" inside the same UPSERT (the RETURNING
+        // subquery above runs against the post-UPDATE row, so it can't
+        // reliably tell old-vs-new) — a rebuild only runs once/day, so this
+        // does not grow unreasonably fast.
+        await client.query(
+          `INSERT INTO price_history (canonical_event_id, provider_id, provider_offer_id, price, total_price)
+           VALUES ($1,$2,$3,$4,$5)`,
+          [canonicalId, providerId, row.external_id, row.min_price, totalPrice]
+        );
       }
     }
 

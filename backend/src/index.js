@@ -20,10 +20,6 @@ import { backfillMissingPrices as backfillTicketmasterPrices } from './services/
 import { backfillMissingPrices as backfillSeatGeekPrices } from './services/seatgeek.js';
 import { logProviderSync } from './utils/syncLog.js';
 
-// Official-sites discovery + sync — see scheduled job below.
-import { discoverArtistOfficialSites } from './services/officialSiteDiscovery.js';
-import { syncOfficialSites } from './services/officialSites.js';
-
 // Ticketmaster/SeatGeek event discovery — see scheduled job below. Until
 // 2026-08 these only ever ran when someone manually POSTed to
 // /admin/sync/ticketmaster or /admin/sync/seatgeek — meaning both the event
@@ -167,72 +163,14 @@ await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', st
 setTimeout(runScheduledPriceBackfill, 5 * 60 * 1000);
 setInterval(runScheduledPriceBackfill, BACKFILL_INTERVAL_MS);
 
-// Official-sites discovery + sync — makes the "obtain offers from official
-// concert websites" feature fully automatic instead of requiring someone to
-// hand-research and POST new URLs. Each run: (1) looks up artists already in
-// our own events table against Ticketmaster's Attractions API to find any
-// new official homepages, adding them to official_sources, then (2) syncs
-// every active official_sources row (old and newly-discovered) for
-// schema.org/JSON-LD events, same as the manual /admin/sync/official-sites
-// endpoint.
-//
-// OFFICIAL_SITES_DISCOVERY_BATCH was 15 — with the catalog now covering
-// thousands of unique artists (17k+ raw events after the SeatGeek volume
-// work), checking only 15 new artists/day meant it would take months to
-// years to work through the backlog even once, which is the actual reason
-// official-site events stayed a tiny sliver of the catalog (6 out of ~4.8k
-// visible via the public API) despite the discovery job running every day
-// as designed. Raised to 300/day — this job runs as a background scheduled
-// task (not an HTTP request with a proxy timeout), so a larger batch here
-// is safe; it adds roughly 300 * 300ms ≈ 90s to the daily run, well within
-// Ticketmaster's free-tier rate limit (5 req/sec) since callers already
-// wait 300ms between Attractions API lookups. Kept at once/day rather than
-// more frequent, to leave headroom in Ticketmaster's daily quota alongside
-// the existing Ticketmaster/SeatGeek event syncs that share the same key.
-const OFFICIAL_SITES_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
-const OFFICIAL_SITES_DISCOVERY_BATCH = 300;
-
-async function runScheduledOfficialSitesJob() {
-console.log('🔎 Running scheduled official-sites discovery...');
-let startedAt = new Date();
-try {
-const discoverResult = await discoverArtistOfficialSites(OFFICIAL_SITES_DISCOVERY_BATCH);
-console.log('Official-sites discovery result:', discoverResult);
-await logProviderSync({
-  providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(),
-  recordsReceived: discoverResult.candidatesChecked ?? null, recordsUpdated: discoverResult.discovered ?? null,
-  status: discoverResult.success ? 'success' : 'error', errorMessage: discoverResult.error ?? null,
-});
-} catch (err) {
-console.error('Official-sites discovery failed:', err);
-await logProviderSync({ providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
-}
-
-console.log('🔄 Running scheduled official-sites sync...');
-startedAt = new Date();
-try {
-const { rows } = await pool.query(
-  'SELECT id, url, label, category FROM official_sources WHERE active = true ORDER BY id'
-);
-const syncResult = rows.length > 0
-  ? await syncOfficialSites(rows)
-  : { success: true, sitesProcessed: 0, totalEventsFound: 0, totalEventsStored: 0, sitesWithErrors: 0 };
-console.log('Official-sites sync result:', syncResult);
-await logProviderSync({
-  providerName: 'official', syncType: 'discovery', startedAt, finishedAt: new Date(),
-  recordsReceived: syncResult.totalEventsFound ?? null, recordsUpdated: syncResult.totalEventsStored ?? null,
-  status: syncResult.success ? 'success' : 'error', errorMessage: syncResult.sitesWithErrors ? `${syncResult.sitesWithErrors} site(s) failed` : null,
-});
-} catch (err) {
-console.error('Official-sites sync failed:', err);
-await logProviderSync({ providerName: 'official', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
-}
-}
-
-// Staggered 10 minutes after boot (after price backfill's 5-minute slot),
-// then daily after that — same pattern as the price backfill job above.
-setTimeout(runScheduledOfficialSitesJob, 10 * 60 * 1000);
-setInterval(runScheduledOfficialSitesJob, OFFICIAL_SITES_INTERVAL_MS);
+// Official-sites discovery + JSON-LD scraping job — REMOVED. It fetched
+// arbitrary third-party pages and parsed structured data out of their raw
+// HTML, which is direct website scraping regardless of the data being
+// machine-readable JSON-LD. See backend/DATA_SOURCES.md for the full list
+// of data-collection mechanisms this platform uses (Ticketmaster and
+// SeatGeek's official, authenticated REST APIs only) and what was removed.
+// Run POST /admin/cleanup/official-source-data once to remove the events
+// this job already collected.
 
 // Ticketmaster + SeatGeek event discovery — keeps the actual event catalog
 // (and therefore the cross-source price-comparison coverage) fresh without

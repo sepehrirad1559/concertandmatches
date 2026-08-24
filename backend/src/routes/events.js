@@ -61,13 +61,53 @@ function mergeEventsAcrossSources(rows) {
     const priced = event.offers.filter((o) => o.min_price != null && o.source !== 'official');
     if (priced.length > 0) {
       const best = priced.reduce((a, b) => (Number(a.min_price) <= Number(b.min_price) ? a : b));
+      const worst = priced.reduce((a, b) => (Number(a.min_price) >= Number(b.min_price) ? a : b));
       event.best_price = best.min_price;
       event.best_source = best.source;
       event.min_price = best.min_price;
       event.max_price = best.max_price;
+
+      // Full price comparison for this event: every comparable offer
+      // sorted lowest-first, plus the lowest/highest/spread numbers so a
+      // caller doesn't have to re-derive them from the offers array. All
+      // of these are computed straight from ticket_offers-equivalent data
+      // already on `event.offers` — nothing here reaches outside the
+      // central database.
+      event.price_comparison = {
+        lowest_price: Number(best.min_price),
+        highest_price: Number(worst.min_price),
+        price_difference: Number((Number(worst.min_price) - Number(best.min_price)).toFixed(2)),
+        // Percentage the highest offer is above the lowest. Undefined
+        // (not 0) when lowest_price is 0 — "N% more than free" isn't a
+        // meaningful figure, so leave it for the caller to handle rather
+        // than emit a misleading Infinity/0.
+        price_difference_pct: Number(best.min_price) > 0
+          ? Number((((Number(worst.min_price) - Number(best.min_price)) / Number(best.min_price)) * 100).toFixed(1))
+          : null,
+        offers: priced
+          .slice()
+          .sort((a, b) => Number(a.min_price) - Number(b.min_price))
+          .map((o, i) => ({
+            rank: i + 1,
+            source: o.source,
+            price: Number(o.min_price),
+            is_best_price: i === 0,
+            url: o.source_url,
+            // Neither Ticketmaster's nor SeatGeek's bulk sync endpoint
+            // documents whether min_price includes fees, so this is
+            // deliberately 'unknown' rather than a guessed 'base'/'all_in'
+            // — see backend/src/services/canonicalize.js and
+            // backend/DATA_SOURCES.md. Surfaced so a comparison built on
+            // top of this API can show the caveat instead of silently
+            // treating two possibly-non-equivalent prices as directly
+            // comparable.
+            price_type: 'unknown',
+          })),
+      };
     } else {
       event.best_price = null;
       event.best_source = null;
+      event.price_comparison = null;
     }
   }
 

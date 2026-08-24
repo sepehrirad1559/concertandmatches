@@ -9,9 +9,10 @@ const router = express.Router();
 // tracked-affiliate link, built client-side in App.jsx), and rerouting them
 // through here without careful, visually-verified testing would risk
 // breaking real affiliate revenue. This exists as ready, tested-by-code-
-// review infrastructure for a future provider (e.g. StubHub, once real
-// partner/affiliate access exists — see services/stubhub.js) or for a
-// deliberate, carefully-tested migration of the existing providers later.
+// review infrastructure for a future official-API provider (e.g. StubHub,
+// if a real partner/affiliate integration is built against their official
+// API later — see backend/DATA_SOURCES.md) or for a deliberate, carefully-
+// tested migration of the existing providers.
 //
 // Only ever redirects to a URL built from OUR OWN database (ticket_offers /
 // providers.affiliate_url_template) — never a user-supplied destination —
