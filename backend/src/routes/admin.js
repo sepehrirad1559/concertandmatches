@@ -94,9 +94,10 @@ router.post('/sync/seatgeek', async (req, res) => {
   // ?total= now means "events per US state/Canadian province" (region-
   // segmented sync — see services/seatgeek.js), not a flat global total.
   // Kept the same query param name for backward compatibility with any
-  // existing bookmarked/scripted calls; 100 mirrors Ticketmaster's own
-  // per-market fetch size.
-  const perState = Number(req.query.total) || 100;
+  // existing bookmarked/scripted calls; 300 is the current default (raised
+  // from 100 after measuring that region-segmentation alone plateaued
+  // around a 3% cross-source overlap rate — see services/seatgeek.js).
+  const perState = Number(req.query.total) || 300;
   const startedAt = new Date();
 
   // Region-segmented sync loops through ~58 US states/Canadian provinces
