@@ -24,7 +24,19 @@ const CANADIAN_PROVINCES = ['ON', 'BC', 'QC', 'AB', 'MB', 'SK', 'NS', 'NB'];
 // smaller than concerts, so unlike the concert sync these don't need
 // per-state segmentation to get real coverage; a straight national page-
 // through per league is enough.
-const SPORTS_TAXONOMIES = ['nfl', 'nba', 'ncaa_football'];
+// Each entry's `totalWanted` is sized to that league's real schedule volume
+// rather than one shared number: NFL (~272 regular-season games + playoffs)
+// and NBA (~1,230 regular-season games) comfortably fit well under 1,000,
+// but NCAA Football spans well over 100 FBS/FCS programs plus Division
+// II/III — enough scheduled games that a shared 1,000 cap could silently
+// truncate it the way the old flat concert fetch used to (see
+// fetchManySeatGeekEvents's comment above).
+const SPORTS_TAXONOMY_CONFIG = [
+  { taxonomy: 'nfl', totalWanted: 1000 },
+  { taxonomy: 'nba', totalWanted: 1500 },
+  { taxonomy: 'ncaa_football', totalWanted: 4000 },
+];
+const SPORTS_TAXONOMIES = SPORTS_TAXONOMY_CONFIG.map((c) => c.taxonomy);
 
 // Maps a SeatGeek taxonomy slug to the display category used on the site.
 const SPORTS_CATEGORY_LABELS = {
@@ -200,14 +212,14 @@ export const fetchSeatGeekEventsByTaxonomy = async (taxonomyName, totalWanted = 
   return events;
 };
 
-// Fetches every configured sports league (see SPORTS_TAXONOMIES) so
+// Fetches every configured sports league (see SPORTS_TAXONOMY_CONFIG) so
 // NFL/NBA/NCAA Football get dedicated coverage from SeatGeek, the same way
 // fetchSeatGeekEventsByRegion gives concerts dedicated regional coverage.
 export const fetchSeatGeekSportsEvents = async () => {
   const events = [];
-  for (const taxonomy of SPORTS_TAXONOMIES) {
-    console.log(`🏈 Fetching SeatGeek ${taxonomy} events...`);
-    const taxEvents = await fetchSeatGeekEventsByTaxonomy(taxonomy, 1000);
+  for (const { taxonomy, totalWanted } of SPORTS_TAXONOMY_CONFIG) {
+    console.log(`🏈 Fetching SeatGeek ${taxonomy} events (up to ${totalWanted})...`);
+    const taxEvents = await fetchSeatGeekEventsByTaxonomy(taxonomy, totalWanted);
     events.push(...taxEvents);
     await new Promise((resolve) => setTimeout(resolve, 500));
   }

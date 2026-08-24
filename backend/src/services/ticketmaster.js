@@ -173,6 +173,87 @@ export const fetchAllCanadianSportsEvents = async () => {
   }
 };
 
+// Ticketmaster's `marketId` codes (1-28, used by every fetch above) only
+// cover ~28 major metro DMAs. That's fine for concerts, which mostly happen
+// in those same big-city arenas — but a large share of NCAA Football (and
+// plenty of NBA/NFL preseason, and minor-league/college sports generally)
+// is played in smaller college towns — Tuscaloosa, Clemson, Ann Arbor,
+// College Station — that fall outside every one of those market codes.
+// Those games were structurally invisible to the per-market fetch above no
+// matter how the classification/size params were tuned, since the market
+// filter itself excludes the venue before classification is even applied.
+// This queries Ticketmaster by country (US/CA) instead of market, which has
+// no such metro-only restriction, so a game in any town gets found.
+//
+// classificationName='Football'/'Basketball' (not 'Sports') so this stays
+// scoped to the two sports actually asked for (NFL/NBA/NCAA Football),
+// rather than pulling every sport nationwide — classificationName matches
+// against the name at ANY level of Ticketmaster's segment/genre/subgenre
+// hierarchy, so 'Football' catches both NFL and NCAA Football events, and
+// 'Basketball' catches both NBA and NCAA Basketball; storeEvent's existing
+// subGenre/genre-based category logic (see below) then splits them apart.
+//
+// Segmented by month (not one big query) because Ticketmaster's Discovery
+// API caps deep paging at ~1,000 total results per query — a single
+// nationwide, unbounded-date query for something as broad as "Basketball"
+// could exceed that during peak season and silently truncate.
+const NATIONWIDE_SPORTS_CLASSIFICATIONS = ['Football', 'Basketball'];
+const NATIONWIDE_SPORTS_COUNTRIES = ['US', 'CA'];
+
+async function fetchTicketmasterEventsByClassificationAndMonth(classificationName, countryCode, startDateTime, endDateTime) {
+  try {
+    const response = await axios.get(`${TICKETMASTER_BASE_URL}/events.json`, {
+      params: {
+        apikey: TICKETMASTER_API_KEY,
+        classificationName,
+        countryCode,
+        startDateTime,
+        endDateTime,
+        size: 200,
+        sort: 'date,asc',
+      },
+    });
+    return response.data?._embedded?.events || [];
+  } catch (error) {
+    console.error(`Ticketmaster nationwide Sports API error (classificationName=${classificationName}, country=${countryCode}, month=${startDateTime.slice(0, 7)}):`, error.message);
+    return [];
+  }
+}
+
+// Formats a Date as the `YYYY-MM-DDTHH:mm:ssZ` shape Ticketmaster's
+// startDateTime/endDateTime params require (no milliseconds).
+function toTicketmasterDateTime(date) {
+  return date.toISOString().split('.')[0] + 'Z';
+}
+
+// Nationwide counterpart to fetchAllUSSportsEvents/fetchAllCanadianSportsEvents
+// — covers every town, not just the ~28 major markets those loop over (see
+// comment above). monthsAhead defaults to 8, comfortably covering a full
+// NFL/NCAA Football season (Aug-Jan) and most of an NBA season from
+// whenever this runs.
+export const fetchTicketmasterSportsEventsNationwide = async (monthsAhead = 8) => {
+  const events = [];
+  const now = new Date();
+
+  for (const countryCode of NATIONWIDE_SPORTS_COUNTRIES) {
+    for (const classificationName of NATIONWIDE_SPORTS_CLASSIFICATIONS) {
+      for (let m = 0; m < monthsAhead; m++) {
+        const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + m, 1, 0, 0, 0));
+        const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + m + 1, 0, 23, 59, 59));
+        const startDateTime = toTicketmasterDateTime(start);
+        const endDateTime = toTicketmasterDateTime(end);
+        console.log(`🏟️  Fetching nationwide ${classificationName} events (${countryCode}, ${startDateTime.slice(0, 7)})...`);
+        const monthEvents = await fetchTicketmasterEventsByClassificationAndMonth(classificationName, countryCode, startDateTime, endDateTime);
+        events.push(...monthEvents);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    }
+  }
+
+  console.log(`✅ Total nationwide Sports events fetched: ${events.length}`);
+  return events;
+};
+
 // Process and store Ticketmaster event in database
 export const storeEvent = async (tmEvent) => {
   try {
@@ -337,8 +418,27 @@ export const syncAllEvents = async () => {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    // Nationwide pull (see fetchTicketmasterSportsEventsNationwide above) —
+    // the per-market fetch just above only reaches Ticketmaster's ~28 major
+    // metro markets, which structurally excludes most college-town NCAA
+    // Football venues regardless of classification/size tuning. This covers
+    // every town by querying per-country instead of per-market.
+    // storeEvent upserts on external_id, so any overlap with the per-market
+    // fetch above just updates the same row rather than duplicating it.
+    console.log('🏟️  Fetching nationwide Sports events from Ticketmaster...');
+    const nationwideSportsEvents = await fetchTicketmasterSportsEventsNationwide();
+    console.log(`Processing ${nationwideSportsEvents.length} nationwide Sports events...`);
+
+    for (const event of nationwideSportsEvents) {
+      await storeEvent(event);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     console.log('✅ Sync complete!');
-    return { success: true, totalEvents: usEvents.length + caEvents.length + sportsEvents.length };
+    return {
+      success: true,
+      totalEvents: usEvents.length + caEvents.length + sportsEvents.length + nationwideSportsEvents.length,
+    };
   } catch (error) {
     console.error('Sync failed:', error);
     return { success: false, error: error.message };
@@ -484,6 +584,7 @@ export default {
   fetchTicketmasterSportsEvents,
   fetchAllUSSportsEvents,
   fetchAllCanadianSportsEvents,
+  fetchTicketmasterSportsEventsNationwide,
   storeEvent,
   syncAllEvents,
   getTicketmasterEventDetails,
