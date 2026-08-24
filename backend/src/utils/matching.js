@@ -19,6 +19,23 @@ const WORD_ALIASES = {
   theatre: 'theater',
   centre: 'center',
   amphitheatre: 'amphitheater',
+  // Sports-specific: SeatGeek/Ticketmaster team names are sometimes given
+  // with an abbreviated city and sometimes spelled out, and this differs
+  // by source/team in ways WORD_ALIASES needs to bridge explicitly (no
+  // general abbreviation-expansion logic exists here) — otherwise "LA
+  // Lakers" vs "Los Angeles Lakers" scores as barely-related token sets
+  // despite being the same team. Each maps to a SPACE-SEPARATED expansion
+  // (possibly multiple words) — normalizeTokens below splits these back
+  // out into individual tokens so "la" still overlaps with the separate
+  // "los" and "angeles" tokens the spelled-out side produces.
+  // Deliberately excludes ambiguous short words that are also common
+  // English words in real titles ("no" for New Orleans being the obvious
+  // one — aliasing it would risk "No Doubt" or similar picking up stray
+  // "new orleans" tokens) — the day+city+state prefilter in isSameEvent
+  // makes a false merge unlikely even so, but there's no upside to adding
+  // that risk for one team's abbreviation.
+  la: 'los angeles', ny: 'new york', sf: 'san francisco', gs: 'golden state',
+  dc: 'washington', okc: 'oklahoma city',
 };
 
 // Lowercase, strip accents/punctuation, collapse whitespace, normalize a
@@ -39,7 +56,11 @@ export function normalizeTokens(text) {
   return cleaned
     .split(' ')
     .filter(Boolean)
-    .map((w) => WORD_ALIASES[w] || w)
+    // WORD_ALIASES values may be multi-word ("la" -> "los angeles") —
+    // flatMap + re-split so an abbreviation expands into the same
+    // individual tokens the spelled-out form would produce, not one fused
+    // token that would never overlap with anything.
+    .flatMap((w) => (WORD_ALIASES[w] || w).split(' '))
     .filter((w) => !STOPWORDS.has(w));
 }
 
@@ -102,7 +123,25 @@ export function isSameEvent(a, b) {
   if ((a.state || '').toLowerCase().trim() !== (b.state || '').toLowerCase().trim()) return false;
 
   const venueScore = tokenSimilarity(a.venue_name, b.venue_name);
-  const titleScore = tokenSimilarity(a.artist_name || a.title, b.artist_name || b.title);
+
+  // Two ways to compare "what is this event of/about", and we take
+  // whichever scores higher — they diverge specifically for team sports.
+  // Ticketmaster's artist_name is never populated (concerts or sports —
+  // see ticketmaster.js's storeEvent, which has no artist_name column in
+  // its INSERT at all), so `a.artist_name || a.title` always falls back to
+  // Ticketmaster's title, which for a game is the full matchup ("Dallas
+  // Cowboys at Philadelphia Eagles"). SeatGeek DOES populate artist_name
+  // (performers[0].name), but for a team-sports event that's only ONE
+  // team, not the matchup — so comparing artist-name-preferring fields
+  // ends up comparing a two-team title against a one-team name, a much
+  // weaker signal than comparing SeatGeek's own (also full-matchup) title
+  // against Ticketmaster's. For concerts this rarely matters since
+  // artist_name and title usually describe the same thing there; for
+  // sports it was the main reason same-game listings from both sources
+  // failed to merge into one comparison card.
+  const artistPreferredScore = tokenSimilarity(a.artist_name || a.title, b.artist_name || b.title);
+  const titleOnlyScore = tokenSimilarity(a.title, b.title);
+  const titleScore = Math.max(artistPreferredScore, titleOnlyScore);
 
   if (titleScore >= TITLE_STRONG_MATCH) return true;
   if (venueScore >= VENUE_STRONG_MATCH && titleScore >= TITLE_FLOOR_FOR_VENUE_MATCH) return true;

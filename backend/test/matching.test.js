@@ -13,7 +13,8 @@ import { normalizeTokens, tokenSimilarity, isSameDay, isSameEvent } from '../src
 
 describe('normalizeTokens', () => {
   test('lowercases, strips punctuation, and drops stopwords', () => {
-    assert.deepEqual(normalizeTokens('The Beyoncé World Tour!'), ['beyonce', 'tour']);
+    // 'the', 'world', and 'tour' are all in STOPWORDS — only 'beyonce' survives.
+    assert.deepEqual(normalizeTokens('The Beyoncé World Tour!'), ['beyonce']);
   });
 
   test('normalizes British/American venue spelling variants', () => {
@@ -37,7 +38,10 @@ describe('tokenSimilarity', () => {
   });
 
   test('partial overlap scores between 0 and 1', () => {
-    const score = tokenSimilarity('Beyoncé World Tour', 'Beyoncé');
+    // 'World'/'Tour' are stopwords, so use a non-stopword extra word to get
+    // genuine partial overlap instead of both sides collapsing to the same
+    // single token.
+    const score = tokenSimilarity('Beyoncé Renaissance Tour', 'Beyoncé');
     assert.ok(score > 0 && score < 1, `expected 0 < score < 1, got ${score}`);
   });
 });
@@ -100,5 +104,42 @@ describe('isSameEvent', () => {
   test('null/undefined inputs never match', () => {
     assert.equal(isSameEvent(null, base), false);
     assert.equal(isSameEvent(base, undefined), false);
+  });
+
+  // Regression test for the bug reported live: sports games from
+  // Ticketmaster and SeatGeek weren't merging into one comparison card.
+  // Root cause — Ticketmaster's artist_name is always null (see
+  // services/ticketmaster.js's storeEvent, no artist_name column in its
+  // INSERT), so `a.artist_name || a.title` falls back to Ticketmaster's
+  // title (the full matchup). SeatGeek's artist_name IS set, but to only
+  // ONE team for a game — so the artist-preferring comparison ends up
+  // matching a two-team title against a one-team name. Fixed by also
+  // comparing title-to-title directly and taking the stronger score.
+  test('sports game merges via title-to-title even though SeatGeek only has one team as artist_name', () => {
+    const tm = {
+      source: 'ticketmaster', date: '2026-11-02T20:00:00Z', city: 'Philadelphia', state: 'PA',
+      venue_name: 'Wells Fargo Center', artist_name: null,
+      title: 'Philadelphia 76ers vs. Boston Celtics',
+    };
+    const sg = {
+      source: 'seatgeek', date: '2026-11-02T20:00:00Z', city: 'Philadelphia', state: 'PA',
+      venue_name: 'Wells Fargo Center', artist_name: 'Philadelphia 76ers',
+      title: 'Philadelphia 76ers vs. Boston Celtics',
+    };
+    assert.equal(isSameEvent(tm, sg), true);
+  });
+
+  test('sports game merges when one source abbreviates the city (LA vs Los Angeles)', () => {
+    const tm = {
+      source: 'ticketmaster', date: '2026-12-05T19:30:00Z', city: 'Los Angeles', state: 'CA',
+      venue_name: 'Crypto.com Arena', artist_name: null,
+      title: 'Los Angeles Lakers vs. Golden State Warriors',
+    };
+    const sg = {
+      source: 'seatgeek', date: '2026-12-05T19:30:00Z', city: 'Los Angeles', state: 'CA',
+      venue_name: 'Crypto.com Arena', artist_name: 'LA Lakers',
+      title: 'LA Lakers vs. GS Warriors',
+    };
+    assert.equal(isSameEvent(tm, sg), true);
   });
 });
