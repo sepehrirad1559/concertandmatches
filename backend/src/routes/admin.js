@@ -292,17 +292,29 @@ router.post('/discover/artist-sites', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
+  // A large batchSize here means many sequential Ticketmaster Attractions
+  // API calls (300ms apart) — same class of problem as the old SeatGeek
+  // sync route: waiting on that synchronously risks Railway's proxy timing
+  // out the connection before it finishes. Respond immediately and run the
+  // discovery in the background instead; check GET /admin/health or Railway
+  // logs for completion, same pattern as /sync/seatgeek.
   const startedAt = new Date();
-  const result = await discoverArtistOfficialSites(
-    req.body?.batchSize ? Number(req.body.batchSize) : undefined
-  );
-  await logProviderSync({
-    providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(),
-    recordsReceived: result.candidatesChecked ?? null, recordsUpdated: result.discovered ?? null,
-    status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
-  });
+  const batchSize = req.body?.batchSize ? Number(req.body.batchSize) : undefined;
+  res.json({ success: true, message: `Artist-site discovery started in the background${batchSize ? ` (batchSize=${batchSize})` : ''}. Check GET /admin/health or Railway logs for completion.` });
 
-  res.json(result);
+  discoverArtistOfficialSites(batchSize)
+    .then((result) => logProviderSync({
+      providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(),
+      recordsReceived: result.candidatesChecked ?? null, recordsUpdated: result.discovered ?? null,
+      status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+    }))
+    .catch((error) => {
+      console.error('Background artist-site discovery failed:', error);
+      return logProviderSync({
+        providerName: 'official', syncType: 'discovery_search', startedAt, finishedAt: new Date(),
+        recordsReceived: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 // One-time schema migration: add venue coordinate columns used to sort
