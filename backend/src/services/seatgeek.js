@@ -46,21 +46,44 @@ export const fetchSeatGeekEvents = async (page = 1, perPage = 100) => {
 // than clustering wherever the next few days happen to have the most
 // events — which is what was silently capping cross-source overlap before.
 export const fetchSeatGeekEventsByState = async (stateCode, perState = 100) => {
-  try {
-    const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
-      params: {
-        client_id: SEATGEEK_CLIENT_ID,
-        'taxonomies.name': 'concert',
-        'venue.state': stateCode,
-        per_page: perState,
-        sort: 'datetime_local.asc',
-      },
-    });
-    return response.data?.events || [];
-  } catch (error) {
-    console.error(`SeatGeek API error (venue.state=${stateCode}):`, error.response?.data || error.message);
-    return [];
+  // SeatGeek's Platform API caps per_page at 100 regardless of what's
+  // requested — asking for more than that in a single call silently returns
+  // only the first 100. To actually honor a perState above 100, page through
+  // in chunks of 100 (same pattern as fetchManySeatGeekEvents below) rather
+  // than relying on a single oversized request that the API would just cap.
+  const PAGE_SIZE = 100;
+  const events = [];
+  const totalPages = Math.ceil(perState / PAGE_SIZE);
+
+  for (let page = 1; page <= totalPages; page++) {
+    try {
+      const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+        params: {
+          client_id: SEATGEEK_CLIENT_ID,
+          'taxonomies.name': 'concert',
+          'venue.state': stateCode,
+          per_page: Math.min(PAGE_SIZE, perState - events.length),
+          page,
+          sort: 'datetime_local.asc',
+        },
+      });
+      const pageEvents = response.data?.events || [];
+      events.push(...pageEvents);
+      // Fewer than a full page back means this state/province is out of
+      // events — no point requesting further pages for it.
+      if (pageEvents.length < PAGE_SIZE) break;
+    } catch (error) {
+      console.error(`SeatGeek API error (venue.state=${stateCode}, page=${page}):`, error.response?.data || error.message);
+      break;
+    }
+    // Politeness delay between pages of the SAME state — separate from (and
+    // shorter than) the between-state delay in fetchSeatGeekEventsByRegion.
+    if (page < totalPages) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
   }
+
+  return events;
 };
 
 // Loops the same US state list Ticketmaster's sync uses, plus a handful of
@@ -69,7 +92,7 @@ export const fetchSeatGeekEventsByState = async (stateCode, perState = 100) => {
 // directly targets the same geographic footprint Ticketmaster covers,
 // rather than relying on a single global feed and hoping enough volume
 // happens to land in the same places.
-export const fetchSeatGeekEventsByRegion = async (perState = 100) => {
+export const fetchSeatGeekEventsByRegion = async (perState = 300) => {
   const events = [];
   const regions = [...US_STATES, ...CANADIAN_PROVINCES];
 
@@ -253,10 +276,13 @@ export const backfillMissingPrices = async (limit = 100) => {
 
 // Sync SeatGeek concert events into the events table. Now region-segmented
 // (see fetchSeatGeekEventsByRegion above) rather than one global
-// soonest-first feed — perState=100 mirrors Ticketmaster's own per-market
-// fetch size, so the two sources cover comparable geographic ground instead
-// of SeatGeek's data clustering whichever days happen to be busiest.
-export const syncSeatGeekEvents = async (perState = 100) => {
+// soonest-first feed — perState now defaults to 300 (raised from the
+// Ticketmaster-matching 100 after measuring that region-segmentation alone
+// plateaued around a 3% cross-source overlap rate; combining region spread
+// with more depth per region gave more absolute matches, so this pushes
+// that further) — paginated via fetchSeatGeekEventsByState above since
+// SeatGeek's API caps a single request at 100 results.
+export const syncSeatGeekEvents = async (perState = 300) => {
   try {
     console.log('🔄 Starting SeatGeek sync...');
 
