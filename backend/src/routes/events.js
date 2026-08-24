@@ -190,12 +190,21 @@ router.get('/', async (req, res) => {
     // acronym like "NFL" or "NBA" doesn't false-positive-match inside an
     // unrelated word that happens to contain those letters in sequence
     // (e.g. "NFL" inside "Inflatable" or "Confluence").
+    //
+    // Also checked against `category`, not just title/artist/venue: a
+    // Ticketmaster/SeatGeek game's title is typically just the matchup
+    // ("Dallas Cowboys vs. Philadelphia Eagles") and rarely contains the
+    // league name itself, so the NFL/NBA/NCAA Football quick-filter tiles
+    // were matching almost nothing even once those events were being
+    // synced — the league name only ever showed up in the category the
+    // provider assigned (see services/ticketmaster.js's subGenre-based
+    // category and services/seatgeek.js's taxonomy-based category).
     if (keywords) {
       const keywordList = keywords.split(',').map((k) => k.trim()).filter(Boolean);
       if (keywordList.length > 0) {
         const orParts = keywordList.map((_, i) => {
           const p = paramCount + i;
-          return `(title ~* $${p} OR artist_name ~* $${p} OR venue_name ~* $${p})`;
+          return `(title ~* $${p} OR artist_name ~* $${p} OR venue_name ~* $${p} OR category ~* $${p})`;
         });
         whereClause += ` AND (${orParts.join(' OR ')})`;
         keywordList.forEach((kw) => params.push(`\\m${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\M`));

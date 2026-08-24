@@ -16,6 +16,48 @@ const SEATGEEK_BASE_URL = 'https://api.seatgeek.com/2';
 // against further.
 const CANADIAN_PROVINCES = ['ON', 'BC', 'QC', 'AB', 'MB', 'SK', 'NS', 'NB'];
 
+// SeatGeek taxonomy slugs (https://platform.seatgeek.com/ — `taxonomies.name`
+// filter) for the sports leagues the site needs dedicated coverage for.
+// Every fetch function below filtered on `'taxonomies.name': 'concert'`
+// only, so NFL/NBA/NCAA Football events were never even requested from
+// SeatGeek — not "sparse", literally zero. Sports volume per league is much
+// smaller than concerts, so unlike the concert sync these don't need
+// per-state segmentation to get real coverage; a straight national page-
+// through per league is enough.
+// Each entry's `totalWanted` is sized to that league's real schedule volume
+// rather than one shared number: NFL (~272 regular-season games + playoffs)
+// and NBA (~1,230 regular-season games) comfortably fit well under 1,000,
+// but NCAA Football spans well over 100 FBS/FCS programs plus Division
+// II/III — enough scheduled games that a shared 1,000 cap could silently
+// truncate it the way the old flat concert fetch used to (see
+// fetchManySeatGeekEvents's comment above).
+const SPORTS_TAXONOMY_CONFIG = [
+  { taxonomy: 'nfl', totalWanted: 1000 },
+  { taxonomy: 'nba', totalWanted: 1500 },
+  { taxonomy: 'ncaa_football', totalWanted: 4000 },
+];
+const SPORTS_TAXONOMIES = SPORTS_TAXONOMY_CONFIG.map((c) => c.taxonomy);
+
+// Maps a SeatGeek taxonomy slug to the display category used on the site.
+const SPORTS_CATEGORY_LABELS = {
+  nfl: 'NFL',
+  nba: 'NBA',
+  ncaa_football: 'NCAA Football',
+};
+
+// Derives an event's category from the taxonomies SeatGeek attaches to it
+// (each event carries a `taxonomies: [{ id, name, priority }, ...]` array,
+// most-specific/highest-priority first). Falls back to null so callers can
+// apply their own default rather than this function guessing one.
+function categoryFromTaxonomies(taxonomies) {
+  if (!Array.isArray(taxonomies)) return null;
+  for (const t of taxonomies) {
+    const label = SPORTS_CATEGORY_LABELS[t?.name];
+    if (label) return label;
+  }
+  return null;
+}
+
 // Fetch a page of concert events from SeatGeek's Platform API.
 // Docs: https://platform.seatgeek.com/
 export const fetchSeatGeekEvents = async (page = 1, perPage = 100) => {
@@ -135,16 +177,71 @@ export const fetchManySeatGeekEvents = async (totalWanted = 3000) => {
   return events;
 };
 
+// Pages through SeatGeek's /events endpoint filtered to one taxonomy
+// (e.g. 'nfl'), nationally — no per-state segmentation, since league
+// schedules are small enough that a straight page-through already gets
+// full coverage (unlike concerts, which needed fetchSeatGeekEventsByRegion
+// to avoid a random slice of the calendar). Capped at 100/page per
+// SeatGeek's API limit, same as fetchSeatGeekEventsByState above.
+export const fetchSeatGeekEventsByTaxonomy = async (taxonomyName, totalWanted = 1000) => {
+  const PAGE_SIZE = 100;
+  const events = [];
+  const totalPages = Math.ceil(totalWanted / PAGE_SIZE);
+
+  for (let page = 1; page <= totalPages; page++) {
+    try {
+      const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+        params: {
+          client_id: SEATGEEK_CLIENT_ID,
+          'taxonomies.name': taxonomyName,
+          per_page: PAGE_SIZE,
+          page,
+          sort: 'datetime_local.asc',
+        },
+      });
+      const pageEvents = response.data?.events || [];
+      events.push(...pageEvents);
+      if (pageEvents.length < PAGE_SIZE) break;
+    } catch (error) {
+      console.error(`SeatGeek API error (taxonomies.name=${taxonomyName}, page=${page}):`, error.response?.data || error.message);
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  return events;
+};
+
+// Fetches every configured sports league (see SPORTS_TAXONOMY_CONFIG) so
+// NFL/NBA/NCAA Football get dedicated coverage from SeatGeek, the same way
+// fetchSeatGeekEventsByRegion gives concerts dedicated regional coverage.
+export const fetchSeatGeekSportsEvents = async () => {
+  const events = [];
+  for (const { taxonomy, totalWanted } of SPORTS_TAXONOMY_CONFIG) {
+    console.log(`🏈 Fetching SeatGeek ${taxonomy} events (up to ${totalWanted})...`);
+    const taxEvents = await fetchSeatGeekEventsByTaxonomy(taxonomy, totalWanted);
+    events.push(...taxEvents);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  console.log(`✅ Total SeatGeek Sports events fetched: ${events.length}`);
+  return events;
+};
+
 // Process and store a SeatGeek event in the shared events table.
 // external_id is prefixed with "sg-" so it can never collide with
 // Ticketmaster's numeric/alphanumeric external IDs in the same column.
 export const storeEvent = async (sgEvent) => {
   try {
-    const { id, title, datetime_local, venue, performers, url, stats } = sgEvent;
+    const { id, title, datetime_local, venue, performers, url, stats, taxonomies } = sgEvent;
 
     const externalId = `sg-${id}`;
     const eventTitle = title || performers?.[0]?.name || 'Untitled Event';
-    const category = 'Concert';
+    // Was hardcoded to 'Concert' for every SeatGeek event regardless of what
+    // it actually was — meaning even a sports event that did get fetched
+    // would have been mislabeled and effectively invisible as NFL/NBA/NCAA
+    // Football on the site. Derive it from the event's own taxonomies
+    // instead, falling back to 'Concert' only when nothing more specific matches.
+    const category = categoryFromTaxonomies(taxonomies) || 'Concert';
     const date = new Date(datetime_local);
     const image = performers?.[0]?.image || null;
     const sourceUrl = url;
@@ -299,8 +396,19 @@ export const syncSeatGeekEvents = async (perState = 300) => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
+    // Dedicated NFL/NBA/NCAA Football pull — see fetchSeatGeekSportsEvents
+    // above. The concert-only fetch above never surfaces these regardless
+    // of perState, since it's hard-filtered to 'taxonomies.name': 'concert'.
+    const sportsEvents = await fetchSeatGeekSportsEvents();
+    console.log(`Processing ${sportsEvents.length} SeatGeek Sports events...`);
+
+    for (const event of sportsEvents) {
+      await storeEvent(event);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
     console.log('✅ SeatGeek sync complete!');
-    return { success: true, totalEvents: events.length };
+    return { success: true, totalEvents: events.length + sportsEvents.length };
   } catch (error) {
     console.error('SeatGeek sync failed:', error);
     return { success: false, error: error.message };
@@ -320,6 +428,8 @@ export const scheduleSeatGeekSync = (intervalMs = 24 * 60 * 60 * 1000) => {
 export default {
   fetchSeatGeekEvents,
   fetchManySeatGeekEvents,
+  fetchSeatGeekEventsByTaxonomy,
+  fetchSeatGeekSportsEvents,
   fetchSeatGeekEventById,
   storeEvent,
   syncSeatGeekEvents,
