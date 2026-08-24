@@ -9,7 +9,7 @@
 // built-in test runner, so no npm install is required to run these).
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeTokens, tokenSimilarity, isSameDay, isSameEvent } from '../src/utils/matching.js';
+import { normalizeTokens, tokenSimilarity, isSameDay, isCloseInTime, isSameEvent } from '../src/utils/matching.js';
 
 describe('normalizeTokens', () => {
   test('lowercases, strips punctuation, and drops stopwords', () => {
@@ -58,6 +58,25 @@ describe('isSameDay', () => {
   test('invalid dates never match', () => {
     assert.equal(isSameDay('not-a-date', '2026-08-22T19:00:00Z'), false);
     assert.equal(isSameDay(null, '2026-08-22T19:00:00Z'), false);
+  });
+});
+
+describe('isCloseInTime', () => {
+  test('same instant is close', () => {
+    assert.equal(isCloseInTime('2026-08-22T19:00:00Z', '2026-08-22T19:00:00Z'), true);
+  });
+
+  test('a couple hours apart (cross-source formatting slop) is close', () => {
+    assert.equal(isCloseInTime('2026-08-22T19:00:00Z', '2026-08-22T21:30:00Z'), true);
+  });
+
+  test('a full day-vs-evening gap on the same calendar day is NOT close', () => {
+    assert.equal(isCloseInTime('2026-08-22T13:00:00Z', '2026-08-22T23:00:00Z'), false);
+  });
+
+  test('null/invalid inputs are never close', () => {
+    assert.equal(isCloseInTime(null, '2026-08-22T19:00:00Z'), false);
+    assert.equal(isCloseInTime('not a date', '2026-08-22T19:00:00Z'), false);
   });
 });
 
@@ -127,6 +146,24 @@ describe('isSameEvent', () => {
       title: 'Philadelphia 76ers vs. Boston Celtics',
     };
     assert.equal(isSameEvent(tm, sg), true);
+  });
+
+  // isSameDay alone (calendar day only) let two DIFFERENT games at the same
+  // venue on the same date pass the venue-match branch's weak title floor —
+  // e.g. a doubleheader's 1pm and 7pm games, both "Mets vs. Phillies" at
+  // the same park. Requiring the times themselves to be close closes this.
+  test('same-day doubleheader at the same venue does NOT merge (different games, same date)', () => {
+    const game1 = {
+      source: 'ticketmaster', date: '2026-07-04T17:00:00Z', city: 'Philadelphia', state: 'PA',
+      venue_name: 'Citizens Bank Park', artist_name: null,
+      title: 'New York Mets vs. Philadelphia Phillies',
+    };
+    const game2 = {
+      source: 'seatgeek', date: '2026-07-04T23:30:00Z', city: 'Philadelphia', state: 'PA',
+      venue_name: 'Citizens Bank Park', artist_name: 'New York Mets',
+      title: 'New York Mets vs. Philadelphia Phillies',
+    };
+    assert.equal(isSameEvent(game1, game2), false);
   });
 
   test('sports game merges when one source abbreviates the city (LA vs Los Angeles)', () => {

@@ -91,6 +91,33 @@ export function isSameDay(dateA, dateB) {
   );
 }
 
+// isSameDay alone (calendar day only, ignoring time) was the sole date
+// signal isSameEvent used to gate on — fine for concerts, where a venue
+// essentially never hosts two different unrelated shows on the same
+// calendar day, but not fine for sports: a same-day doubleheader (common in
+// MLB) or an afternoon-vs-evening slate at one venue means TWO different,
+// unrelated games can share a venue AND a calendar day. Without also
+// checking how close the actual start TIMES are, those could pass the
+// venue-match branch of isSameEvent (weak title floor + strong venue
+// match) and get wrongly merged into one comparison card — the same class
+// of bug the Sphere/arena regression test guards against for artists,
+// just triggered by date instead of by venue alone.
+//
+// 6 hours tolerates real cross-source formatting slop (a source reporting
+// local start time without full timezone info, gate-open time vs.
+// first-pitch time, etc.) while still being tight enough that a 1pm and a
+// 7pm game the same day at the same park don't get treated as the same
+// game.
+const SAME_TIME_TOLERANCE_MS = 6 * 60 * 60 * 1000;
+
+export function isCloseInTime(dateA, dateB, toleranceMs = SAME_TIME_TOLERANCE_MS) {
+  if (!dateA || !dateB) return false;
+  const a = new Date(dateA);
+  const b = new Date(dateB);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false;
+  return Math.abs(a.getTime() - b.getTime()) <= toleranceMs;
+}
+
 // Best-effort "is this the same real-world event" check across two rows
 // from DIFFERENT sources. Two listings are only merged when they're on the
 // same day and in the same city/state (cheap, exact, and reliable), AND
@@ -119,6 +146,7 @@ export function isSameEvent(a, b) {
   if (!a || !b) return false;
   if (a.source === b.source) return false; // only merge ACROSS sources
   if (!isSameDay(a.date, b.date)) return false;
+  if (!isCloseInTime(a.date, b.date)) return false;
   if ((a.city || '').toLowerCase().trim() !== (b.city || '').toLowerCase().trim()) return false;
   if ((a.state || '').toLowerCase().trim() !== (b.state || '').toLowerCase().trim()) return false;
 
