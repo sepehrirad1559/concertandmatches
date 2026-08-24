@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool } from '../index.js';
 import { mergeEventsAcrossSources } from './events.js';
+import { topArtistCityCombos, guideSlugify } from './guides.js';
 
 const router = express.Router();
 
@@ -50,7 +51,17 @@ router.get('/sitemap.xml', async (req, res) => {
       return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`;
     });
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlEntries.join('\n')}\n</urlset>\n`;
+    // Evergreen artist+city guide pages (see routes/guides.js) — worth a
+    // higher changefreq than per-event pages since their content (the list
+    // of upcoming shows/prices for that artist in that city) shifts as
+    // often as sync jobs run, not just once around one show's date.
+    const combos = await topArtistCityCombos();
+    const guideEntries = combos.map((c) => {
+      const loc = `${SITE_ORIGIN}/guide/${guideSlugify(c.artist_name)}-tickets-${guideSlugify(c.city)}`;
+      return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <changefreq>daily</changefreq>\n  </url>`;
+    });
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...urlEntries, ...guideEntries].join('\n')}\n</urlset>\n`;
 
     res.set('Content-Type', 'application/xml');
     res.send(xml);

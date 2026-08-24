@@ -28,24 +28,39 @@ const BOT_UA_REGEX = /bot|crawl|spider|facebookexternalhit|slackbot|twitterbot|l
 
 const PRERENDER_ORIGIN = 'https://concertandmatches-production.up.railway.app';
 
+// /guide and /guide/:slug (see backend/src/routes/guides.js) are plain
+// server-rendered content pages — a list of upcoming shows/prices for one
+// artist+city, not an interactive comparison UI — so unlike /event/:id
+// there's no SPA experience worth reserving for humans here. Proxying
+// them straight through for EVERY request (not just recognized bots)
+// keeps this one route in one place instead of duplicating the same
+// content as a second React page, and guarantees crawlers and humans see
+// byte-identical content (no dynamic-rendering divergence to worry about).
 export const config = {
-  matcher: '/event/:path*',
+  matcher: ['/event/:path*', '/guide', '/guide/:path*'],
 };
 
 export default async function middleware(request) {
+  const url = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
+
+  const isGuidePath = url.pathname === '/guide' || url.pathname.startsWith('/guide/');
+  if (isGuidePath) {
+    return proxyTo(`${PRERENDER_ORIGIN}${url.pathname}`, userAgent);
+  }
+
   if (!BOT_UA_REGEX.test(userAgent)) {
     return; // not a recognized bot — fall through to the normal SPA rewrite
   }
 
-  const url = new URL(request.url);
   // url.pathname looks like "/event/3048-shahin-najafi-erfan-anaheim"
   const pathParam = url.pathname.replace(/^\/event\//, '');
+  return proxyTo(`${PRERENDER_ORIGIN}/prerender/event/${pathParam}`, userAgent);
+}
 
+async function proxyTo(upstreamUrl, userAgent) {
   try {
-    const upstream = await fetch(`${PRERENDER_ORIGIN}/prerender/event/${pathParam}`, {
-      headers: { 'user-agent': userAgent },
-    });
+    const upstream = await fetch(upstreamUrl, { headers: { 'user-agent': userAgent } });
     const body = await upstream.text();
     return new Response(body, {
       status: upstream.status,

@@ -379,6 +379,7 @@ function Footer() {
     <footer style={{ marginTop: '40px', padding: '20px 0', borderTop: '1px solid #eee', fontSize: '12px', color: '#888' }}>
       <p>ConcertAndMatches is an independent event discovery site and is not affiliated with any ticket seller. We may earn a commission when you buy tickets through links on this site.</p>
       <p style={{ marginTop: '8px' }}>
+        <a href="/guide" style={{ color: '#888', marginRight: '16px' }}>Ticket Price Guides</a>
         <a href="/terms.html" style={{ color: '#888', marginRight: '16px' }}>Terms of Service</a>
         <a href="/privacy.html" style={{ color: '#888' }}>Privacy Policy</a>
       </p>
