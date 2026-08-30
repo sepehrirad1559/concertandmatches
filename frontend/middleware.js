@@ -24,6 +24,24 @@
 // of letting the request fall through to the SPA's index.html. Real users
 // and JS-executing crawlers (Googlebot itself renders JS fine) are
 // completely unaffected and never hit this branch's fetch.
+// FIX (2026-08-30): every branch below that should "do nothing and let the
+// normal SPA/rewrite handle this request" was doing `return;` (undefined).
+// That looked like a harmless no-op, but Vercel's documented contract for
+// Routing Middleware on non-Next.js ("other") projects is to return
+// `next()` from the `@vercel/functions` package — every code sample in
+// https://vercel.com/docs/routing-middleware/api for framework=other
+// returns something (next()/rewrite()/a Response), and bare `return;` is
+// never shown as a valid continuation. Since this middleware's matcher
+// (`/event/:path*`) runs on every single event-detail-page request — not
+// just bot ones — an undefined return here meant every real visitor
+// hitting an event page got whatever Vercel's edge runtime does with an
+// undefined middleware result instead of the SPA shell, breaking the event
+// page (and therefore the outbound "Search on Ticketmaster/SeatGeek" links
+// on it) for real humans. This shipped in commit 37084ad1 (2026-08-23),
+// which lines up exactly with clicks/visits going to ~0 in Impact.com's
+// dashboard starting that date. See @vercel/functions in package.json.
+import { next } from '@vercel/functions';
+
 const BOT_UA_REGEX = /bot|crawl|spider|facebookexternalhit|slackbot|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|bingpreview|duckduckbot|yandexbot|redditbot|skypeuripreview|facebot|ia_archiver|embedly|quora link preview|vkshare|w3c_validator|whatsapp/i;
 
 const PRERENDER_ORIGIN = 'https://concertandmatches-production.up.railway.app';
@@ -50,7 +68,7 @@ export default async function middleware(request) {
   }
 
   if (!BOT_UA_REGEX.test(userAgent)) {
-    return; // not a recognized bot — fall through to the normal SPA rewrite
+    return next(); // not a recognized bot — fall through to the normal SPA rewrite
   }
 
   // url.pathname looks like "/event/3048-shahin-najafi-erfan-anaheim"
@@ -69,6 +87,6 @@ async function proxyTo(upstreamUrl, userAgent) {
   } catch (err) {
     // If the backend is unreachable for any reason, don't break the page —
     // let the request fall through to the normal SPA instead of erroring.
-    return;
+    return next();
   }
 }
