@@ -152,7 +152,18 @@ router.get('/', async (req, res) => {
     const hasLocation = Number.isFinite(customerLat) && Number.isFinite(customerLng);
     const effectiveSort = sort || (hasLocation ? 'distance' : 'date');
 
-    let whereClause = ' WHERE 1=1';
+    // Excludes past events by default — unconditionally, not just when a
+    // caller explicitly passes startDate. Before this fix, a listing
+    // request with no date filter (the homepage's default view) had
+    // nothing excluding events whose date had already passed, so a show
+    // that already happened stayed visible/sellable-looking indefinitely
+    // until enough newer rows pushed it out of the LIMIT. A ticket-
+    // comparison site has no legitimate reason to list a past event, so
+    // this applies regardless of sort order or other filters. The
+    // startDate/endDate filters below still work as an additional narrowing
+    // on top of this — e.g. "shows in the next 7 days" — they just can no
+    // longer be the ONLY thing keeping past events out.
+    let whereClause = ' WHERE date >= NOW()';
     const params = [];
     let paramCount = 1;
 
