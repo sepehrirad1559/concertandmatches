@@ -125,7 +125,13 @@ console.log(`📦 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.
 // automatically, so pricing keeps filling in over time without anyone
 // needing to trigger it by hand. Batched (300 events per source per run) and
 // rate-limited internally, so each run only takes a couple of minutes.
-const BACKFILL_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
+// Was once/day; raised to every 6 hours (4x/day) so prices on existing
+// events fill in and refresh far sooner after a sync — see
+// EVENT_SYNC_INTERVAL_MS below for the shared reasoning on how far this can
+// go before risking Ticketmaster's daily API quota (roughly 5,000 calls/day
+// on the free Discovery API tier; each backfilled event costs one call per
+// source, so a full 300-event batch on both sources is up to ~600 calls).
+const BACKFILL_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const BACKFILL_BATCH_SIZE = 300;
 
 async function runScheduledPriceBackfill() {
@@ -159,7 +165,7 @@ await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', st
 }
 
 // First run 5 minutes after boot (so it doesn't compete with startup
-// traffic), then every 24 hours after that.
+// traffic), then every BACKFILL_INTERVAL_MS after that.
 setTimeout(runScheduledPriceBackfill, 5 * 60 * 1000);
 setInterval(runScheduledPriceBackfill, BACKFILL_INTERVAL_MS);
 
@@ -186,7 +192,21 @@ setInterval(runScheduledPriceBackfill, BACKFILL_INTERVAL_MS);
 // the canonical_events/ticket_offers tables afterward so the admin-facing
 // derived tables reflect the new data immediately rather than only on the
 // next manual /admin/canonicalize/rebuild call.
-const EVENT_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // once a day
+// Was once/day; raised to every 6 hours (4x/day) so new events, sold-out
+// events dropping off, and price movement all show up within hours instead
+// of up to a full day. A full run costs roughly ~60 Ticketmaster calls
+// (25 US + 3 Canada markets, x2 for the sports variants) and ~100-150
+// SeatGeek calls (state/province-segmented, early-exit per region once a
+// page comes back under-full) — call it ~200/run, x4/day ≈ 800/day, plus
+// up to ~600/day from the price-backfill job above. That's comfortably
+// under Ticketmaster's ~5,000-call/day free-tier quota with real headroom
+// for manual /admin/sync/* triggers too. Going more frequent than this
+// (e.g. hourly) would start eating into that headroom fast and risks
+// hitting the quota outright — if you upgrade to a paid Ticketmaster tier
+// with a higher quota, this can safely go lower than 6h; watch
+// GET /admin/health / provider_sync_logs for status:'error' rows after any
+// change here, since a rate-limited run fails loudly there, not silently.
+const EVENT_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const SEATGEEK_PER_STATE = 300;
 
 async function runScheduledEventSync() {
@@ -229,8 +249,8 @@ console.error('Canonicalize rebuild failed:', err);
 }
 }
 
-// Staggered 20 minutes after boot (after the official-sites job's 10-minute
-// slot — this is the heaviest of the three jobs, so it goes last), then
-// daily after that.
+// Staggered 20 minutes after boot (after the price-backfill job's 5-minute
+// slot — this is the heavier of the two jobs, so it goes last), then every
+// EVENT_SYNC_INTERVAL_MS after that.
 setTimeout(runScheduledEventSync, 20 * 60 * 1000);
 setInterval(runScheduledEventSync, EVENT_SYNC_INTERVAL_MS);
