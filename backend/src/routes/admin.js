@@ -463,18 +463,32 @@ router.post('/schema/add-offer-details', async (req, res) => {
     // history when appropriate"). Never updated in place, only inserted
     // into, so it's safe for this to grow independently of ticket_offers
     // being truncated/rebuilt each run.
+    //
+    // NOT a plain CREATE TABLE IF NOT EXISTS: this database already has a
+    // `price_history` table left over from database-schema.sql, an early
+    // e-commerce-style scaffold (users/tickets/orders/price_history/
+    // refund_requests) that predates the events/canonical_events model this
+    // app actually runs on and was never wired into any route. That old
+    // table uses event_id/ticket_id/marketplace columns, not
+    // canonical_event_id/provider_id — so CREATE TABLE IF NOT EXISTS was a
+    // silent no-op against it, and the CREATE INDEX below then failed with
+    // "column canonical_event_id does not exist". Build it column-by-column
+    // with ADD COLUMN IF NOT EXISTS instead, so this works whether the table
+    // is brand new or is that old leftover shape — additive only, doesn't
+    // touch/drop the old columns. canonical_event_id is left nullable here
+    // (rather than NOT NULL, as originally written) since ADD COLUMN NOT
+    // NULL fails outright on a table that already has rows.
+    await pool.query(`CREATE TABLE IF NOT EXISTS price_history (id SERIAL PRIMARY KEY)`);
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS price_history (
-        id SERIAL PRIMARY KEY,
-        canonical_event_id INTEGER NOT NULL REFERENCES canonical_events(id) ON DELETE CASCADE,
-        provider_id INTEGER REFERENCES providers(id),
-        provider_offer_id TEXT NOT NULL,
-        price NUMERIC,
-        total_price NUMERIC,
-        recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS idx_price_history_event ON price_history (canonical_event_id, recorded_at);
+      ALTER TABLE price_history
+        ADD COLUMN IF NOT EXISTS canonical_event_id INTEGER REFERENCES canonical_events(id) ON DELETE CASCADE,
+        ADD COLUMN IF NOT EXISTS provider_id INTEGER REFERENCES providers(id),
+        ADD COLUMN IF NOT EXISTS provider_offer_id TEXT,
+        ADD COLUMN IF NOT EXISTS price NUMERIC,
+        ADD COLUMN IF NOT EXISTS total_price NUMERIC,
+        ADD COLUMN IF NOT EXISTS recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_price_history_event ON price_history (canonical_event_id, recorded_at)`);
 
     res.json({ success: true, message: 'canonical_events/ticket_offers extended with the remaining normalized fields; price_history created. Run POST /admin/canonicalize/rebuild to populate.' });
   } catch (error) {
