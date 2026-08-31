@@ -490,7 +490,7 @@ router.post('/schema/add-offer-details', async (req, res) => {
     `);
     const legacyCols = await pool.query(
       `SELECT column_name FROM information_schema.columns
-       WHERE table_name = 'price_history' AND column_name IN ('event_id', 'ticket_id')`
+       WHERE table_name = 'price_history' AND column_name IN ('event_id', 'ticket_id', 'price')`
       );
     for (const { column_name } of legacyCols.rows) {
       await pool.query(`ALTER TABLE price_history ALTER COLUMN ${column_name} DROP NOT NULL`);
