@@ -488,10 +488,17 @@ router.post('/schema/add-offer-details', async (req, res) => {
         ADD COLUMN IF NOT EXISTS total_price NUMERIC,
         ADD COLUMN IF NOT EXISTS recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     `);
+    const legacyCols = await pool.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_name = 'price_history' AND column_name IN ('event_id', 'ticket_id')`
+      );
+    for (const { column_name } of legacyCols.rows) {
+      await pool.query(`ALTER TABLE price_history ALTER COLUMN ${column_name} DROP NOT NULL`);
+    }
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_price_history_event ON price_history (canonical_event_id, recorded_at)`);
 
     res.json({ success: true, message: 'canonical_events/ticket_offers extended with the remaining normalized fields; price_history created. Run POST /admin/canonicalize/rebuild to populate.' });
-  } catch (error) {
+  } catch (error)  {
     console.error('Error adding offer-detail columns:', error);
     res.status(500).json({ success: false, error: error.message });
   }
