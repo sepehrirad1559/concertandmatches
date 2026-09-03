@@ -494,7 +494,7 @@ export default function App() {
   }, []);
 
   // Keeps `selectedEvent` in sync with the URL. When a customer clicks
-  // "View Event" we already have the full merged object in hand (see the
+  // "Find Tickets" we already have the full merged object in hand (see the
   // grid button below) and just navigate — no fetch needed, no flash of a
   // loading state. But a direct visit, a page refresh, a shared link, or a
   // search engine crawler only has the URL, with no event data in memory,
@@ -861,7 +861,7 @@ export default function App() {
                             fontWeight: 'bold',
                             textAlign: 'center',
                           }}>
-                          {isOfficialLink ? `Visit ${link.name} ↗` : `Search on ${link.name} ↗`}
+                          {isOfficialLink ? `Visit ${link.name} ↗` : `Buy on ${link.name} ↗`}
                         </a>
                         {showTierBreakdown && (
                           <div style={{ padding: '8px 6px 4px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
@@ -1192,7 +1192,7 @@ export default function App() {
                     fontWeight: 'bold',
                     borderRadius: '8px',
                   }}>
-                  View Event
+                  Find Tickets
                 </button>
               </div>
             </div>
