@@ -154,16 +154,21 @@ function trackedTicketmasterLink(destinationUrl) {
   return `${TICKETMASTER_TRACKED_BASE}?u=${encodeURIComponent(destinationUrl)}`;
 }
 
-// Impact.com tracked link for the approved TicketNetwork affiliate program.
-// Unlike Ticketmaster's evyy.net base, this is a fixed short link generated
-// by Impact.com's "Create a link" tool (Brand: TicketNetwork Affiliate
-// Program) rather than a documented `<base>?u=<destination>` template — we
-// don't have a confirmed per-destination wrapping format for this campaign,
-// so rather than guess at a query param (risking a dead link or, worse, an
-// untracked click that pays TicketNetwork nothing), every TicketNetwork
-// button uses this exact tracked URL. It lands on ticketnetwork.com, where
-// the visitor can search for the event themselves.
-const TICKETNETWORK_TRACKED_LINK = 'https://goto.ticketnetwork.com/6kQ1kV';
+// TicketNetwork search link for a specific event. TicketNetwork's Impact.com
+// affiliate program is approved, but we don't have a confirmed per-
+// destination wrapping format for their tracked link (unlike Ticketmaster's
+// documented `<base>?u=<destination>` evyy.net template) — a fixed
+// untargeted tracking URL was used here previously, which sent every event
+// to the same TicketNetwork homepage instead of that event's own listing.
+// This builds a per-event search URL on ticketnetwork.com itself instead
+// (same fallback pattern as Ticketmaster/SeatGeek below when there's no
+// exact source_url), so clicking through actually searches for the event
+// the visitor was looking at. This is untracked (no affiliate base wrapped
+// around it) until the tracked-link wrap format is confirmed — see
+// buildFindTicketsLinks' ticketnetwork entry.
+function ticketNetworkSearchLink(query) {
+  return `https://www.ticketnetwork.com/search?q=${query}`;
+}
 
 // Ticketmaster is a live, tracked affiliate link (program approved). SeatGeek
 // is still a plain (non-tracked) link — its affiliate application is
@@ -242,15 +247,16 @@ function buildFindTicketsLinks(event) {
   // Mercury Web Services API, which we don't have credentials for yet). Per
   // an explicit product decision, every event gets a TicketNetwork button
   // anyway, same as the Ticketmaster/SeatGeek "search" fallback pattern:
-  // it's a blind link to TicketNetwork's own site, not a confirmed listing,
-  // and is never marked "best price" or given a price range since we don't
-  // know if this event is even sold there.
+  // it's a per-event search link to TicketNetwork's own site (built from
+  // this event's title/artist, same `q` used for the other fallbacks above),
+  // not a confirmed listing, and is never marked "best price" or given a
+  // price range since we don't know if this event is even sold there.
   return [
     ...confirmedLinks,
     {
       source: 'ticketnetwork',
       name: 'TicketNetwork',
-      url: TICKETNETWORK_TRACKED_LINK,
+      url: ticketNetworkSearchLink(q),
       minPrice: null,
       maxPrice: null,
       isBest: false,
