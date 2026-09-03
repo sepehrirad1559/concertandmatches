@@ -154,6 +154,17 @@ function trackedTicketmasterLink(destinationUrl) {
   return `${TICKETMASTER_TRACKED_BASE}?u=${encodeURIComponent(destinationUrl)}`;
 }
 
+// Impact.com tracked link for the approved TicketNetwork affiliate program.
+// Unlike Ticketmaster's evyy.net base, this is a fixed short link generated
+// by Impact.com's "Create a link" tool (Brand: TicketNetwork Affiliate
+// Program) rather than a documented `<base>?u=<destination>` template — we
+// don't have a confirmed per-destination wrapping format for this campaign,
+// so rather than guess at a query param (risking a dead link or, worse, an
+// untracked click that pays TicketNetwork nothing), every TicketNetwork
+// button uses this exact tracked URL. It lands on ticketnetwork.com, where
+// the visitor can search for the event themselves.
+const TICKETNETWORK_TRACKED_LINK = 'https://goto.ticketnetwork.com/6kQ1kV';
+
 // Ticketmaster is a live, tracked affiliate link (program approved). SeatGeek
 // is still a plain (non-tracked) link — its affiliate application is
 // pending. Swap it in for its network's tracked deep link once approved.
@@ -200,7 +211,7 @@ function buildFindTicketsLinks(event) {
     ? event.offers
     : (event.source ? [{ source: event.source, source_url: event.source_url, min_price: event.min_price, max_price: event.max_price }] : []);
 
-  return offers
+  const confirmedLinks = offers
     .filter((o) => sourceMeta[o.source])
     .map((o) => ({
       source: o.source,
@@ -224,6 +235,28 @@ function buildFindTicketsLinks(event) {
       if (b.minPrice != null) return 1;
       return 0;
     });
+
+  // TicketNetwork is a deliberate, explicit exception to the "confirmed
+  // listings only" rule above (approved Impact.com affiliate program, but
+  // we have no TicketNetwork inventory data — that requires their separate
+  // Mercury Web Services API, which we don't have credentials for yet). Per
+  // an explicit product decision, every event gets a TicketNetwork button
+  // anyway, same as the Ticketmaster/SeatGeek "search" fallback pattern:
+  // it's a blind link to TicketNetwork's own site, not a confirmed listing,
+  // and is never marked "best price" or given a price range since we don't
+  // know if this event is even sold there.
+  return [
+    ...confirmedLinks,
+    {
+      source: 'ticketnetwork',
+      name: 'TicketNetwork',
+      url: TICKETNETWORK_TRACKED_LINK,
+      minPrice: null,
+      maxPrice: null,
+      isBest: false,
+      eventRowId: null,
+    },
+  ];
 }
 
 // Shown wherever outbound ticket links appear. Required by the FTC whenever
@@ -797,6 +830,12 @@ export default function App() {
                       : null;
                     const highlightBest = link.isBest && findTicketsLinks.length > 1;
                     const isOfficialLink = link.source === 'official';
+                    // TicketNetwork is a blind link (see buildFindTicketsLinks)
+                    // with no confirmed listing or price for this event, so it
+                    // gets the same "no price footer" treatment as official
+                    // site links — showing "Price not yet reported by this
+                    // seller" would wrongly imply we know it's listed there.
+                    const suppressPriceFooter = isOfficialLink || link.source === 'ticketnetwork';
                     return (
                       <div key={link.source}>
                         <a
@@ -861,7 +900,7 @@ export default function App() {
                             )}
                           </div>
                         )}
-                        {!showTierBreakdown && !priceLabel && !isOfficialLink && (
+                        {!showTierBreakdown && !priceLabel && !suppressPriceFooter && (
                           <div style={{
                             padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px',
                             backgroundColor: '#fff', fontSize: '13px', color: '#000', textAlign: 'center', fontWeight: 'bold',
