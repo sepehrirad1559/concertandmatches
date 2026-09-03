@@ -154,22 +154,6 @@ function trackedTicketmasterLink(destinationUrl) {
   return `${TICKETMASTER_TRACKED_BASE}?u=${encodeURIComponent(destinationUrl)}`;
 }
 
-// TicketNetwork search link for a specific event. TicketNetwork's Impact.com
-// affiliate program is approved, but we don't have a confirmed per-
-// destination wrapping format for their tracked link (unlike Ticketmaster's
-// documented `<base>?u=<destination>` evyy.net template) — a fixed
-// untargeted tracking URL was used here previously, which sent every event
-// to the same TicketNetwork homepage instead of that event's own listing.
-// This builds a per-event search URL on ticketnetwork.com itself instead
-// (same fallback pattern as Ticketmaster/SeatGeek below when there's no
-// exact source_url), so clicking through actually searches for the event
-// the visitor was looking at. This is untracked (no affiliate base wrapped
-// around it) until the tracked-link wrap format is confirmed — see
-// buildFindTicketsLinks' ticketnetwork entry.
-function ticketNetworkSearchLink(query) {
-  return `https://www.ticketnetwork.com/search?q=${query}`;
-}
-
 // Ticketmaster is a live, tracked affiliate link (program approved). SeatGeek
 // is still a plain (non-tracked) link — its affiliate application is
 // pending. Swap it in for its network's tracked deep link once approved.
@@ -241,28 +225,16 @@ function buildFindTicketsLinks(event) {
       return 0;
     });
 
-  // TicketNetwork is a deliberate, explicit exception to the "confirmed
-  // listings only" rule above (approved Impact.com affiliate program, but
-  // we have no TicketNetwork inventory data — that requires their separate
-  // Mercury Web Services API, which we don't have credentials for yet). Per
-  // an explicit product decision, every event gets a TicketNetwork button
-  // anyway, same as the Ticketmaster/SeatGeek "search" fallback pattern:
-  // it's a per-event search link to TicketNetwork's own site (built from
-  // this event's title/artist, same `q` used for the other fallbacks above),
-  // not a confirmed listing, and is never marked "best price" or given a
-  // price range since we don't know if this event is even sold there.
-  return [
-    ...confirmedLinks,
-    {
-      source: 'ticketnetwork',
-      name: 'TicketNetwork',
-      url: ticketNetworkSearchLink(q),
-      minPrice: null,
-      maxPrice: null,
-      isBest: false,
-      eventRowId: null,
-    },
-  ];
+  // TicketNetwork used to get a button on every event — a blind search link
+  // to ticketnetwork.com, since we have no TicketNetwork inventory data
+  // (that requires their separate Mercury Web Services API, which we don't
+  // have credentials for yet) to confirm an event is actually listed there.
+  // That meant visitors could click "Buy on TicketNetwork" for an event
+  // TicketNetwork doesn't even sell, only to land on a search with no
+  // results. Per product decision, TicketNetwork is removed until we have
+  // real inventory data (see docs/ticketnetwork-mws-application-draft.md) —
+  // same "confirmed listings only" rule as every other seller above.
+  return confirmedLinks;
 }
 
 // Shown wherever outbound ticket links appear. Required by the FTC whenever
@@ -836,12 +808,7 @@ export default function App() {
                       : null;
                     const highlightBest = link.isBest && findTicketsLinks.length > 1;
                     const isOfficialLink = link.source === 'official';
-                    // TicketNetwork is a blind link (see buildFindTicketsLinks)
-                    // with no confirmed listing or price for this event, so it
-                    // gets the same "no price footer" treatment as official
-                    // site links — showing "Price not yet reported by this
-                    // seller" would wrongly imply we know it's listed there.
-                    const suppressPriceFooter = isOfficialLink || link.source === 'ticketnetwork';
+                    const suppressPriceFooter = isOfficialLink;
                     return (
                       <div key={link.source}>
                         <a
