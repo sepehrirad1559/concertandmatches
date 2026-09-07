@@ -447,7 +447,7 @@ function EventCard({ event, onSelect }) {
           style={{ width: '100%', height: '150px', objectFit: 'cover' }}
         />
       )}
-      <div style={{ padding: '12px 0 15px' }}>
+      <div style={{ padding: '12px 0 0' }}>
         <h4>{event.title}</h4>
         <p>📅 {formatDate(event.date)}</p>
         <p>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
@@ -478,22 +478,21 @@ function EventCard({ event, onSelect }) {
             {formatOffersComparison(event)}
           </p>
         )}
-        <div style={{ padding: '0 15px' }}>
-          <button
-            onClick={(e) => { e.stopPropagation(); onSelect(event); }}
-            style={{
-              padding: '8px 16px',
-              cursor: 'pointer',
-              width: '100%',
-              border: '1px solid #8b0000',
-              backgroundColor: '#8b0000',
-              color: 'white',
-              fontWeight: 'bold',
-              borderRadius: '8px',
-            }}>
-            Find Tickets
-          </button>
-        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onSelect(event); }}
+          style={{
+            marginTop: '10px',
+            padding: '10px 16px',
+            cursor: 'pointer',
+            width: '100%',
+            display: 'block',
+            border: 'none',
+            backgroundColor: '#8b0000',
+            color: 'white',
+            fontWeight: 'bold',
+          }}>
+          Find Tickets
+        </button>
       </div>
     </div>
   );
