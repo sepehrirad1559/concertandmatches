@@ -508,7 +508,7 @@ function EventSection({ title, events, loading, onSelect }) {
   if (!loading && (!events || events.length === 0)) return null;
   return (
     <div style={{ marginBottom: '32px' }}>
-      <h3 style={{ marginBottom: '12px' }}>{title}</h3>
+      <h3 style={{ marginBottom: '12px', fontSize: '26px' }}>{title}</h3>
       {loading ? (
         <p style={{ color: '#666' }}>Loading…</p>
       ) : (
@@ -1510,7 +1510,7 @@ export default function App() {
       />
 
       <div id="featured-events" style={{ marginTop: '20px' }}>
-        <h3>Featured Events</h3>
+        <h3 style={{ fontSize: '26px' }}>Featured Events</h3>
 
         {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
           <p style={{ color: '#666' }}>
