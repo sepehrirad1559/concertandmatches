@@ -1202,27 +1202,6 @@ export default function App() {
         Be The First To Buy Your Ticket
       </h1>
 
-      <EventSection
-        title="Popular Events"
-        events={discoverData?.popular}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      <EventSection
-        title="Recommended for You"
-        events={discoverData?.recommended}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      {(discoverLoading || discoverData?.city) && (
-        <EventSection
-          title={`Trending Events Near ${discoverData?.city || '…'}`}
-          events={discoverData?.trending}
-          loading={discoverLoading}
-          onSelect={handleSelectEvent}
-        />
-      )}
-
       <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
           <input
@@ -1386,6 +1365,27 @@ export default function App() {
             )}
           </div>
         </form>
+      )}
+
+      <EventSection
+        title="Popular Events"
+        events={discoverData?.popular}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      <EventSection
+        title="Recommended for You"
+        events={discoverData?.recommended}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      {(discoverLoading || discoverData?.city) && (
+        <EventSection
+          title={`Trending Events Near ${discoverData?.city || '…'}`}
+          events={discoverData?.trending}
+          loading={discoverLoading}
+          onSelect={handleSelectEvent}
+        />
       )}
 
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
