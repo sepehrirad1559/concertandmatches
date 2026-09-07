@@ -429,8 +429,8 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
               textAlign: 'center',
               boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
             }}>
-            <div style={{ fontSize: '26px', marginBottom: '6px' }}>{cat.emoji}</div>
-            <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{cat.label}</div>
+            <div style={{ fontSize: '34px', marginBottom: '8px' }}>{cat.emoji}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{cat.label}</div>
           </button>
         );
       })}
