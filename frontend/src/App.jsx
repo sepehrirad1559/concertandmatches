@@ -70,6 +70,103 @@ function logTicketClick(offer, event) {
   }
 }
 
+// ---- Lightweight, anonymous per-browser personalization signal, used by
+// the "Recommended for You" discovery section (there's no login/account
+// system on this site, so this — plus location and overall popularity — is
+// the only "user information/preference" available for a returning
+// visitor). Every time a visitor clicks through to a seller for an event,
+// we bump a tally of that event's category in localStorage; the two
+// categories with the highest tally are sent to GET /events/discover as a
+// small ranking boost. Never blocks anything and is skipped entirely if
+// localStorage is unavailable (private browsing, storage disabled, etc).
+const CATEGORY_INTEREST_KEY = 'cm_category_interest';
+
+function bumpCategoryInterest(category) {
+  if (!category) return;
+  try {
+    const raw = window.localStorage.getItem(CATEGORY_INTEREST_KEY);
+    const tally = raw ? JSON.parse(raw) : {};
+    tally[category] = (tally[category] || 0) + 1;
+    window.localStorage.setItem(CATEGORY_INTEREST_KEY, JSON.stringify(tally));
+  } catch (_err) {
+    // Personalization is a nice-to-have, never worth breaking a real click over.
+  }
+}
+
+function getPreferredCategories(max = 2) {
+  try {
+    const raw = window.localStorage.getItem(CATEGORY_INTEREST_KEY);
+    if (!raw) return [];
+    const tally = JSON.parse(raw);
+    return Object.entries(tally)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, max)
+      .map(([category]) => category);
+  } catch (_err) {
+    return [];
+  }
+}
+
+// ---- Visitor location, resolved for the discovery sections below (Popular/
+// Recommended/Trending/by-category). Two sources, tried in this order:
+//  1. A ZIP code the visitor typed in (see the homepage's ZIP input) —
+//     looked up via zippopotam.us (free, no API key, CORS-enabled), which
+//     returns the ZIP's place name and coordinates directly — exactly the
+//     "identify the nearest city associated with that ZIP code" the spec
+//     asks for, with no separate reverse-geocoding step needed.
+//  2. Browser geolocation (already used elsewhere on this page for
+//     nearest-first sorting) — reverse-geocoded to a city name via
+//     bigdatacloud's free, keyless, CORS-enabled reverse-geocode API, since
+//     geolocation alone gives coordinates but not a city name to put in the
+//     "Trending Events Near {city}" heading.
+// Cached in localStorage so a returning visitor doesn't need to re-enter
+// their ZIP or re-prompt for geolocation every visit.
+const LOCATION_CACHE_KEY = 'cm_location';
+
+function loadCachedLocation() {
+  try {
+    const raw = window.localStorage.getItem(LOCATION_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_err) {
+    return null;
+  }
+}
+
+function saveCachedLocation(loc) {
+  try {
+    window.localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(loc));
+  } catch (_err) {
+    // Non-fatal — the location just won't persist across visits.
+  }
+}
+
+async function resolveZipLocation(zip) {
+  const response = await fetch(`https://api.zippopotam.us/us/${encodeURIComponent(zip)}`);
+  if (!response.ok) throw new Error('ZIP code not found');
+  const data = await response.json();
+  const place = data.places && data.places[0];
+  if (!place) throw new Error('ZIP code not found');
+  return {
+    city: place['place name'],
+    state: place['state abbreviation'],
+    lat: parseFloat(place.latitude),
+    lng: parseFloat(place.longitude),
+    source: 'zip',
+    zip,
+  };
+}
+
+async function reverseGeocodeCity(lat, lng) {
+  const response = await fetch(
+    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+  );
+  if (!response.ok) throw new Error('Reverse geocode failed');
+  const data = await response.json();
+  const city = data.city || data.locality || null;
+  if (!city) throw new Error('Reverse geocode returned no city');
+  return { city, state: data.principalSubdivisionCode ? data.principalSubdivisionCode.split('-').pop() : null, lat, lng, source: 'geolocation' };
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
@@ -334,6 +431,91 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
   );
 }
 
+// A single event card — extracted from the main "Featured Events" grid so
+// the event-discovery sections below (Popular/Recommended/Trending/by-
+// category) can share the exact same card instead of duplicating this
+// markup seven more times.
+function EventCard({ event, onSelect }) {
+  return (
+    <div style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
+      {event.image_url && (
+        <img
+          src={event.image_url}
+          alt={event.title}
+          style={{ width: '100%', height: '150px', objectFit: 'cover' }}
+        />
+      )}
+      <div style={{ padding: '15px' }}>
+        <h4>{event.title}</h4>
+        <p>📅 {formatDate(event.date)}</p>
+        <p>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
+        {formatDistance(event.distance_km) && (
+          <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>🚗 {formatDistance(event.distance_km)}</p>
+        )}
+        <p>
+          💰 {formatPrice(event)}
+          {Array.isArray(event.offers) && event.offers.length > 1 && (
+            <span style={{
+              marginLeft: '8px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              color: 'white',
+              backgroundColor: '#2e7d32',
+              padding: '2px 6px',
+              borderRadius: '8px',
+              verticalAlign: 'middle',
+            }}>
+              BEST PRICE
+            </span>
+          )}
+        </p>
+        {formatOffersComparison(event) && (
+          <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 10px' }}>
+            {formatOffersComparison(event)}
+          </p>
+        )}
+        <button
+          onClick={() => onSelect(event)}
+          style={{
+            padding: '8px 16px',
+            cursor: 'pointer',
+            width: '100%',
+            border: '1px solid #8b0000',
+            backgroundColor: '#8b0000',
+            color: 'white',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+          }}>
+          Find Tickets
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// One event-discovery row (Popular Events / Recommended for You / Trending
+// Events Near {city} / Concerts / Sports / Theater / Comedy) — a heading
+// plus up to 5 EventCards in the same responsive grid the main listing
+// uses. Renders nothing while loading or once it's clear the platform has
+// no events at all for this section, rather than showing an empty heading.
+function EventSection({ title, events, loading, onSelect }) {
+  if (!loading && (!events || events.length === 0)) return null;
+  return (
+    <div style={{ marginBottom: '32px' }}>
+      <h3 style={{ marginBottom: '12px' }}>{title}</h3>
+      {loading ? (
+        <p style={{ color: '#666' }}>Loading…</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          {events.map((event) => (
+            <EventCard key={`${event.id}-${event.source || ''}`} event={event} onSelect={onSelect} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Platform logo: a gradient ticket badge (reusing the same purple → pink →
 // orange gradient family as the category tiles above, so it reads as part
 // of the same brand) with a white ticket glyph — a perforated stub with a
@@ -470,6 +652,92 @@ export default function App() {
       { timeout: 8000, maximumAge: 5 * 60 * 1000 }
     );
   }, []);
+
+  // ---- Event-discovery homepage sections: Popular Events, Recommended for
+  // You, Trending Events Near {city}, and Concerts/Sports/Theater/Comedy. ----
+  const [zipInput, setZipInput] = useState('');
+  const [zipStatus, setZipStatus] = useState('idle'); // 'idle' | 'loading' | 'error'
+  // The resolved { city, state, lat, lng, source, zip? } used for every
+  // discovery section below — from a ZIP the visitor typed in, or (once)
+  // reverse-geocoded from browser geolocation. Restored from localStorage
+  // on first load so a returning visitor doesn't have to re-enter it.
+  const [discoverLocation, setDiscoverLocation] = useState(() => loadCachedLocation());
+  const [discoverData, setDiscoverData] = useState(null);
+  const [discoverLoading, setDiscoverLoading] = useState(true);
+
+  const handleZipSubmit = async (e) => {
+    e.preventDefault();
+    const zip = zipInput.trim();
+    if (!/^\d{5}$/.test(zip)) {
+      setZipStatus('error');
+      return;
+    }
+    setZipStatus('loading');
+    try {
+      const loc = await resolveZipLocation(zip);
+      setDiscoverLocation(loc);
+      saveCachedLocation(loc);
+      setZipStatus('idle');
+      setZipInput('');
+    } catch (_err) {
+      setZipStatus('error');
+    }
+  };
+
+  // Falls back to reverse-geocoding the browser's geolocation into a city
+  // name — but only once we know it (locationStatus 'granted') and only if
+  // the visitor hasn't already given us a ZIP code (a typed ZIP is a more
+  // deliberate, more precise signal than "wherever the browser says you are
+  // right now", so it always wins).
+  useEffect(() => {
+    if (discoverLocation || locationStatus !== 'granted' || userLat == null || userLng == null) return;
+    let cancelled = false;
+    reverseGeocodeCity(userLat, userLng)
+      .then((loc) => {
+        if (cancelled) return;
+        setDiscoverLocation(loc);
+        saveCachedLocation(loc);
+      })
+      .catch(() => {
+        // No city name available — the discovery sections below just run
+        // without one (nationwide "Popular"/"Recommended", and "Trending
+        // Events Near {city}" is skipped rather than showing a blank city).
+      });
+    return () => { cancelled = true; };
+  }, [discoverLocation, locationStatus, userLat, userLng]);
+
+  // Loads all seven discovery sections in one call once we know whatever
+  // location we're going to know (a resolved ZIP/geolocation city, or that
+  // none is coming — we don't wait forever on geolocation permission).
+  useEffect(() => {
+    if (!discoverLocation && locationStatus === 'pending') return;
+    let cancelled = false;
+    setDiscoverLoading(true);
+    const params = new URLSearchParams();
+    if (discoverLocation) {
+      params.set('lat', String(discoverLocation.lat));
+      params.set('lng', String(discoverLocation.lng));
+      params.set('city', discoverLocation.city);
+    } else if (locationStatus === 'granted' && userLat != null && userLng != null) {
+      params.set('lat', String(userLat));
+      params.set('lng', String(userLng));
+    }
+    const prefCategories = getPreferredCategories();
+    if (prefCategories.length > 0) params.set('prefCategories', prefCategories.join(','));
+
+    fetch(`${API_URL}/events/discover?${params.toString()}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled) setDiscoverData(data);
+      })
+      .catch(() => {
+        if (!cancelled) setDiscoverData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setDiscoverLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [discoverLocation, locationStatus, userLat, userLng]);
 
   // Keeps `selectedEvent` in sync with the URL. When a customer clicks
   // "Find Tickets" we already have the full merged object in hand (see the
@@ -704,6 +972,17 @@ export default function App() {
     setActiveLocation('');
   };
 
+  // Shared by every event card on the homepage — the main "Featured Events"
+  // grid and every discovery section (Popular/Recommended/Trending/by-
+  // category) alike — so a click anywhere feeds the same category-interest
+  // tally that personalizes "Recommended for You" (see bumpCategoryInterest
+  // above) before navigating to the event's own page.
+  const handleSelectEvent = (event) => {
+    bumpCategoryInterest(event.category);
+    setSelectedEvent(event);
+    navigate(buildEventPath(event));
+  };
+
   const handleLoadMore = async () => {
     setEventsLoadingMore(true);
     try {
@@ -916,6 +1195,86 @@ export default function App() {
         Be The First To Buy Your Ticket
       </h1>
 
+      <div style={{ marginBottom: '32px' }}>
+        <form
+          onSubmit={handleZipSubmit}
+          style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '4px' }}>
+          <label style={{ fontSize: '13px', color: '#666' }}>
+            📍{discoverLocation ? ` Showing recommendations for ${discoverLocation.city}${discoverLocation.state ? `, ${discoverLocation.state}` : ''}.` : ' Enter your ZIP code for local recommendations:'}
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="ZIP code"
+            value={zipInput}
+            onChange={(e) => setZipInput(e.target.value)}
+            maxLength={5}
+            style={{ padding: '6px 10px', width: '100px' }}
+          />
+          <button type="submit" disabled={zipStatus === 'loading'} style={{ padding: '6px 14px', cursor: 'pointer' }}>
+            {zipStatus === 'loading' ? 'Looking up…' : discoverLocation ? 'Update' : 'Go'}
+          </button>
+          {discoverLocation && (
+            <button
+              type="button"
+              onClick={() => { setDiscoverLocation(null); saveCachedLocation(null); }}
+              style={{ padding: '6px 14px', cursor: 'pointer' }}>
+              Clear
+            </button>
+          )}
+        </form>
+        {zipStatus === 'error' && (
+          <p style={{ color: '#c62828', fontSize: '13px', margin: '4px 0 0' }}>
+            That doesn't look like a valid US ZIP code — please try again.
+          </p>
+        )}
+      </div>
+
+      <EventSection
+        title="Popular Events"
+        events={discoverData?.popular}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      <EventSection
+        title="Recommended for You"
+        events={discoverData?.recommended}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      {(discoverLoading || discoverData?.city) && (
+        <EventSection
+          title={`Trending Events Near ${discoverData?.city || '…'}`}
+          events={discoverData?.trending}
+          loading={discoverLoading}
+          onSelect={handleSelectEvent}
+        />
+      )}
+      <EventSection
+        title="Concerts"
+        events={discoverData?.categories?.concerts}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      <EventSection
+        title="Sports"
+        events={discoverData?.categories?.sports}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      <EventSection
+        title="Theater"
+        events={discoverData?.categories?.theater}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      <EventSection
+        title="Comedy"
+        events={discoverData?.categories?.comedy}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+
       <div style={{ marginTop: '20px' }}>
         <h3>Featured Events</h3>
 
@@ -1116,59 +1475,7 @@ export default function App() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
           {events.map((event) => (
-            <div key={event.id} style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
-              {event.image_url && (
-                <img
-                  src={event.image_url}
-                  alt={event.title}
-                  style={{ width: '100%', height: '150px', objectFit: 'cover' }}
-                />
-              )}
-              <div style={{ padding: '15px' }}>
-                <h4>{event.title}</h4>
-                <p>📅 {formatDate(event.date)}</p>
-                <p>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
-                {formatDistance(event.distance_km) && (
-                  <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>🚗 {formatDistance(event.distance_km)}</p>
-                )}
-                <p>
-                  💰 {formatPrice(event)}
-                  {Array.isArray(event.offers) && event.offers.length > 1 && (
-                    <span style={{
-                      marginLeft: '8px',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      color: 'white',
-                      backgroundColor: '#2e7d32',
-                      padding: '2px 6px',
-                      borderRadius: '8px',
-                      verticalAlign: 'middle',
-                    }}>
-                      BEST PRICE
-                    </span>
-                  )}
-                </p>
-                {formatOffersComparison(event) && (
-                  <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 10px' }}>
-                    {formatOffersComparison(event)}
-                  </p>
-                )}
-                <button
-                  onClick={() => { setSelectedEvent(event); navigate(buildEventPath(event)); }}
-                  style={{
-                    padding: '8px 16px',
-                    cursor: 'pointer',
-                    width: '100%',
-                    border: '1px solid #8b0000',
-                    backgroundColor: '#8b0000',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    borderRadius: '8px',
-                  }}>
-                  Find Tickets
-                </button>
-              </div>
-            </div>
+            <EventCard key={event.id} event={event} onSelect={handleSelectEvent} />
           ))}
         </div>
 

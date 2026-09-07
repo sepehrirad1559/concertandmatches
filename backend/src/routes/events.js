@@ -362,6 +362,320 @@ async function getMergedEventById(eventRowId) {
   return merged[0];
 }
 
+// ---- Homepage event-discovery sections (Popular / Recommended / Trending /
+// by-category) ------------------------------------------------------------
+//
+// Category match rules mirror the frontend's own quick-filter tiles (see
+// EVENT_CATEGORIES in frontend/src/App.jsx) so a "Concerts"/"Theater"/
+// "Comedy" section here contains exactly the same kinds of events those
+// tiles would show. "Sports" is new here — the homepage tiles split sports
+// into separate NFL/NBA/NCAA Football tiles instead — built the same way:
+// an exact-category list first, a word-boundary keyword match as a net for
+// anything a source tagged less specifically (see services/ticketmaster.js
+// and services/seatgeek.js for why category values are this inconsistent
+// across sources).
+const DISCOVER_CATEGORY_RULES = {
+  concerts: { categories: ['Music', 'Concert'], keywords: [] },
+  sports: {
+    categories: ['NFL', 'NBA', 'NCAA Football', 'Sports', 'Football', 'Basketball'],
+    keywords: ['NFL', 'NBA', 'NCAA', 'Football', 'Basketball', 'Baseball', 'Hockey', 'Soccer', 'MLB', 'NHL', 'MLS'],
+  },
+  theater: { categories: ['Arts & Theatre', 'Theatre', 'Theater'], keywords: [] },
+  comedy: { categories: [], keywords: ['Comedy', 'Stand-Up', 'Stand Up'] },
+};
+
+// How many events each discover section should return.
+const DISCOVER_SECTION_COUNT = 5;
+
+function buildCategoryWhere(rule, paramCountStart, params) {
+  let paramCount = paramCountStart;
+  const parts = [];
+  if (rule.categories.length > 0) {
+    parts.push(`category = ANY($${paramCount}::text[])`);
+    params.push(rule.categories);
+    paramCount++;
+  }
+  if (rule.keywords.length > 0) {
+    const orParts = rule.keywords.map((_, i) => {
+      const p = paramCount + i;
+      return `(title ~* $${p} OR artist_name ~* $${p} OR venue_name ~* $${p} OR category ~* $${p})`;
+    });
+    parts.push(`(${orParts.join(' OR ')})`);
+    rule.keywords.forEach((kw) => params.push(`\\m${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\M`));
+    paramCount += rule.keywords.length;
+  }
+  return { sql: parts.length ? `(${parts.join(' OR ')})` : '', paramCount };
+}
+
+// Raw-row fetch shared by every discover section below: upcoming events
+// only, optionally distance-scored/sorted from (lat,lng) when the visitor's
+// location is known, optionally narrowed to one DISCOVER_CATEGORY_RULES
+// entry. Returns raw (pre-merge) rows — callers merge with
+// mergeEventsAcrossSources themselves so each section can attach its own
+// scoring afterward. Each category section runs this as its OWN dedicated
+// query (rather than slicing one shared pool) specifically so a thin
+// category never comes up short just because the shared pool's LIMIT
+// happened to fill up with other categories first.
+async function fetchDiscoverCandidates(dbPool, { lat, lng, categoryRule = null, limitRaw = 400 }) {
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+  const params = [];
+  let paramCount = 1;
+  let whereClause = 'WHERE date >= NOW()';
+
+  if (categoryRule) {
+    const built = buildCategoryWhere(categoryRule, paramCount, params);
+    if (built.sql) {
+      whereClause += ` AND ${built.sql}`;
+      paramCount = built.paramCount;
+    }
+  }
+
+  const selectClause = hasCoords
+    ? `SELECT *, (
+         CASE WHEN latitude IS NULL OR longitude IS NULL THEN NULL ELSE
+           6371 * acos(
+             LEAST(1, GREATEST(-1,
+               cos(radians($${paramCount})) * cos(radians(latitude)) * cos(radians(longitude) - radians($${paramCount + 1}))
+               + sin(radians($${paramCount})) * sin(radians(latitude))
+             ))
+           )
+         END
+       ) AS distance_km FROM events`
+    : 'SELECT * FROM events';
+  const listParams = hasCoords ? [...params, lat, lng] : [...params];
+  if (hasCoords) paramCount += 2;
+
+  // Nearest-first when we know where the visitor is (so a tight LIMIT still
+  // keeps the closest events rather than an arbitrary date-ordered slice
+  // that might all be on the other side of the country); soonest-first
+  // otherwise. Events with no stored coordinates (distance_km NULL) always
+  // sort last rather than being excluded outright.
+  const orderClause = hasCoords ? 'ORDER BY (distance_km IS NULL), distance_km ASC, date ASC' : 'ORDER BY date ASC';
+
+  const query = `${selectClause} ${whereClause} ${orderClause} LIMIT $${paramCount}`;
+  listParams.push(limitRaw);
+  const result = await dbPool.query(query, listParams);
+  return result.rows;
+}
+
+// Attaches click_count (all-time clicks logged against this event — see
+// routes/clicks.js) and recent_click_count (last 7 days, used for the
+// Trending section) to each merged event, summed across every offer's
+// event_row_id since a click on any one source's offer for the same real-
+// world event still means a visitor found it interesting. All-time rather
+// than a rolling window for click_count: the platform is too young for a
+// 30-day window to reliably separate "popular" from "barely any data yet".
+async function attachClickCounts(dbPool, mergedEvents) {
+  const allRowIds = [];
+  for (const event of mergedEvents) {
+    for (const offer of event.offers) {
+      if (offer.event_row_id != null) allRowIds.push(offer.event_row_id);
+    }
+  }
+  if (allRowIds.length === 0) {
+    for (const event of mergedEvents) {
+      event.click_count = 0;
+      event.recent_click_count = 0;
+    }
+    return;
+  }
+
+  const [totalResult, recentResult] = await Promise.all([
+    dbPool.query(
+      `SELECT event_row_id, COUNT(*)::int AS n FROM click_events WHERE event_row_id = ANY($1::int[]) GROUP BY event_row_id`,
+      [allRowIds]
+    ),
+    dbPool.query(
+      `SELECT event_row_id, COUNT(*)::int AS n FROM click_events WHERE event_row_id = ANY($1::int[]) AND created_at > NOW() - INTERVAL '7 days' GROUP BY event_row_id`,
+      [allRowIds]
+    ),
+  ]);
+  const totalMap = new Map(totalResult.rows.map((r) => [r.event_row_id, r.n]));
+  const recentMap = new Map(recentResult.rows.map((r) => [r.event_row_id, r.n]));
+
+  for (const event of mergedEvents) {
+    let total = 0;
+    let recent = 0;
+    for (const offer of event.offers) {
+      total += totalMap.get(offer.event_row_id) || 0;
+      recent += recentMap.get(offer.event_row_id) || 0;
+    }
+    event.click_count = total;
+    event.recent_click_count = recent;
+  }
+}
+
+// Picks `count` events by a precomputed `_score`, but never lets one
+// category dominate until every distinct category present has had a turn —
+// the spec for "Recommended for You" explicitly calls out "category
+// diversity". First pass: walk the score-sorted list, taking the single
+// highest-scoring event from each not-yet-used category. Second pass (only
+// if the first didn't fill every slot — e.g. fewer than `count` distinct
+// categories exist nearby): fill remaining slots with the next best-scoring
+// events regardless of category.
+function pickDiverse(scoredEvents, count) {
+  const sorted = scoredEvents.slice().sort((a, b) => b._score - a._score);
+  const picked = [];
+  const usedCategories = new Set();
+  const usedIds = new Set();
+
+  for (const event of sorted) {
+    if (picked.length >= count) break;
+    const cat = event.category || 'Other';
+    if (usedCategories.has(cat)) continue;
+    usedCategories.add(cat);
+    usedIds.add(event.id);
+    picked.push(event);
+  }
+  if (picked.length < count) {
+    for (const event of sorted) {
+      if (picked.length >= count) break;
+      if (usedIds.has(event.id)) continue;
+      usedIds.add(event.id);
+      picked.push(event);
+    }
+  }
+  return picked;
+}
+
+// Fills a section out to exactly `count` events (when the candidate pool
+// has that many) by appending the soonest not-yet-picked upcoming events
+// from the same pool — used whenever a popularity/trend signal alone
+// doesn't produce enough events (e.g. a brand-new platform with little
+// click data yet), so a section never comes back thinner than the platform
+// actually has to offer nearby.
+function backfillByDate(picked, candidatePool, count) {
+  if (picked.length >= count) return picked.slice(0, count);
+  const usedIds = new Set(picked.map((e) => e.id));
+  const bySoonest = candidatePool.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  const result = picked.slice();
+  for (const event of bySoonest) {
+    if (result.length >= count) break;
+    if (usedIds.has(event.id)) continue;
+    usedIds.add(event.id);
+    result.push(event);
+  }
+  return result;
+}
+
+// Homepage event-discovery sections (spec: Popular Events, Recommended for
+// You, Trending Events Near [City], and one 5-event row per Concerts/
+// Sports/Theater/Comedy). Registered ahead of GET /:eventId below so
+// "discover" is never swallowed as an :eventId path param.
+//
+// lat/lng/city are resolved CLIENT-SIDE (from the visitor's entered ZIP
+// code, or reverse-geocoded from browser geolocation — see App.jsx) and
+// passed straight through: this endpoint never tries to derive its own
+// "nearest city" from the events table, since the visitor's actual home
+// city may have no nearby events at all, and the heading still needs to
+// name the visitor's real city rather than whatever's closest to it.
+router.get('/discover', async (req, res) => {
+  try {
+    const lat = req.query.lat !== undefined ? parseFloat(req.query.lat) : null;
+    const lng = req.query.lng !== undefined ? parseFloat(req.query.lng) : null;
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+    const cityLabel = (req.query.city || '').trim() || null;
+
+    // Comma-separated categories the visitor has shown interest in this
+    // session (see the frontend's lightweight click-category tally) — "based
+    // on whatever user information/preferences are available" for
+    // Recommended for You. Optional; the diversity algorithm below covers a
+    // visitor with no history yet just as well.
+    const prefCategories = (req.query.prefCategories || '')
+      .split(',').map((c) => c.trim()).filter(Boolean);
+
+    // One broad, location-aware candidate pool feeds Popular/Recommended/
+    // Trending (all three are "best of what's nearby", just scored
+    // differently). Concerts/Sports/Theater/Comedy each get their own
+    // dedicated query further down.
+    const rawCandidates = await fetchDiscoverCandidates(pool, { lat, lng, limitRaw: 1200 });
+    const merged = mergeEventsAcrossSources(rawCandidates);
+    await attachClickCounts(pool, merged);
+
+    // ---- Popular Events: click_count first, soonest as a tiebreak; only
+    // events with at least one real click count as "popular" — backfilled
+    // with the soonest nearby upcoming events to reach 5 when click data is
+    // thin (e.g. a brand-new platform or region). ----
+    const popularSorted = merged.slice().sort((a, b) => {
+      if (b.click_count !== a.click_count) return b.click_count - a.click_count;
+      return new Date(a.date) - new Date(b.date);
+    });
+    const popular = backfillByDate(
+      popularSorted.filter((e) => e.click_count > 0).slice(0, DISCOVER_SECTION_COUNT),
+      merged,
+      DISCOVER_SECTION_COUNT
+    );
+
+    // ---- Trending Events Near [City]: recent (7-day) click velocity, same
+    // backfill approach as Popular. ----
+    const trendingSorted = merged.slice().sort((a, b) => {
+      if (b.recent_click_count !== a.recent_click_count) return b.recent_click_count - a.recent_click_count;
+      if (b.click_count !== a.click_count) return b.click_count - a.click_count;
+      return new Date(a.date) - new Date(b.date);
+    });
+    const trending = backfillByDate(
+      trendingSorted.filter((e) => e.recent_click_count > 0).slice(0, DISCOVER_SECTION_COUNT),
+      merged,
+      DISCOVER_SECTION_COUNT
+    );
+
+    // ---- Recommended for You: popularity + "happening soon" recency +
+    // category diversity, with a small boost for categories the visitor has
+    // actually shown interest in this session (if any — see prefCategories
+    // above). This is the "sensible recommendation algorithm based on
+    // event popularity, category diversity, location, and current trends"
+    // fallback the spec calls for when there isn't enough personal history
+    // yet — since the site has no login/account system, that's true for
+    // every visitor today, so this fallback IS the algorithm for now. ----
+    const now = Date.now();
+    for (const event of merged) {
+      const daysUntil = Math.max(0, (new Date(event.date).getTime() - now) / 86400000);
+      const popularityScore = Math.log1p(event.click_count);
+      const recencyScore = 1 / (1 + daysUntil / 14); // happening sooner scores higher ("current trends")
+      const prefBoost = prefCategories.includes(event.category) ? 1 : 0;
+      event._score = popularityScore * 2 + recencyScore + prefBoost;
+    }
+    const recommended = backfillByDate(pickDiverse(merged, DISCOVER_SECTION_COUNT), merged, DISCOVER_SECTION_COUNT);
+
+    // ---- Concerts / Sports / Theater / Comedy: exactly 5 each when the
+    // platform has that many upcoming, via their own dedicated query so a
+    // thin shared pool never shorts one category. ----
+    const categories = {};
+    for (const [key, rule] of Object.entries(DISCOVER_CATEGORY_RULES)) {
+      const rawRows = await fetchDiscoverCandidates(pool, { lat, lng, categoryRule: rule, limitRaw: 150 });
+      const mergedCategory = mergeEventsAcrossSources(rawRows);
+      await attachClickCounts(pool, mergedCategory);
+      const sorted = mergedCategory.slice().sort((a, b) => {
+        if (b.click_count !== a.click_count) return b.click_count - a.click_count;
+        return new Date(a.date) - new Date(b.date);
+      });
+      categories[key] = sorted.slice(0, DISCOVER_SECTION_COUNT);
+    }
+
+    // Strip internal-only scoring/click bookkeeping before responding —
+    // these fields exist only for this endpoint's own ranking, not part of
+    // the event shape the rest of the API returns.
+    const clean = (events) => events.map(({ _score, click_count, recent_click_count, ...rest }) => rest);
+
+    res.json({
+      city: cityLabel,
+      locationKnown: hasCoords || Boolean(cityLabel),
+      popular: clean(popular),
+      recommended: clean(recommended),
+      trending: clean(trending),
+      categories: {
+        concerts: clean(categories.concerts),
+        sports: clean(categories.sports),
+        theater: clean(categories.theater),
+        comedy: clean(categories.comedy),
+      },
+    });
+  } catch (error) {
+    console.error('Error building discover sections:', error);
+    res.status(500).json({ error: 'Failed to load discovery sections' });
+  }
+});
+
 router.get('/detail/:eventRowId', async (req, res) => {
   try {
     const event = await getMergedEventById(req.params.eventRowId);
