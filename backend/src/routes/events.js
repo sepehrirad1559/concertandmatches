@@ -449,8 +449,20 @@ async function fetchDiscoverCandidates(dbPool, { lat, lng, categoryRule = null, 
   // keeps the closest events rather than an arbitrary date-ordered slice
   // that might all be on the other side of the country); soonest-first
   // otherwise. Events with no stored coordinates (distance_km NULL) always
-  // sort last rather than being excluded outright.
-  const orderClause = hasCoords ? 'ORDER BY (distance_km IS NULL), distance_km ASC, date ASC' : 'ORDER BY date ASC';
+  // sort last rather than being excluded outright — Postgres already
+  // defaults NULLs to sort last in ASC order, so a plain `distance_km ASC`
+  // is enough; no need for an explicit `(distance_km IS NULL)` clause.
+  //
+  // Important: `distance_km` here must stay a BARE column reference.
+  // Postgres only resolves a SELECT-list alias like `distance_km` when the
+  // ORDER BY item is exactly that identifier — wrap it in any expression
+  // (e.g. `(distance_km IS NULL)`) and Postgres instead tries to resolve it
+  // as a real column of `events`, which doesn't exist, throwing "column
+  // distance_km does not exist" and 500ing the whole /discover endpoint.
+  // (This bit the very first version of this endpoint — passing lat/lng
+  // triggered exactly that 500 in production. Keep this comment if this
+  // clause is ever touched again.)
+  const orderClause = hasCoords ? 'ORDER BY distance_km ASC, date ASC' : 'ORDER BY date ASC';
 
   const query = `${selectClause} ${whereClause} ${orderClause} LIMIT $${paramCount}`;
   listParams.push(limitRaw);
