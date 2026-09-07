@@ -452,6 +452,7 @@ function EventCard({ event, onSelect }) {
         {formatDistance(event.distance_km) && (
           <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>🚗 {formatDistance(event.distance_km)}</p>
         )}
+        {(event.min_price != null || event.max_price != null) && (
         <p>
           💰 {formatPrice(event)}
           {Array.isArray(event.offers) && event.offers.length > 1 && (
@@ -469,6 +470,7 @@ function EventCard({ event, onSelect }) {
             </span>
           )}
         </p>
+        )}
         {formatOffersComparison(event) && (
           <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 10px' }}>
             {formatOffersComparison(event)}
@@ -1056,7 +1058,9 @@ export default function App() {
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
             <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
-            <p><strong>{findTicketsLinks.length > 1 ? '💰 Best Price:' : '💰 Price:'}</strong> {formatPrice(selectedEvent)}</p>
+            {(selectedEvent.min_price != null || selectedEvent.max_price != null) && (
+              <p><strong>{findTicketsLinks.length > 1 ? '💰 Best Price:' : '💰 Price:'}</strong> {formatPrice(selectedEvent)}</p>
+            )}
           </div>
 
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
@@ -1194,43 +1198,6 @@ export default function App() {
       <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 30px' }}>
         Be The First To Buy Your Ticket
       </h1>
-
-      <div style={{ marginBottom: '32px' }}>
-        <form
-          onSubmit={handleZipSubmit}
-          style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '4px' }}>
-          {!discoverLocation && (
-            <label style={{ fontSize: '13px', color: '#666' }}>
-              📍 Enter your ZIP code for local recommendations:
-            </label>
-          )}
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="ZIP code"
-            value={zipInput}
-            onChange={(e) => setZipInput(e.target.value)}
-            maxLength={5}
-            style={{ padding: '6px 10px', width: '100px' }}
-          />
-          <button type="submit" disabled={zipStatus === 'loading'} style={{ padding: '6px 14px', cursor: 'pointer' }}>
-            {zipStatus === 'loading' ? 'Looking up…' : discoverLocation ? 'Update' : 'Go'}
-          </button>
-          {discoverLocation && (
-            <button
-              type="button"
-              onClick={() => { setDiscoverLocation(null); saveCachedLocation(null); }}
-              style={{ padding: '6px 14px', cursor: 'pointer' }}>
-              Clear
-            </button>
-          )}
-        </form>
-        {zipStatus === 'error' && (
-          <p style={{ color: '#c62828', fontSize: '13px', margin: '4px 0 0' }}>
-            That doesn't look like a valid US ZIP code — please try again.
-          </p>
-        )}
-      </div>
 
       <EventSection
         title="Popular Events"
