@@ -1250,6 +1250,174 @@ export default function App() {
           onSelect={handleSelectEvent}
         />
       )}
+
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
+          <input
+            type="text"
+            placeholder="Search by artist, event, venue or keyword..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
+            onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
+            style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+            autoComplete="off"
+          />
+          {showAutocomplete && autocompleteSuggestions.length > 0 && (
+            <ul
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 2px)',
+                left: 0,
+                right: 0,
+                zIndex: 20,
+                margin: 0,
+                padding: '4px 0',
+                listStyle: 'none',
+                background: 'white',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                maxHeight: '280px',
+                overflowY: 'auto',
+              }}
+            >
+              {autocompleteSuggestions.map((s, i) => (
+                <li
+                  key={`${s.type}-${s.label}-${i}`}
+                  onMouseDown={() => handleSuggestionClick(s.label)}
+                  style={{
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                  }}
+                >
+                  <span>{s.label}</span>
+                  <span style={{ color: '#888', fontSize: '0.8em' }}>{s.type}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
+          Search
+        </button>
+        {activeSearch && (
+          <button type="button" onClick={handleClearSearch} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            Clear
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          style={{
+            padding: '10px 20px',
+            cursor: 'pointer',
+            backgroundColor: activeFilterCount > 0 ? '#1a73e8' : undefined,
+            color: activeFilterCount > 0 ? 'white' : undefined,
+            fontWeight: activeFilterCount > 0 ? 'bold' : undefined,
+          }}>
+          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''} {showFilters ? '▲' : '▼'}
+        </button>
+      </form>
+
+      {showFilters && (
+        <form
+          onSubmit={handleApplyFilters}
+          style={{
+            display: 'flex',
+            gap: '16px',
+            flexWrap: 'wrap',
+            alignItems: 'flex-end',
+            padding: '16px',
+            marginBottom: '16px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '8px',
+            color: '#222',
+          }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Location</label>
+            <input
+              type="text"
+              placeholder="City or state"
+              value={draftLocation}
+              onChange={(e) => setDraftLocation(e.target.value)}
+              style={{ padding: '8px', width: '160px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Min Price ($)</label>
+            <input
+              type="number"
+              min="0"
+              placeholder="0"
+              value={draftMinPrice}
+              onChange={(e) => setDraftMinPrice(e.target.value)}
+              style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Price ($)</label>
+            <input
+              type="number"
+              min="0"
+              placeholder="Any"
+              value={draftMaxPrice}
+              onChange={(e) => setDraftMaxPrice(e.target.value)}
+              style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>From Date</label>
+            <input
+              type="date"
+              value={draftStartDate}
+              onChange={(e) => setDraftStartDate(e.target.value)}
+              style={{ padding: '8px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>To Date</label>
+            <input
+              type="date"
+              value={draftEndDate}
+              onChange={(e) => setDraftEndDate(e.target.value)}
+              style={{ padding: '8px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Sort By</label>
+            <select
+              value={draftSort}
+              onChange={(e) => setDraftSort(e.target.value)}
+              style={{ padding: '8px', boxSizing: 'border-box' }}>
+              <option value="">
+                {locationStatus === 'granted' ? 'Nearest first (default)' : 'Date (default)'}
+              </option>
+              <option value="date">Date: Soonest first</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="name">Name: A to Z</option>
+              {locationStatus === 'granted' && <option value="distance">Distance: Nearest first</option>}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
+              Apply Filters
+            </button>
+            {activeFilterCount > 0 && (
+              <button type="button" onClick={handleClearFilters} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+
+      <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
+
       <EventSection
         title="Concerts"
         events={discoverData?.categories?.concerts}
@@ -1277,173 +1445,6 @@ export default function App() {
 
       <div style={{ marginTop: '20px' }}>
         <h3>Featured Events</h3>
-
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
-            <input
-              type="text"
-              placeholder="Search by artist, event, venue or keyword..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
-              onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
-              style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
-              autoComplete="off"
-            />
-            {showAutocomplete && autocompleteSuggestions.length > 0 && (
-              <ul
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 2px)',
-                  left: 0,
-                  right: 0,
-                  zIndex: 20,
-                  margin: 0,
-                  padding: '4px 0',
-                  listStyle: 'none',
-                  background: 'white',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                  maxHeight: '280px',
-                  overflowY: 'auto',
-                }}
-              >
-                {autocompleteSuggestions.map((s, i) => (
-                  <li
-                    key={`${s.type}-${s.label}-${i}`}
-                    onMouseDown={() => handleSuggestionClick(s.label)}
-                    style={{
-                      padding: '8px 12px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: '8px',
-                    }}
-                  >
-                    <span>{s.label}</span>
-                    <span style={{ color: '#888', fontSize: '0.8em' }}>{s.type}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
-            Search
-          </button>
-          {activeSearch && (
-            <button type="button" onClick={handleClearSearch} style={{ padding: '10px 20px', cursor: 'pointer' }}>
-              Clear
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setShowFilters((v) => !v)}
-            style={{
-              padding: '10px 20px',
-              cursor: 'pointer',
-              backgroundColor: activeFilterCount > 0 ? '#1a73e8' : undefined,
-              color: activeFilterCount > 0 ? 'white' : undefined,
-              fontWeight: activeFilterCount > 0 ? 'bold' : undefined,
-            }}>
-            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''} {showFilters ? '▲' : '▼'}
-          </button>
-        </form>
-
-        {showFilters && (
-          <form
-            onSubmit={handleApplyFilters}
-            style={{
-              display: 'flex',
-              gap: '16px',
-              flexWrap: 'wrap',
-              alignItems: 'flex-end',
-              padding: '16px',
-              marginBottom: '16px',
-              backgroundColor: '#f5f5f5',
-              borderRadius: '8px',
-              color: '#222',
-            }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Location</label>
-              <input
-                type="text"
-                placeholder="City or state"
-                value={draftLocation}
-                onChange={(e) => setDraftLocation(e.target.value)}
-                style={{ padding: '8px', width: '160px', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Min Price ($)</label>
-              <input
-                type="number"
-                min="0"
-                placeholder="0"
-                value={draftMinPrice}
-                onChange={(e) => setDraftMinPrice(e.target.value)}
-                style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Price ($)</label>
-              <input
-                type="number"
-                min="0"
-                placeholder="Any"
-                value={draftMaxPrice}
-                onChange={(e) => setDraftMaxPrice(e.target.value)}
-                style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>From Date</label>
-              <input
-                type="date"
-                value={draftStartDate}
-                onChange={(e) => setDraftStartDate(e.target.value)}
-                style={{ padding: '8px', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>To Date</label>
-              <input
-                type="date"
-                value={draftEndDate}
-                onChange={(e) => setDraftEndDate(e.target.value)}
-                style={{ padding: '8px', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Sort By</label>
-              <select
-                value={draftSort}
-                onChange={(e) => setDraftSort(e.target.value)}
-                style={{ padding: '8px', boxSizing: 'border-box' }}>
-                <option value="">
-                  {locationStatus === 'granted' ? 'Nearest first (default)' : 'Date (default)'}
-                </option>
-                <option value="date">Date: Soonest first</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="name">Name: A to Z</option>
-                {locationStatus === 'granted' && <option value="distance">Distance: Nearest first</option>}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
-                Apply Filters
-              </button>
-              {activeFilterCount > 0 && (
-                <button type="button" onClick={handleClearFilters} style={{ padding: '10px 20px', cursor: 'pointer' }}>
-                  Clear Filters
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-
-        <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
 
         {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
           <p style={{ color: '#666' }}>
