@@ -1123,7 +1123,7 @@ export default function App() {
                             fontWeight: 'bold',
                             textAlign: 'center',
                           }}>
-                          {isOfficialLink ? `Visit ${link.name} ↗` : `Buy on ${link.name} ↗`}
+                          {isOfficialLink ? `Visit ${link.name} ↗` : 'Buy Your Ticket ↗'}
                         </a>
                         {showTierBreakdown && (
                           <div style={{ padding: '8px 6px 4px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
