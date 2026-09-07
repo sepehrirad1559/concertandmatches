@@ -1199,9 +1199,11 @@ export default function App() {
         <form
           onSubmit={handleZipSubmit}
           style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '4px' }}>
-          <label style={{ fontSize: '13px', color: '#666' }}>
-            📍{discoverLocation ? ` Showing recommendations for ${discoverLocation.city}${discoverLocation.state ? `, ${discoverLocation.state}` : ''}.` : ' Enter your ZIP code for local recommendations:'}
-          </label>
+          {!discoverLocation && (
+            <label style={{ fontSize: '13px', color: '#666' }}>
+              📍 Enter your ZIP code for local recommendations:
+            </label>
+          )}
           <input
             type="text"
             inputMode="numeric"
