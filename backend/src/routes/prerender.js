@@ -59,7 +59,7 @@ router.get('/event/:pathParam', async (req, res) => {
     }
 
     const title = `${event.title} Tickets — ${formatDate(event.date)} | ConcertAndMatches.com`;
-    const description = `Compare ticket prices for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}. See offers from multiple authorized sellers.`;
+    const description = `Get tickets for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}. Listed from multiple authorized sellers.`;
     const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
     const url = `https://www.concertandmatches.com/event/${event.id}-${slug}`;
 

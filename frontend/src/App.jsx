@@ -809,15 +809,15 @@ export default function App() {
   // previews fetched after the page has loaded, rather than a classic
   // no-JS crawler — real SSR would be a further, separate upgrade.
   useEffect(() => {
-    const defaultTitle = 'ConcertAndMatches.com — Compare Ticket Prices for Concerts, Sports & Theater';
-    const defaultDescription = 'Compare available ticket offers from multiple authorized sellers for concerts, sports, theater and events across the USA and Canada. See current prices side by side before you buy.';
+    const defaultTitle = 'ConcertAndMatches.com — Newly Listed Tickets for Concerts, Sports & Theater';
+    const defaultDescription = 'Be the first to buy tickets to concerts, sports, theater and comedy across the USA and Canada — new events listed from multiple authorized sellers as fast as they go on sale.';
     const canonicalEl = document.querySelector('link[rel="canonical"]');
     const descriptionEl = document.querySelector('meta[name="description"]');
     let jsonLdEl = document.getElementById('event-jsonld');
 
     if (selectedEvent) {
       const title = `${selectedEvent.title} Tickets — ${formatDate(selectedEvent.date)} | ConcertAndMatches.com`;
-      const description = `Compare ticket prices for ${selectedEvent.title}${selectedEvent.venue_name ? ` at ${selectedEvent.venue_name}` : ''}${selectedEvent.city ? ` in ${selectedEvent.city}` : ''} on ${formatDate(selectedEvent.date)}. See offers from multiple authorized sellers.`;
+      const description = `Get tickets for ${selectedEvent.title}${selectedEvent.venue_name ? ` at ${selectedEvent.venue_name}` : ''}${selectedEvent.city ? ` in ${selectedEvent.city}` : ''} on ${formatDate(selectedEvent.date)}. Listed from multiple authorized sellers.`;
       const url = `https://www.concertandmatches.com${buildEventPath(selectedEvent)}`;
 
       document.title = title;
@@ -1097,7 +1097,7 @@ export default function App() {
               <>
                 {findTicketsLinks.length > 1 && (
                   <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
-                    ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — compare prices below and click through to buy:
+                    ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — click through below to buy:
                   </p>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
