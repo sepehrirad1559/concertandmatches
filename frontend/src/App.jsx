@@ -1199,6 +1199,45 @@ export default function App() {
         <BrandLink onClick={() => navigate('/')} />
       </nav>
 
+      <nav
+        aria-label="Quick category filters"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: '10px 20px',
+          marginBottom: '20px',
+        }}>
+        {EVENT_CATEGORIES.map((cat) => {
+          const isActive = activeCategoryId === cat.id;
+          return (
+            <span
+              key={cat.id}
+              role="link"
+              tabIndex={0}
+              onClick={() => {
+                setActiveCategoryId(isActive ? null : cat.id);
+                document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setActiveCategoryId(isActive ? null : cat.id);
+                  document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              style={{
+                cursor: 'pointer',
+                fontWeight: isActive ? 'bold' : 'normal',
+                textDecoration: isActive ? 'underline' : 'none',
+                color: isActive ? '#8b0000' : '#1a0733',
+              }}>
+              {cat.label}
+            </span>
+          );
+        })}
+      </nav>
+
       <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 30px' }}>
         Be The First To Buy Your Ticket
       </h1>
@@ -1416,7 +1455,7 @@ export default function App() {
         onSelect={handleSelectEvent}
       />
 
-      <div style={{ marginTop: '20px' }}>
+      <div id="featured-events" style={{ marginTop: '20px' }}>
         <h3>Featured Events</h3>
 
         {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
