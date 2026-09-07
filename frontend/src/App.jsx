@@ -490,7 +490,7 @@ function EventCard({ event, onSelect }) {
             backgroundColor: '#8b0000',
             color: 'white',
             fontWeight: 'bold',
-            borderRadius: '0 0 8px 8px',
+            borderRadius: '8px',
           }}>
           Find Tickets
         </button>
