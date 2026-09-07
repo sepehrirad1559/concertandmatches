@@ -1292,7 +1292,7 @@ export default function App() {
         </div>
       )}
 
-      <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 12px' }}>
+      <h1 style={{ textAlign: 'left', fontSize: '40px', margin: '10px 0 12px' }}>
         Be The First To Buy Your Ticket
       </h1>
 
