@@ -90,7 +90,22 @@ res.json({ status: 'OK', timestamp: new Date().toISOString() });
 app.use('/api/events', eventsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/clicks', clicksRoutes);
-app.use('/go', redirectRoutes);
+// Deliberately NOT mounted. /go/event/:id and /go/:offerId aren't linked
+// from the frontend anywhere (the site's real outbound ticket links are
+// built client-side in App.jsx) — but they're public, unauthenticated GET
+// endpoints with no rate limiting, and for a ticketmaster.com event
+// /go/event/:id redirects straight through the real revenue-earning
+// Impact.com tracked affiliate link. Click-analytics investigation on
+// 2026-09-07 found ~2,075 clicks logged with no referrer and no session id
+// (impossible for a real click through the site's UI, which always sets
+// both client-side) — an automated script/scanner had found and was
+// hammering this route directly, generating what looks to Impact.com like
+// fraudulent/bot clicks on the real Ticketmaster affiliate link, risking
+// the account being flagged. Unmounted until there's an actual feature
+// that needs it and it's given proper anti-abuse protection (referer/
+// signed-token check, rate limiting) — re-enable with app.use('/go',
+// redirectRoutes) once that's in place.
+// app.use('/go', redirectRoutes);
 app.use('/', sitemapRoutes);
 app.use('/', guidesRoutes);
 app.use('/prerender', prerenderRoutes);
