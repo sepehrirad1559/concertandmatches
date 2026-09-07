@@ -610,8 +610,17 @@ export default function App() {
   const [eventsError, setEventsError] = useState('');
   const [eventsTotal, setEventsTotal] = useState(0);
   const [eventsHasMore, setEventsHasMore] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
+  // Seeded from a ?q= URL param on first load (e.g. a shared search link,
+  // or Google's sitelinks search box — see the WebSite/SearchAction JSON-LD
+  // in index.html, which promises exactly this URL shape actually runs the
+  // search) so a search someone shares is actually reproducible for
+  // whoever opens the link, not just a home-page visit.
+  const initialQuery = (() => {
+    if (typeof window === 'undefined') return '';
+    return new URLSearchParams(window.location.search).get('q') || '';
+  })();
+  const [searchInput, setSearchInput] = useState(initialQuery);
+  const [activeSearch, setActiveSearch] = useState(initialQuery);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   // Accounts aren't built yet — clicking "Sign In" just lets the visitor
   // know that, rather than pretending a login flow exists.

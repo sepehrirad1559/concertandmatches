@@ -181,9 +181,11 @@ router.get('/guide/:slug', async (req, res) => {
 <meta property="og:title" content="${xmlEscape(title)}" />
 <meta property="og:description" content="${xmlEscape(description)}" />
 <meta property="og:url" content="${xmlEscape(url)}" />
-<meta name="twitter:card" content="summary" />
+<meta property="og:image" content="https://www.concertandmatches.com/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${xmlEscape(title)}" />
 <meta name="twitter:description" content="${xmlEscape(description)}" />
+<meta name="twitter:image" content="https://www.concertandmatches.com/og-image.png" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>
 <body>
