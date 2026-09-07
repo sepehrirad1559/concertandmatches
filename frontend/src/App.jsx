@@ -1079,11 +1079,11 @@ export default function App() {
               </p>
             ) : (
               <>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
-                  {findTicketsLinks.length > 1
-                    ? "ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — compare prices below and click through to buy:"
-                    : "ConcertAndMatches doesn't sell tickets directly. This event was found on the seller below — click through to see availability and complete your purchase:"}
-                </p>
+                {findTicketsLinks.length > 1 && (
+                  <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
+                    ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — compare prices below and click through to buy:
+                  </p>
+                )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {findTicketsLinks.map((link) => {
                     // The full tier breakdown (e.g. Standard vs. VIP) only
@@ -1098,7 +1098,6 @@ export default function App() {
                       : null;
                     const highlightBest = link.isBest && findTicketsLinks.length > 1;
                     const isOfficialLink = link.source === 'official';
-                    const suppressPriceFooter = isOfficialLink;
                     return (
                       <div key={link.source}>
                         <a
@@ -1161,14 +1160,6 @@ export default function App() {
                                 BEST PRICE
                               </span>
                             )}
-                          </div>
-                        )}
-                        {!showTierBreakdown && !priceLabel && !suppressPriceFooter && (
-                          <div style={{
-                            padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px',
-                            backgroundColor: '#fff', fontSize: '13px', color: '#000', textAlign: 'center', fontWeight: 'bold',
-                          }}>
-                            Price not yet reported by this seller
                           </div>
                         )}
                       </div>
