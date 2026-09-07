@@ -1198,8 +1198,38 @@ export default function App() {
   // HOME PAGE
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <BrandLink onClick={() => navigate('/')} />
+        <div aria-label="Quick category filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 20px', alignItems: 'center' }}>
+          {EVENT_CATEGORIES.map((cat) => {
+            const isActive = activeCategoryId === cat.id;
+            return (
+              <span
+                key={cat.id}
+                role="link"
+                tabIndex={0}
+                onClick={() => {
+                  setActiveCategoryId(isActive ? null : cat.id);
+                  document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setActiveCategoryId(isActive ? null : cat.id);
+                    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                style={{
+                  cursor: 'pointer',
+                  fontWeight: isActive ? 'bold' : 'normal',
+                  textDecoration: isActive ? 'underline' : 'none',
+                  color: isActive ? '#8b0000' : '#1a0733',
+                }}>
+                {cat.label}
+              </span>
+            );
+          })}
+        </div>
         <div style={{ display: 'flex', gap: '18px', alignItems: 'center' }}>
           <a
             href="mailto:sepehrirad15@gmail.com"
@@ -1261,45 +1291,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      <nav
-        aria-label="Quick category filters"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: '10px 20px',
-          marginBottom: '20px',
-        }}>
-        {EVENT_CATEGORIES.map((cat) => {
-          const isActive = activeCategoryId === cat.id;
-          return (
-            <span
-              key={cat.id}
-              role="link"
-              tabIndex={0}
-              onClick={() => {
-                setActiveCategoryId(isActive ? null : cat.id);
-                document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setActiveCategoryId(isActive ? null : cat.id);
-                  document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-              style={{
-                cursor: 'pointer',
-                fontWeight: isActive ? 'bold' : 'normal',
-                textDecoration: isActive ? 'underline' : 'none',
-                color: isActive ? '#8b0000' : '#1a0733',
-              }}>
-              {cat.label}
-            </span>
-          );
-        })}
-      </nav>
 
       <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 12px' }}>
         Be The First To Buy Your Ticket
