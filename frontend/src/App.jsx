@@ -913,7 +913,7 @@ export default function App() {
       </nav>
 
       <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 30px' }}>
-        Best Price For Any Events
+        Be The First To Buy Your Ticket For Any Events
       </h1>
 
       <div style={{ marginTop: '20px' }}>
