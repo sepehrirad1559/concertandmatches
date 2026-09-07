@@ -6,15 +6,22 @@
 
 body {
   font-family: Arial, sans-serif;
-  /* Deep indigo-purple from the user-provided swatch. Page text (headings,
-     event card text, etc.) has no per-element color set in App.jsx — it
-     just inherits from here — so the "color" below switches that inherited
-     default from black to a light tone. Without it, nearly all text on the
-     page would be unreadable (near-black on near-black). The white/#f5f5f5
-     content panels (Find Tickets, event details, etc.) set their own dark
-     text colors inline, so they're unaffected and stay exactly as before. */
-  background-color: #1a0733;
-  color: #f2ecfb;
+  /* Researched the 5 leading ticket-selling platforms (Ticketmaster,
+     StubHub, SeatGeek, Vivid Seats, AXS) before choosing this: every one of
+     them uses a light/white page background with a single bold brand
+     accent color, rather than an all-over dark/colored background. Moved
+     ConcertAndMatches to the same pattern for a more familiar, easier-to-
+     read ticket-marketplace feel, while keeping our brand identity: the
+     background carries a faint tint of our original indigo-purple
+     (#1a0733), and that same purple now does double duty as the default
+     text color instead of the page background.
+     Page text (headings, event card text, etc.) has no per-element color
+     set in App.jsx — it just inherits from here — so the "color" below
+     controls nearly all body text. The white/#f5f5f5 content panels (Find
+     Tickets, event details, etc.) set their own dark text colors inline,
+     so they're unaffected and stay exactly as before. */
+  background-color: #f8f5fb;
+  color: #1a0733;
   min-height: 100vh;
 }
 
