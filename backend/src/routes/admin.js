@@ -836,4 +836,57 @@ router.get('/analytics/clicks', requireAdminAccess, async (req, res) => {
   }
 });
 
+// Diagnostic breakdown by referrer/session/landing-page — NOT shown on the
+// main dashboard, added specifically to tell real visitor traffic apart
+// from bots/scripts hitting POST /api/clicks directly (which skip the
+// browser entirely, so they have no real referrer and often reuse or fake
+// a session id). Read-only, same auth as the rest of this file.
+router.get('/analytics/click-detail', requireAdminAccess, async (req, res) => {
+  try {
+    const [byReferrer, bySession, byLandingPage, recentSample] = await Promise.all([
+      pool.query(`
+        SELECT COALESCE(NULLIF(referrer, ''), '(none)') AS referrer, COUNT(*)::int AS count
+        FROM click_events
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 20
+      `),
+      pool.query(`
+        SELECT session_id, COUNT(*)::int AS count,
+               MIN(created_at) AS first_click, MAX(created_at) AS last_click,
+               COUNT(DISTINCT event_row_id)::int AS distinct_events
+        FROM click_events
+        WHERE session_id IS NOT NULL
+        GROUP BY session_id
+        ORDER BY count DESC
+        LIMIT 20
+      `),
+      pool.query(`
+        SELECT COALESCE(NULLIF(landing_page, ''), '(none)') AS landing_page, COUNT(*)::int AS count
+        FROM click_events
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 20
+      `),
+      pool.query(`
+        SELECT created_at, source, event_title, city, state, device_type, referrer, session_id
+        FROM click_events
+        ORDER BY created_at DESC
+        LIMIT 30
+      `),
+    ]);
+
+    res.json({
+      success: true,
+      byReferrer: byReferrer.rows,
+      bySession: bySession.rows,
+      byLandingPage: byLandingPage.rows,
+      recentSample: recentSample.rows,
+    });
+  } catch (error) {
+    console.error('Error computing click detail:', error);
+    res.status(200).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
