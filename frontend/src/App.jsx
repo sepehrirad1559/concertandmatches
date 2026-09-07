@@ -606,6 +606,9 @@ export default function App() {
   const [searchInput, setSearchInput] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   const [activeCategoryId, setActiveCategoryId] = useState(null);
+  // Accounts aren't built yet — clicking "Sign In" just lets the visitor
+  // know that, rather than pretending a login flow exists.
+  const [showSignInNotice, setShowSignInNotice] = useState(false);
 
   // Autocomplete dropdown for the search box (spec: search/autocomplete
   // engine). Debounced so we don't hit the API on every keystroke; the
@@ -1195,9 +1198,69 @@ export default function App() {
   // HOME PAGE
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+      <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between' }}>
         <BrandLink onClick={() => navigate('/')} />
+        <div style={{ display: 'flex', gap: '18px', alignItems: 'center' }}>
+          <a
+            href="mailto:sepehrirad15@gmail.com"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }}>
+            <span aria-hidden="true">✉️</span> Contact Us
+          </a>
+          <button
+            type="button"
+            onClick={() => setShowSignInNotice(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              margin: 0,
+              font: 'inherit',
+              fontWeight: 'bold',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}>
+            <span aria-hidden="true">👤</span> Sign In
+          </button>
+        </div>
       </nav>
+
+      {showSignInNotice && (
+        <div
+          role="alertdialog"
+          aria-label="Sign in"
+          onClick={() => setShowSignInNotice(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              color: '#222',
+              padding: '24px',
+              borderRadius: '10px',
+              maxWidth: '320px',
+              textAlign: 'center',
+            }}>
+            <p style={{ marginBottom: '16px' }}>Accounts and sign-in are coming soon — check back shortly!</p>
+            <button
+              type="button"
+              onClick={() => setShowSignInNotice(false)}
+              style={{ padding: '8px 20px', cursor: 'pointer', border: 'none', borderRadius: '6px', backgroundColor: '#8b0000', color: 'white', fontWeight: 'bold' }}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       <nav
         aria-label="Quick category filters"
