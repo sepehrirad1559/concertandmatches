@@ -1301,11 +1301,11 @@ export default function App() {
         })}
       </nav>
 
-      <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 30px' }}>
+      <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 12px' }}>
         Be The First To Buy Your Ticket
       </h1>
 
-      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginTop: 0, marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
           <input
             type="text"
