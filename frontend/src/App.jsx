@@ -351,48 +351,55 @@ function AffiliateDisclosure() {
 // comma-joined); `keywords` are matched against title/artist/venue text
 // (also OR'd) for leagues/genres that aren't their own category in the data.
 // Both are ANDed with whatever the customer types in the main search box.
+// Tile styling deliberately mirrors what the big ticket marketplaces do for
+// their own category/genre filter chips (StubHub's "All types / Sports /
+// Concerts / Theater & Comedy" pills, SeatGeek's "Location / Date" pills,
+// etc.): a flat white tile with a thin colored border, not a bold colored
+// gradient fill. The accent color is still per-category (so the row stays
+// visually scannable) but only shows up as the border/icon/active-fill
+// color now, matching that flatter, whiter competitor look.
 const EVENT_CATEGORIES = [
   {
     id: 'nfl',
     label: 'NFL',
     emoji: '🏈',
     keywords: ['NFL'],
-    background: 'linear-gradient(135deg, #013369, #1c3f7c)',
+    accent: '#013369',
   },
   {
     id: 'concerts',
     label: 'Concerts',
     emoji: '🎤',
     category: ['Music', 'Concert'],
-    background: 'linear-gradient(135deg, #8e2de2, #e91e8c)',
+    accent: '#8e2de2',
   },
   {
     id: 'nba',
     label: 'NBA',
     emoji: '🏀',
     keywords: ['NBA', 'Basketball'],
-    background: 'linear-gradient(135deg, #1d428a, #c8102e)',
+    accent: '#1d428a',
   },
   {
     id: 'ncaaf',
     label: 'NCAA Football',
     emoji: '🎓',
     keywords: ['NCAA Football', 'College Football', 'NCAA'],
-    background: 'linear-gradient(135deg, #002d62, #b08d2c)',
+    accent: '#002d62',
   },
   {
     id: 'theater',
     label: 'Theater',
     emoji: '🎭',
     category: ['Arts & Theatre'],
-    background: 'linear-gradient(135deg, #6a0dad, #a8781f)',
+    accent: '#6a0dad',
   },
   {
     id: 'comedy',
     label: 'Comedy',
     emoji: '😂',
     keywords: ['Comedy', 'Stand-Up', 'Stand Up'],
-    background: 'linear-gradient(135deg, #ff8c00, #ffb703)',
+    accent: '#c9660b',
   },
 ];
 
@@ -413,14 +420,14 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
             type="button"
             onClick={() => onSelect(isActive ? null : cat.id)}
             style={{
-              background: cat.background,
-              border: isActive ? '3px solid #222' : '3px solid transparent',
+              background: isActive ? cat.accent : '#fff',
+              border: `2px solid ${cat.accent}`,
               borderRadius: '10px',
               padding: '16px 8px',
-              color: 'white',
+              color: isActive ? '#fff' : '#222',
               cursor: 'pointer',
               textAlign: 'center',
-              boxShadow: isActive ? '0 0 0 2px white inset' : 'none',
+              boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
             }}>
             <div style={{ fontSize: '26px', marginBottom: '6px' }}>{cat.emoji}</div>
             <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{cat.label}</div>
