@@ -366,20 +366,17 @@ async function getMergedEventById(eventRowId) {
 // by-category) ------------------------------------------------------------
 //
 // Category match rules mirror the frontend's own quick-filter tiles (see
-// EVENT_CATEGORIES in frontend/src/App.jsx) so a "Concerts"/"Theater"/
-// "Comedy" section here contains exactly the same kinds of events those
-// tiles would show. "Sports" is new here — the homepage tiles split sports
-// into separate NFL/NBA/NCAA Football tiles instead — built the same way:
-// an exact-category list first, a word-boundary keyword match as a net for
-// anything a source tagged less specifically (see services/ticketmaster.js
-// and services/seatgeek.js for why category values are this inconsistent
-// across sources).
+// EVENT_CATEGORIES in frontend/src/App.jsx) so a section here contains
+// exactly the same kinds of events those tiles would show. The generic
+// "Sports" bucket was replaced with dedicated nfl/nba/ncaaFootball rules
+// (matching the tiles' own NFL/NBA/NCAA Football keyword lists exactly) so
+// the homepage sections split sports the same way the tiles do, rather than
+// lumping every sport into one catch-all section.
 const DISCOVER_CATEGORY_RULES = {
+  nfl: { categories: [], keywords: ['NFL'] },
   concerts: { categories: ['Music', 'Concert'], keywords: [] },
-  sports: {
-    categories: ['NFL', 'NBA', 'NCAA Football', 'Sports', 'Football', 'Basketball'],
-    keywords: ['NFL', 'NBA', 'NCAA', 'Football', 'Basketball', 'Baseball', 'Hockey', 'Soccer', 'MLB', 'NHL', 'MLS'],
-  },
+  nba: { categories: [], keywords: ['NBA', 'Basketball'] },
+  ncaaFootball: { categories: [], keywords: ['NCAA Football', 'College Football', 'NCAA'] },
   theater: { categories: ['Arts & Theatre', 'Theatre', 'Theater'], keywords: [] },
   comedy: { categories: [], keywords: ['Comedy', 'Stand-Up', 'Stand Up'] },
 };
@@ -676,8 +673,10 @@ router.get('/discover', async (req, res) => {
       recommended: clean(recommended),
       trending: clean(trending),
       categories: {
+        nfl: clean(categories.nfl),
         concerts: clean(categories.concerts),
-        sports: clean(categories.sports),
+        nba: clean(categories.nba),
+        ncaaFootball: clean(categories.ncaaFootball),
         theater: clean(categories.theater),
         comedy: clean(categories.comedy),
       },

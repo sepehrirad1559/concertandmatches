@@ -1494,14 +1494,26 @@ export default function App() {
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
 
       <EventSection
+        title="NFL"
+        events={discoverData?.categories?.nfl}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      <EventSection
         title="Concerts"
         events={discoverData?.categories?.concerts}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
       />
       <EventSection
-        title="Sports"
-        events={discoverData?.categories?.sports}
+        title="NBA"
+        events={discoverData?.categories?.nba}
+        loading={discoverLoading}
+        onSelect={handleSelectEvent}
+      />
+      <EventSection
+        title="NCAA Football"
+        events={discoverData?.categories?.ncaaFootball}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
       />
