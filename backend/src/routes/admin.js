@@ -112,7 +112,8 @@ router.post('/sync/seatgeek', async (req, res) => {
   getProvider('seatgeek').sync(perState)
     .then((result) => logProviderSync({
       providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
-      recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+      recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error',
+      errorMessage: result.error ?? (result.apiErrorCount > 0 ? `${result.apiErrorCount} API error(s): ${JSON.stringify(result.sampleApiErrors)}` : null),
     }))
     .catch((error) => {
       console.error('Background SeatGeek sync failed:', error);
@@ -135,16 +136,36 @@ router.post('/sync/ticketmaster', async (req, res) => {
   }
 
   const startedAt = new Date();
-  const result = await getProvider('ticketmaster').sync();
-  await logProviderSync({
-    providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
-    recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
-  });
 
-  if (!result.success) {
-    return res.status(500).json(result);
-  }
-  res.json(result);
+  // Same fix as /sync/seatgeek above: the comprehensive nationwide sync
+  // (every segment, every US/CA town, fully paginated per month) can take
+  // many minutes — far longer than Railway's proxy will hold a synchronous
+  // request open. Waiting on it here is exactly what produced the
+  // PowerShell-side "upstream error" (a proxy-level timeout/disconnect)
+  // even though the sync itself kept running server-side. Respond
+  // immediately once it's kicked off instead; check GET /admin/health or
+  // the Railway logs for the actual completed result (including the new
+  // apiErrorCount/sampleApiErrors fields).
+  res.json({ success: true, message: 'Ticketmaster sync started in the background. Check GET /admin/health or Railway logs for completion.' });
+
+  getProvider('ticketmaster').sync()
+    .then((result) => logProviderSync({
+      providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+      recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error',
+      // Surface apiErrorCount/sampleApiErrors (see services/ticketmaster.js)
+      // in the logged error_message even on a "successful" run, so a sync
+      // that silently failed most of its requests but still returned
+      // success:true is visible from GET /admin/health without needing a
+      // separate diagnostics call.
+      errorMessage: result.error ?? (result.apiErrorCount > 0 ? `${result.apiErrorCount} API error(s): ${JSON.stringify(result.sampleApiErrors)}` : null),
+    }))
+    .catch((error) => {
+      console.error('Background Ticketmaster sync failed:', error);
+      return logProviderSync({
+        providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+        recordsReceived: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 // Removed (see backend/DATA_SOURCES.md): official_sources schema/CRUD
