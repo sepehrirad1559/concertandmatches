@@ -14,6 +14,7 @@ import redirectRoutes from './routes/redirect.js';
 import sitemapRoutes from './routes/sitemap.js';
 import prerenderRoutes from './routes/prerender.js';
 import guidesRoutes from './routes/guides.js';
+import seoPagesRoutes from './routes/seoPages.js';
 
 // Price backfill — see scheduled job below.
 import { backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
@@ -108,6 +109,10 @@ app.use('/api/clicks', clicksRoutes);
 // app.use('/go', redirectRoutes);
 app.use('/', sitemapRoutes);
 app.use('/', guidesRoutes);
+// Programmatic SEO pages (artists/cities/venues/leagues/teams) — see
+// routes/seoPages.js and services/seoEngine.js. Mounted at root, same as
+// guidesRoutes, so paths are reachable at e.g. /artists/:slug directly.
+app.use('/', seoPagesRoutes);
 app.use('/prerender', prerenderRoutes);
 
 // 404 Handler

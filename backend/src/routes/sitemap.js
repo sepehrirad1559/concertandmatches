@@ -2,6 +2,7 @@ import express from 'express';
 import { pool } from '../index.js';
 import { mergeEventsAcrossSources } from './events.js';
 import { topArtistCityCombos, guideSlugify } from './guides.js';
+import { discoverArtists, discoverCities, discoverVenues, LEAGUE_DEFS, discoverTeams } from '../services/seoEngine.js';
 
 const router = express.Router();
 
@@ -61,7 +62,27 @@ router.get('/sitemap.xml', async (req, res) => {
       return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <changefreq>daily</changefreq>\n  </url>`;
     });
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...urlEntries, ...guideEntries].join('\n')}\n</urlset>\n`;
+    // Programmatic SEO pages (routes/seoPages.js + services/seoEngine.js) —
+    // discover* already excludes 'do-not-index' tier candidates, so every
+    // URL below is backed by real, currently-listed inventory. Priority is
+    // derived from tier so tier1 pages get the strongest internal signal.
+    const priorityForTier = (tier) => (tier === 'tier1' ? '0.8' : tier === 'tier2' ? '0.6' : '0.4');
+    const seoEntry = (loc, tier) => `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <changefreq>daily</changefreq>\n    <priority>${priorityForTier(tier)}</priority>\n  </url>`;
+
+    const [artists, cities, venues, teams] = await Promise.all([
+      discoverArtists({ limit: 2000 }).catch(() => []),
+      discoverCities({ limit: 2000 }).catch(() => []),
+      discoverVenues({ limit: 2000 }).catch(() => []),
+      discoverTeams({ limit: 2000 }).catch(() => []),
+    ]);
+
+    const artistEntries = artists.map((a) => seoEntry(`${SITE_ORIGIN}/artists/${a.slug}`, a.tier));
+    const cityEntries = cities.flatMap((c) => ['events', 'concerts', 'sports'].map((v) => seoEntry(`${SITE_ORIGIN}/cities/${c.slug}/${v}`, c.tier)));
+    const venueEntries = venues.map((v) => seoEntry(`${SITE_ORIGIN}/venues/${v.slug}`, v.tier));
+    const teamEntries = teams.map((t) => seoEntry(`${SITE_ORIGIN}/teams/${t.slug}`, t.tier));
+    const leagueEntries = Object.keys(LEAGUE_DEFS).map((slug) => seoEntry(`${SITE_ORIGIN}/leagues/${slug}`, 'tier1'));
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...urlEntries, ...guideEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries, ...leagueEntries].slice(0, SITEMAP_URL_CAP * 3).join('\n')}\n</urlset>\n`;
 
     res.set('Content-Type', 'application/xml');
     res.send(xml);

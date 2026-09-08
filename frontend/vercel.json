@@ -1,5 +1,20 @@
 {
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://concertandmatches-production.up.railway.app/sitemap.xml" },
+    { "source": "/guide", "destination": "https://concertandmatches-production.up.railway.app/guide" },
+    { "source": "/guide/:slug", "destination": "https://concertandmatches-production.up.railway.app/guide/:slug" },
+    { "source": "/artists", "destination": "https://concertandmatches-production.up.railway.app/artists" },
+    { "source": "/artists/:slug", "destination": "https://concertandmatches-production.up.railway.app/artists/:slug" },
+    { "source": "/venues", "destination": "https://concertandmatches-production.up.railway.app/venues" },
+    { "source": "/venues/:slug", "destination": "https://concertandmatches-production.up.railway.app/venues/:slug" },
+    { "source": "/leagues", "destination": "https://concertandmatches-production.up.railway.app/leagues" },
+    { "source": "/leagues/:slug", "destination": "https://concertandmatches-production.up.railway.app/leagues/:slug" },
+    { "source": "/teams", "destination": "https://concertandmatches-production.up.railway.app/teams" },
+    { "source": "/teams/:slug", "destination": "https://concertandmatches-production.up.railway.app/teams/:slug" },
+    { "source": "/cities", "destination": "https://concertandmatches-production.up.railway.app/cities" },
+    { "source": "/cities/:slug/events", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/events" },
+    { "source": "/cities/:slug/concerts", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/concerts" },
+    { "source": "/cities/:slug/sports", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/sports" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

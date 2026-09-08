@@ -630,6 +630,11 @@ function Footer() {
       <p>ConcertAndMatches is an independent event discovery site and is not affiliated with any ticket seller. We may earn a commission when you buy tickets through links on this site.</p>
       <p style={{ marginTop: '8px' }}>
         <a href="/guide" style={{ color: '#888', marginRight: '16px' }}>Ticket Price Guides</a>
+        <a href="/artists" style={{ color: '#888', marginRight: '16px' }}>Artists</a>
+        <a href="/cities" style={{ color: '#888', marginRight: '16px' }}>Cities</a>
+        <a href="/venues" style={{ color: '#888', marginRight: '16px' }}>Venues</a>
+        <a href="/leagues" style={{ color: '#888', marginRight: '16px' }}>Leagues</a>
+        <a href="/teams" style={{ color: '#888', marginRight: '16px' }}>Teams</a>
         <a href="/terms.html" style={{ color: '#888', marginRight: '16px' }}>Terms of Service</a>
         <a href="/privacy.html" style={{ color: '#888' }}>Privacy Policy</a>
       </p>
