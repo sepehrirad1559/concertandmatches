@@ -698,23 +698,6 @@ router.get('/detail/:eventRowId', async (req, res) => {
   }
 });
 
-// Get Single Event
-router.get('/:eventId', async (req, res) => {
-  try {
-    const { eventId } = req.params;
-
-    const eventResult = await pool.query('SELECT * FROM events WHERE id = $1', [eventId]);
-    if (eventResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Event not found' });
-    }
-
-    res.json({ event: eventResult.rows[0] });
-  } catch (error) {
-    console.error('Error fetching event:', error);
-    res.status(500).json({ error: 'Failed to fetch event' });
-  }
-});
-
 // Autocomplete suggestions for the search box (spec: search/autocomplete
 // engine). Returns a short, ranked list of distinct artists, event titles,
 // venues, and cities matching the customer's in-progress query — meant to
@@ -805,6 +788,33 @@ router.get('/search/advanced', async (req, res) => {
     res.json({ results: result.rows });
   } catch (error) {
     res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// Get Single Event
+// IMPORTANT: this catch-all :eventId route must stay registered AFTER every
+// other GET route on this router (/discover, /detail/:eventRowId,
+// /autocomplete, /search/advanced, ...) — Express matches routes in
+// registration order, and a bare "/:eventId" pattern matches literally any
+// single path segment, including "autocomplete" or "advanced". Registered
+// earlier, it silently swallowed those requests (treating the literal
+// string "autocomplete" as an event id, which always 500'd on the DB
+// lookup), which is why the search box's autocomplete dropdown never
+// worked in production even though the /autocomplete handler itself was
+// completely correct.
+router.get('/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const eventResult = await pool.query('SELECT * FROM events WHERE id = $1', [eventId]);
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.json({ event: eventResult.rows[0] });
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    res.status(500).json({ error: 'Failed to fetch event' });
   }
 });
 
