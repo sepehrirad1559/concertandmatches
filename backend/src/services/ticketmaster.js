@@ -173,6 +173,81 @@ export const fetchAllCanadianSportsEvents = async () => {
   }
 };
 
+// Comprehensive nationwide sync (spec: "add ALL events listed on
+// Ticketmaster"). The per-market fetches above (fetchAllUSEvents,
+// fetchAllCanadianEvents) only ever request ONE page of 100 results per
+// market — Ticketmaster's actual inventory in any of these 28 metro areas
+// is routinely several times that on a given day, so the vast majority of
+// real listings were silently never fetched at all, on top of the same
+// "college towns fall outside every market code" gap already solved for
+// Sports above (see the big comment on fetchTicketmasterSportsEventsNationwide).
+//
+// This generalizes that nationwide-by-classification-and-month approach
+// (which has no metro-market restriction) to every top-level Ticketmaster
+// segment, not just Sports, and fully paginates each month/segment/country
+// combo up to the Discovery API's own ~1,000-result-per-query ceiling
+// instead of stopping at page 1. It's genuinely the most complete coverage
+// achievable through Ticketmaster's public Discovery API — "every event
+// Ticketmaster has" isn't a fixed, queryable number the API exposes, and a
+// handful of new events go on sale every day, but this removes every
+// artificial cap this codebase was previously imposing on top of
+// Ticketmaster's own limits.
+const NATIONWIDE_ALL_SEGMENTS = ['Music', 'Sports', 'Arts & Theatre', 'Film', 'Miscellaneous'];
+
+// Pages through a single classification+country+month query up to
+// Ticketmaster's deep-paging ceiling (page*size must stay under ~1000, so at
+// size=200 that's pages 0-4). Stops early once a page comes back short or
+// the API's own page.totalPages says there's nothing more, so a quiet
+// month/segment combo costs one request, not five.
+async function fetchTicketmasterEventsPaged(params, maxResults = 1000, pageSize = 200) {
+  const events = [];
+  const maxPage = Math.floor(maxResults / pageSize) - 1;
+  for (let page = 0; page <= maxPage; page++) {
+    try {
+      const response = await axios.get(`${TICKETMASTER_BASE_URL}/events.json`, {
+        params: { apikey: TICKETMASTER_API_KEY, ...params, size: pageSize, page, sort: 'date,asc' },
+      });
+      const pageEvents = response.data?._embedded?.events || [];
+      events.push(...pageEvents);
+      const totalPages = response.data?.page?.totalPages ?? 1;
+      if (pageEvents.length < pageSize || page + 1 >= totalPages) break;
+    } catch (error) {
+      console.error(`Ticketmaster paged fetch error (page=${page}, params=${JSON.stringify(params)}):`, error.message);
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return events;
+}
+
+// Every segment, every country, every month ahead — the actual "get
+// everything" sync. monthsAhead defaults to 9 (comfortably past a full
+// concert-touring season and most sports seasons from whenever this runs).
+export const fetchAllTicketmasterEventsNationwide = async (monthsAhead = 9) => {
+  const events = [];
+  const now = new Date();
+
+  for (const countryCode of NATIONWIDE_SPORTS_COUNTRIES) {
+    for (const segment of NATIONWIDE_ALL_SEGMENTS) {
+      for (let m = 0; m < monthsAhead; m++) {
+        const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + m, 1, 0, 0, 0));
+        const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + m + 1, 0, 23, 59, 59));
+        console.log(`🌎 Fetching nationwide ${segment} events (${countryCode}, ${toTicketmasterDateTime(start).slice(0, 7)})...`);
+        const monthEvents = await fetchTicketmasterEventsPaged({
+          classificationName: segment,
+          countryCode,
+          startDateTime: toTicketmasterDateTime(start),
+          endDateTime: toTicketmasterDateTime(end),
+        });
+        events.push(...monthEvents);
+      }
+    }
+  }
+
+  console.log(`✅ Total nationwide events fetched (all segments): ${events.length}`);
+  return events;
+};
+
 // Ticketmaster's `marketId` codes (1-28, used by every fetch above) only
 // cover ~28 major metro DMAs. That's fine for concerts, which mostly happen
 // in those same big-city arenas — but a large share of NCAA Football (and
@@ -434,10 +509,28 @@ export const syncAllEvents = async () => {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    // The actual comprehensive pull ("add ALL events listed on
+    // Ticketmaster" — see fetchAllTicketmasterEventsNationwide above): every
+    // top-level segment (Music, Sports, Arts & Theatre, Film, Miscellaneous),
+    // every US/CA town (not just the 28 metro markets above), fully paginated
+    // per month instead of stopping at page 1. This alone supersedes the
+    // per-market fetches above in coverage, but they're left in place rather
+    // than removed — storeEvent upserts on external_id, so the overlap just
+    // updates the same rows, and this keeps the market-based fetch as a
+    // fallback if this heavier nationwide pull ever fails partway through.
+    console.log('🌎 Fetching ALL Ticketmaster events nationwide (every segment)...');
+    const allNationwideEvents = await fetchAllTicketmasterEventsNationwide();
+    console.log(`Processing ${allNationwideEvents.length} nationwide events (all segments)...`);
+
+    for (const event of allNationwideEvents) {
+      await storeEvent(event);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     console.log('✅ Sync complete!');
     return {
       success: true,
-      totalEvents: usEvents.length + caEvents.length + sportsEvents.length + nationwideSportsEvents.length,
+      totalEvents: usEvents.length + caEvents.length + sportsEvents.length + nationwideSportsEvents.length + allNationwideEvents.length,
     };
   } catch (error) {
     console.error('Sync failed:', error);
@@ -585,6 +678,7 @@ export default {
   fetchAllUSSportsEvents,
   fetchAllCanadianSportsEvents,
   fetchTicketmasterSportsEventsNationwide,
+  fetchAllTicketmasterEventsNationwide,
   storeEvent,
   syncAllEvents,
   getTicketmasterEventDetails,
