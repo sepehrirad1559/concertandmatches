@@ -1,6 +1,7 @@
 // build-refresh marker 2
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import AdminPage from './AdminPage.jsx';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:30001/api';
@@ -1079,6 +1080,14 @@ export default function App() {
       setEventsLoadingMore(false);
     }
   };
+
+  // ADMIN DASHBOARD — same-origin so it isn't blocked by the backend's
+  // CORS allowedOrigins list (see backend/src/index.js). Auth is a runtime-
+  // entered shared key (SYNC_SECRET_KEY), not a real user/session system —
+  // see AdminPage.jsx for details.
+  if (location.pathname === '/admin' || location.pathname.startsWith('/admin/')) {
+    return <AdminPage />;
+  }
 
   // EVENT DETAIL PAGE (direct load / refresh / shared link that hasn't
   // resolved to a full event object yet)
