@@ -412,6 +412,25 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
         gap: '12px',
         marginBottom: '20px',
       }}>
+      <button
+        type="button"
+        onClick={() => {
+          onSelect(null);
+          document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        style={{
+          background: activeCategoryId === null ? '#1a0733' : '#fff',
+          border: '2px solid #1a0733',
+          borderRadius: '10px',
+          padding: '16px 8px',
+          color: activeCategoryId === null ? '#fff' : '#222',
+          cursor: 'pointer',
+          textAlign: 'center',
+          boxShadow: activeCategoryId === null ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
+        }}>
+        <div style={{ fontSize: '34px', marginBottom: '8px' }}>🎟️</div>
+        <div style={{ fontWeight: 'bold', fontSize: '20px' }}>All</div>
+      </button>
       {EVENT_CATEGORIES.map((cat) => {
         const isActive = activeCategoryId === cat.id;
         return (
@@ -1242,6 +1261,28 @@ export default function App() {
       <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <BrandLink onClick={() => navigate('/')} />
         <div aria-label="Quick category filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 20px', alignItems: 'center' }}>
+          <span
+            role="link"
+            tabIndex={0}
+            onClick={() => {
+              setActiveCategoryId(null);
+              document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setActiveCategoryId(null);
+                document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            style={{
+              cursor: 'pointer',
+              fontWeight: activeCategoryId === null ? 'bold' : 'normal',
+              textDecoration: activeCategoryId === null ? 'underline' : 'none',
+              color: activeCategoryId === null ? '#8b0000' : '#1a0733',
+            }}>
+            All
+          </span>
           {EVENT_CATEGORIES.map((cat) => {
             const isActive = activeCategoryId === cat.id;
             return (
