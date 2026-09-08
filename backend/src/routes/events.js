@@ -717,29 +717,37 @@ router.get('/autocomplete', async (req, res) => {
     const like = `%${q}%`;
     const startsWith = `${q}%`;
 
+    // NOTE: each of these is SELECT DISTINCT with an ORDER BY expression
+    // (the ILIKE-based "starts with" boolean) — Postgres requires every
+    // ORDER BY expression on a SELECT DISTINCT query to appear in the
+    // select list itself, so that boolean is explicitly selected (aliased
+    // as starts_with) rather than only referenced in ORDER BY. Since
+    // starts_with is fully determined by value (same value -> same
+    // boolean), adding it to the select list doesn't change what DISTINCT
+    // considers distinct.
     const [artists, titles, venues, cities] = await Promise.all([
       pool.query(
-        `SELECT DISTINCT artist_name AS value FROM events
+        `SELECT DISTINCT artist_name AS value, (artist_name ILIKE $2) AS starts_with FROM events
          WHERE artist_name ILIKE $1 AND artist_name IS NOT NULL AND artist_name != ''
-         ORDER BY (artist_name ILIKE $2) DESC, artist_name ASC LIMIT 5`,
+         ORDER BY starts_with DESC, value ASC LIMIT 5`,
         [like, startsWith]
       ),
       pool.query(
-        `SELECT DISTINCT title AS value FROM events
+        `SELECT DISTINCT title AS value, (title ILIKE $2) AS starts_with FROM events
          WHERE title ILIKE $1 AND title IS NOT NULL AND title != ''
-         ORDER BY (title ILIKE $2) DESC, title ASC LIMIT 5`,
+         ORDER BY starts_with DESC, value ASC LIMIT 5`,
         [like, startsWith]
       ),
       pool.query(
-        `SELECT DISTINCT venue_name AS value FROM events
+        `SELECT DISTINCT venue_name AS value, (venue_name ILIKE $2) AS starts_with FROM events
          WHERE venue_name ILIKE $1 AND venue_name IS NOT NULL AND venue_name != ''
-         ORDER BY (venue_name ILIKE $2) DESC, venue_name ASC LIMIT 5`,
+         ORDER BY starts_with DESC, value ASC LIMIT 5`,
         [like, startsWith]
       ),
       pool.query(
-        `SELECT DISTINCT city AS value, state FROM events
+        `SELECT DISTINCT city AS value, state, (city ILIKE $2) AS starts_with FROM events
          WHERE city ILIKE $1 AND city IS NOT NULL AND city != ''
-         ORDER BY (city ILIKE $2) DESC, city ASC LIMIT 5`,
+         ORDER BY starts_with DESC, value ASC LIMIT 5`,
         [like, startsWith]
       ),
     ]);
