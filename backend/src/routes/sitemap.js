@@ -76,13 +76,29 @@ router.get('/sitemap.xml', async (req, res) => {
       discoverTeams({ limit: 2000 }).catch(() => []),
     ]);
 
-    const artistEntries = artists.map((a) => seoEntry(`${SITE_ORIGIN}/artists/${a.slug}`, a.tier));
-    const cityEntries = cities.flatMap((c) => ['events', 'concerts', 'sports'].map((v) => seoEntry(`${SITE_ORIGIN}/cities/${c.slug}/${v}`, c.tier)));
-    const venueEntries = venues.map((v) => seoEntry(`${SITE_ORIGIN}/venues/${v.slug}`, v.tier));
-    const teamEntries = teams.map((t) => seoEntry(`${SITE_ORIGIN}/teams/${t.slug}`, t.tier));
+    // A handful of fixed, always-worth-including league pages — listed
+    // first among the SEO entries (and given the same tier1 priority as
+    // the highest-value dynamic pages) so a global truncation below can
+    // never starve them out the way it did before this fix (a large
+    // cities/venues/teams batch was pushing these 6 URLs past the cap).
     const leagueEntries = Object.keys(LEAGUE_DEFS).map((slug) => seoEntry(`${SITE_ORIGIN}/leagues/${slug}`, 'tier1'));
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...urlEntries, ...guideEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries, ...leagueEntries].slice(0, SITEMAP_URL_CAP * 3).join('\n')}\n</urlset>\n`;
+    // Sort each dynamic set tier1-first so if a cap ever does truncate,
+    // the highest-opportunity pages are the ones kept.
+    const tierRank = { tier1: 0, tier2: 1, tier3: 2 };
+    const byTier = (a, b) => (tierRank[a.tier] ?? 3) - (tierRank[b.tier] ?? 3);
+
+    const artistEntries = [...artists].sort(byTier).map((a) => seoEntry(`${SITE_ORIGIN}/artists/${a.slug}`, a.tier));
+    const cityEntries = [...cities].sort(byTier).flatMap((c) => ['events', 'concerts', 'sports'].map((v) => seoEntry(`${SITE_ORIGIN}/cities/${c.slug}/${v}`, c.tier)));
+    const venueEntries = [...venues].sort(byTier).map((v) => seoEntry(`${SITE_ORIGIN}/venues/${v.slug}`, v.tier));
+    const teamEntries = [...teams].sort(byTier).map((t) => seoEntry(`${SITE_ORIGIN}/teams/${t.slug}`, t.tier));
+
+    // Comfortably under the 50,000-URL sitemap protocol limit even with
+    // every entity type at its own individual query cap (2000 each for
+    // artists/venues/teams, 2000 cities x3 variants) plus the event and
+    // guide entries above.
+    const SEO_SITEMAP_CAP = 45000;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...urlEntries, ...guideEntries, ...leagueEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries].slice(0, SEO_SITEMAP_CAP).join('\n')}\n</urlset>\n`;
 
     res.set('Content-Type', 'application/xml');
     res.send(xml);
