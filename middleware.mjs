@@ -46,25 +46,52 @@ const BOT_UA_REGEX = /bot|crawl|spider|facebookexternalhit|slackbot|twitterbot|l
 
 const PRERENDER_ORIGIN = 'https://concertandmatches-production.up.railway.app';
 
-// /guide and /guide/:slug (see backend/src/routes/guides.js) are plain
-// server-rendered content pages — a list of upcoming shows/prices for one
-// artist+city, not an interactive comparison UI — so unlike /event/:id
-// there's no SPA experience worth reserving for humans here. Proxying
-// them straight through for EVERY request (not just recognized bots)
-// keeps this one route in one place instead of duplicating the same
-// content as a second React page, and guarantees crawlers and humans see
-// byte-identical content (no dynamic-rendering divergence to worry about).
+// /guide, /sitemap.xml, and the programmatic SEO pages (routes/seoPages.js:
+// /artists, /cities, /venues, /leagues, /teams) are all plain
+// server-rendered content pages — not an interactive comparison UI — so
+// unlike /event/:id there's no SPA experience worth reserving for humans
+// here. Proxying them straight through for EVERY request (not just
+// recognized bots) keeps this one route in one place instead of
+// duplicating the same content as a second React page, and guarantees
+// crawlers and humans see byte-identical content (no dynamic-rendering
+// divergence to worry about).
+//
+// A plain vercel.json rewrite to these same paths was tried first (see the
+// header comment above and this file's own history with /guide/bot
+// detection) and did not reliably take effect on this project either — so
+// every server-rendered backend path goes through this same, already-
+// proven middleware mechanism rather than splitting the routing logic
+// across two different systems.
+const PLAIN_CONTENT_PREFIXES = ['/guide', '/sitemap.xml', '/artists', '/cities', '/venues', '/leagues', '/teams'];
+
 export const config = {
-  matcher: ['/event/:path*', '/guide', '/guide/:path*'],
+  matcher: [
+    '/event/:path*',
+    '/guide',
+    '/guide/:path*',
+    '/sitemap.xml',
+    '/artists',
+    '/artists/:path*',
+    '/cities',
+    '/cities/:path*',
+    '/venues',
+    '/venues/:path*',
+    '/leagues',
+    '/leagues/:path*',
+    '/teams',
+    '/teams/:path*',
+  ],
 };
 
 export default async function middleware(request) {
   const url = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
 
-  const isGuidePath = url.pathname === '/guide' || url.pathname.startsWith('/guide/');
-  if (isGuidePath) {
-    return proxyTo(`${PRERENDER_ORIGIN}${url.pathname}`, userAgent);
+  const isPlainContentPath = PLAIN_CONTENT_PREFIXES.some(
+    (p) => url.pathname === p || url.pathname.startsWith(`${p}/`)
+  );
+  if (isPlainContentPath) {
+    return proxyTo(`${PRERENDER_ORIGIN}${url.pathname}${url.search}`, userAgent);
   }
 
   if (!BOT_UA_REGEX.test(userAgent)) {
@@ -80,9 +107,13 @@ async function proxyTo(upstreamUrl, userAgent) {
   try {
     const upstream = await fetch(upstreamUrl, { headers: { 'user-agent': userAgent } });
     const body = await upstream.text();
+    // Pass through the backend's real content-type (routes/sitemap.js sends
+    // application/xml; every HTML page sends text/html) instead of
+    // hardcoding text/html, which would otherwise mislabel the sitemap.
+    const contentType = upstream.headers.get('content-type') || 'text/html; charset=utf-8';
     return new Response(body, {
       status: upstream.status,
-      headers: { 'content-type': 'text/html; charset=utf-8' },
+      headers: { 'content-type': contentType },
     });
   } catch (err) {
     // If the backend is unreachable for any reason, don't break the page —
