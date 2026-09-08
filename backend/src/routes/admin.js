@@ -7,6 +7,7 @@ import { logProviderSync } from '../utils/syncLog.js';
 // below call getProvider('ticketmaster').sync() etc. instead of importing
 // each service's functions directly. See ../providers/registry.js.
 import { getProvider } from '../providers/registry.js';
+import axios from 'axios';
 
 const router = express.Router();
 
@@ -887,6 +888,52 @@ router.get('/analytics/click-detail', requireAdminAccess, async (req, res) => {
     console.error('Error computing click detail:', error);
     res.status(200).json({ success: false, error: error.message });
   }
+});
+
+// One-off diagnostic: the comprehensive Ticketmaster/SeatGeek syncs both
+// came back with totalEvents: 0 (success: true) despite the older, known-
+// working code paths being untouched — which points at something wrong
+// with the API keys/quota themselves rather than the new sync logic
+// (a bug in new code would still leave the old per-market fetches working).
+// Makes one cheap, direct call to each provider's own API and reports the
+// raw HTTP status/error back, without going through any of the sync
+// machinery — read-only, same auth as the rest of this file.
+router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
+  const results = {};
+
+  const tmKey = process.env.TICKETMASTER_API_KEY;
+  results.ticketmaster = { keyConfigured: !!tmKey };
+  if (tmKey) {
+    try {
+      const r = await axios.get('https://app.ticketmaster.com/discovery/v2/events.json', {
+        params: { apikey: tmKey, size: 1 },
+      });
+      results.ticketmaster.status = r.status;
+      results.ticketmaster.eventCount = r.data?._embedded?.events?.length ?? 0;
+      results.ticketmaster.pageInfo = r.data?.page ?? null;
+    } catch (error) {
+      results.ticketmaster.status = error.response?.status ?? null;
+      results.ticketmaster.error = error.response?.data ?? error.message;
+    }
+  }
+
+  const sgKey = process.env.SEATGEEK_CLIENT_ID;
+  results.seatgeek = { keyConfigured: !!sgKey };
+  if (sgKey) {
+    try {
+      const r = await axios.get('https://api.seatgeek.com/2/events', {
+        params: { client_id: sgKey, per_page: 1 },
+      });
+      results.seatgeek.status = r.status;
+      results.seatgeek.eventCount = r.data?.events?.length ?? 0;
+      results.seatgeek.meta = r.data?.meta ?? null;
+    } catch (error) {
+      results.seatgeek.status = error.response?.status ?? null;
+      results.seatgeek.error = error.response?.data ?? error.message;
+    }
+  }
+
+  res.json({ success: true, results });
 });
 
 export default router;
