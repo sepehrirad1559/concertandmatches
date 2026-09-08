@@ -516,11 +516,31 @@ function EventCard({ event, onSelect }) {
 // plus up to 5 EventCards in the same responsive grid the main listing
 // uses. Renders nothing while loading or once it's clear the platform has
 // no events at all for this section, rather than showing an empty heading.
-function EventSection({ title, events, loading, onSelect }) {
+function EventSection({ title, events, loading, onSelect, categoryId, onViewAll }) {
   if (!loading && (!events || events.length === 0)) return null;
   return (
     <div style={{ marginBottom: '32px' }}>
-      <h3 style={{ marginBottom: '12px', fontSize: '26px' }}>{title}</h3>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+        <h3 style={{ margin: 0, fontSize: '26px' }}>{title}</h3>
+        {categoryId && (
+          <button
+            type="button"
+            onClick={() => onViewAll(categoryId)}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              margin: 0,
+              font: 'inherit',
+              fontSize: '15px',
+              color: '#8b0000',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}>
+            View all {title} →
+          </button>
+        )}
+      </div>
       {loading ? (
         <p style={{ color: '#666' }}>Loading…</p>
       ) : (
@@ -627,6 +647,15 @@ export default function App() {
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [activeSearch, setActiveSearch] = useState(initialQuery);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
+  // "View all <Category>" link on a homepage discover section (which only
+  // ever shows DISCOVER_SECTION_COUNT=5 events): jump straight to that
+  // category's full, paginated list in Featured Events, same as clicking
+  // the category tile/quick-link — always sets it (never toggles off, so
+  // clicking a second "View all" link doesn't silently clear the filter).
+  const handleViewAllCategory = (categoryId) => {
+    setActiveCategoryId(categoryId);
+    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+  };
   // Accounts aren't built yet — clicking "Sign In" just lets the visitor
   // know that, rather than pretending a login flow exists.
   const [showSignInNotice, setShowSignInNotice] = useState(false);
@@ -1501,36 +1530,48 @@ export default function App() {
         events={discoverData?.categories?.nfl}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
+        categoryId="nfl"
+        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="Concerts"
         events={discoverData?.categories?.concerts}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
+        categoryId="concerts"
+        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="NBA"
         events={discoverData?.categories?.nba}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
+        categoryId="nba"
+        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="NCAA Football"
         events={discoverData?.categories?.ncaaFootball}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
+        categoryId="ncaaf"
+        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="Theater"
         events={discoverData?.categories?.theater}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
+        categoryId="theater"
+        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="Comedy"
         events={discoverData?.categories?.comedy}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
+        categoryId="comedy"
+        onViewAll={handleViewAllCategory}
       />
 
       <div id="featured-events" style={{ marginTop: '20px' }}>
