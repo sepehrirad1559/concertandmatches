@@ -4,6 +4,24 @@ import { pool } from '../index.js';
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
 const TICKETMASTER_BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
 
+// Every low-level fetch below used to swallow API errors completely — log
+// to console (which nobody but Railway's own dashboard can see) and return
+// an empty array, indistinguishable from "this market/month genuinely has
+// zero events." That's how a full sync came back `success: true,
+// totalEvents: 0` with no way to tell, from the response alone, whether
+// Ticketmaster genuinely had nothing or every single request failed (e.g.
+// an invalid/rate-limited key). This tracks recent failures so syncAllEvents
+// can surface them in its own return value instead of requiring a separate
+// diagnostic call every time this happens again.
+let recentApiErrors = [];
+function trackApiError(where, error) {
+  recentApiErrors.push({
+    where,
+    status: error.response?.status ?? null,
+    message: error.response?.data?.fault?.faultstring || error.message,
+  });
+}
+
 // Map of countries and their market codes
 const MARKET_CODES = {
   'USA': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
@@ -40,6 +58,7 @@ export const fetchTicketmasterEvents = async (marketCode = '1', limit = 50) => {
     return response.data._embedded.events;
   } catch (error) {
     console.error('Ticketmaster API error:', error.message);
+    trackApiError('fetchTicketmasterEvents', error);
     return [];
   }
 };
@@ -120,6 +139,7 @@ export const fetchTicketmasterSportsEvents = async (marketCode = '1', limit = 20
     return response.data._embedded.events;
   } catch (error) {
     console.error('Ticketmaster Sports API error:', error.message);
+    trackApiError('fetchTicketmasterSportsEvents', error);
     return [];
   }
 };
@@ -213,6 +233,7 @@ async function fetchTicketmasterEventsPaged(params, maxResults = 1000, pageSize 
       if (pageEvents.length < pageSize || page + 1 >= totalPages) break;
     } catch (error) {
       console.error(`Ticketmaster paged fetch error (page=${page}, params=${JSON.stringify(params)}):`, error.message);
+      trackApiError('fetchTicketmasterEventsPaged', error);
       break;
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -291,6 +312,7 @@ async function fetchTicketmasterEventsByClassificationAndMonth(classificationNam
     return response.data?._embedded?.events || [];
   } catch (error) {
     console.error(`Ticketmaster nationwide Sports API error (classificationName=${classificationName}, country=${countryCode}, month=${startDateTime.slice(0, 7)}):`, error.message);
+    trackApiError('fetchTicketmasterEventsByClassificationAndMonth', error);
     return [];
   }
 }
@@ -456,9 +478,10 @@ export const storeEvent = async (tmEvent) => {
 
 // Sync all Ticketmaster events
 export const syncAllEvents = async () => {
+  recentApiErrors = [];
   try {
     console.log('🔄 Starting Ticketmaster sync...');
-    
+
     // Fetch US events
     const usEvents = await fetchAllUSEvents();
     console.log(`Processing ${usEvents.length} US events...`);
@@ -528,13 +551,23 @@ export const syncAllEvents = async () => {
     }
 
     console.log('✅ Sync complete!');
-    return {
+    // Surface tracked API failures in the response itself (see trackApiError
+    // above) — this is what would have told us immediately, from the very
+    // first `totalEvents: 0` response, whether Ticketmaster genuinely had
+    // nothing to return or every request was failing (invalid/rate-limited
+    // key, etc.), instead of needing a separate diagnostic round-trip.
+    const result = {
       success: true,
       totalEvents: usEvents.length + caEvents.length + sportsEvents.length + nationwideSportsEvents.length + allNationwideEvents.length,
+      apiErrorCount: recentApiErrors.length,
     };
+    if (recentApiErrors.length > 0) {
+      result.sampleApiErrors = recentApiErrors.slice(0, 5);
+    }
+    return result;
   } catch (error) {
     console.error('Sync failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, apiErrorCount: recentApiErrors.length, sampleApiErrors: recentApiErrors.slice(0, 5) };
   }
 };
 

@@ -5,6 +5,20 @@ import { US_STATES } from './ticketmaster.js';
 const SEATGEEK_CLIENT_ID = process.env.SEATGEEK_CLIENT_ID;
 const SEATGEEK_BASE_URL = 'https://api.seatgeek.com/2';
 
+// Same purpose as ticketmaster.js's trackApiError — every low-level fetch
+// below used to swallow API errors and return an empty array, which reads
+// identically to "SeatGeek genuinely has 0 events for this query." This
+// lets syncSeatGeekEvents report whether requests were actually failing
+// instead of just reporting a suspiciously-low totalEvents with no context.
+let recentApiErrors = [];
+function trackApiError(where, error) {
+  recentApiErrors.push({
+    where,
+    status: error.response?.status ?? null,
+    message: error.response?.data?.errors?.[0]?.message || error.message,
+  });
+}
+
 // A handful of Canadian provinces, for the same reason Ticketmaster's sync
 // covers Canada separately (spec: discover events across the US AND
 // Canada). Confirmed against SeatGeek's own docs that `venue.state` is a
@@ -104,6 +118,7 @@ export const fetchSeatGeekEvents = async (page = 1, perPage = 100) => {
     return response.data?.events || [];
   } catch (error) {
     console.error('SeatGeek API error:', error.response?.data || error.message);
+    trackApiError('fetchSeatGeekEvents', error);
     return [];
   }
 };
@@ -145,6 +160,7 @@ export const fetchSeatGeekEventsByState = async (stateCode, perState = 100) => {
       if (pageEvents.length < PAGE_SIZE) break;
     } catch (error) {
       console.error(`SeatGeek API error (venue.state=${stateCode}, page=${page}):`, error.response?.data || error.message);
+      trackApiError('fetchSeatGeekEventsByState', error);
       break;
     }
     // Politeness delay between pages of the SAME state — separate from (and
@@ -189,6 +205,7 @@ export const fetchAllSeatGeekEventsByState = async (stateCode, perState = 2000) 
       if (pageEvents.length < PAGE_SIZE) break;
     } catch (error) {
       console.error(`SeatGeek API error (all-types, venue.state=${stateCode}, page=${page}):`, error.response?.data || error.message);
+      trackApiError('fetchAllSeatGeekEventsByState', error);
       break;
     }
     if (page < totalPages) {
@@ -290,6 +307,7 @@ export const fetchSeatGeekEventsByTaxonomy = async (taxonomyName, totalWanted = 
       if (pageEvents.length < PAGE_SIZE) break;
     } catch (error) {
       console.error(`SeatGeek API error (taxonomies.name=${taxonomyName}, page=${page}):`, error.response?.data || error.message);
+      trackApiError('fetchSeatGeekEventsByTaxonomy', error);
       break;
     }
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -466,6 +484,7 @@ export const backfillMissingPrices = async (limit = 100) => {
 // that further) — paginated via fetchSeatGeekEventsByState above since
 // SeatGeek's API caps a single request at 100 results.
 export const syncSeatGeekEvents = async (perState = 300) => {
+  recentApiErrors = [];
   try {
     console.log('🔄 Starting SeatGeek sync...');
 
@@ -505,10 +524,18 @@ export const syncSeatGeekEvents = async (perState = 300) => {
     }
 
     console.log('✅ SeatGeek sync complete!');
-    return { success: true, totalEvents: events.length + sportsEvents.length + allTypeEvents.length };
+    const result = {
+      success: true,
+      totalEvents: events.length + sportsEvents.length + allTypeEvents.length,
+      apiErrorCount: recentApiErrors.length,
+    };
+    if (recentApiErrors.length > 0) {
+      result.sampleApiErrors = recentApiErrors.slice(0, 5);
+    }
+    return result;
   } catch (error) {
     console.error('SeatGeek sync failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, apiErrorCount: recentApiErrors.length, sampleApiErrors: recentApiErrors.slice(0, 5) };
   }
 };
 
