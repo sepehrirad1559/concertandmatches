@@ -37,8 +37,43 @@
 //                get generated, or gets a noindex + excluded from the
 //                sitemap if it must exist for navigation reasons
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool } from '../index.js';
 import { mergeEventsAcrossSources } from '../routes/events.js';
+
+// Real (not fabricated) search-intent signal: a periodic, dated snapshot of
+// actual Google Autocomplete completions for this platform's top inventory
+// entities — see backend/data/search-patterns.json for the full disclosure
+// of what this is and isn't. Autocomplete suggestions are genuine aggregate
+// searcher behavior returned by Google itself, not volume figures and
+// definitely not text an AI model invented — but Google's suggest endpoint
+// is undocumented/unofficial, so this is pulled by hand in a research
+// session and refreshed periodically, never called live from production
+// (repeated automated hits risk rate-limiting/blocking and there's no
+// supported contract for it). Loaded once at startup; a missing/unreadable
+// file degrades to "no confirmed search data" rather than crashing anything
+// that depends on it.
+const SEARCH_PATTERNS_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../data/search-patterns.json');
+let SEARCH_PATTERNS = { entries: [] };
+try {
+  SEARCH_PATTERNS = JSON.parse(fs.readFileSync(SEARCH_PATTERNS_PATH, 'utf8'));
+} catch (err) {
+  console.warn('search-patterns.json not loaded — confirmed-search-data signal will be empty:', err.message);
+}
+const SEARCH_PATTERNS_BY_KEY = new Map(
+  SEARCH_PATTERNS.entries.map((e) => [`${e.matchType}:${e.matchKey}`, e])
+);
+
+// Looks up a real confirmed-search-pattern entry for an entity, if this
+// snapshot happens to cover it. Returns null for the (large majority of)
+// entities not in the hand-pulled sample — that's expected and honest,
+// not an error; scoreOpportunity() and the page templates both treat "no
+// entry" as "no claim made" rather than "confirmed zero interest".
+export function lookupSearchPatterns(matchType, matchKey) {
+  return SEARCH_PATTERNS_BY_KEY.get(`${matchType}:${matchKey}`) || null;
+}
 
 export function slugify(text) {
   return (text || '')
@@ -82,6 +117,7 @@ export function scoreOpportunity({
   clickCount = 0,
   daysToNearest = null,
   heuristicBoost = false,
+  hasConfirmedSearchData = false,
 }) {
   const inventoryScore = clamp01(Math.log10(eventCount + 1) / 2); // ~100 events -> 1.0
   const diversityScore = clamp01(sourceCount / 2); // 2+ sources -> full comparison value
@@ -94,6 +130,12 @@ export function scoreOpportunity({
   const hasClickSignal = clickCount > 0;
   let demandScore = hasClickSignal ? clamp01(Math.log10(clickCount + 1) / 2) : 0.15;
   if (heuristicBoost) demandScore = clamp01(demandScore + 0.15);
+  // A confirmed Google Autocomplete hit (see search-patterns.json / the
+  // lookupSearchPatterns() loader above) is real evidence people actually
+  // search for this entity with ticket-buying intent — a smaller, distinct
+  // bump from the heuristic league boost, and only applied when this
+  // specific entity is in the hand-pulled snapshot.
+  if (hasConfirmedSearchData) demandScore = clamp01(demandScore + 0.1);
 
   let freshnessScore = 0.3;
   if (daysToNearest != null) {
@@ -124,6 +166,7 @@ export function scoreOpportunity({
       demandScore: Number(demandScore.toFixed(3)),
       freshnessScore: Number(freshnessScore.toFixed(3)),
       demandSource: hasClickSignal ? 'real-click-data' : 'heuristic-floor-no-click-data-yet',
+      confirmedByRealSearchData: hasConfirmedSearchData,
     },
   };
 }
@@ -170,23 +213,27 @@ export async function discoverArtists({ limit = 500 } = {}) {
   const clicksByArtist = new Map(clickRows.rows.map((r) => [r.artist_name, r.click_count]));
 
   return rows.rows.map((r) => {
+    const slug = slugify(r.artist_name);
+    const searchData = lookupSearchPatterns('artist', slug);
     const { score, tier, breakdown } = scoreOpportunity({
       eventCount: r.event_count,
       sourceCount: r.source_count,
       pricedFraction: r.event_count > 0 ? r.priced_count / r.event_count : 0,
       clickCount: clicksByArtist.get(r.artist_name) || 0,
       daysToNearest: daysUntil(r.nearest_date),
+      hasConfirmedSearchData: !!searchData,
     });
     return {
       type: 'artist',
       artistName: r.artist_name,
-      slug: slugify(r.artist_name),
+      slug,
       eventCount: r.event_count,
       sourceCount: r.source_count,
       cityCount: r.city_count,
       score,
       tier,
       breakdown,
+      confirmedSearches: searchData?.suggestions || null,
     };
   }).filter((a) => a.tier !== 'do-not-index');
 }
@@ -240,22 +287,26 @@ export async function discoverCities({ limit = 500 } = {}) {
 
   return rows.rows.map((r) => {
     const key = `${r.city}|${r.state || ''}`;
+    const slug = slugify(`${r.city}-${r.state || ''}`);
+    const searchData = lookupSearchPatterns('city', slug);
     const { score, tier, breakdown } = scoreOpportunity({
       eventCount: r.event_count,
       sourceCount: r.source_count,
       pricedFraction: r.event_count > 0 ? r.priced_count / r.event_count : 0,
       clickCount: clicksByCity.get(key) || 0,
       daysToNearest: daysUntil(r.nearest_date),
+      hasConfirmedSearchData: !!searchData,
     });
     return {
       type: 'city',
       city: r.city,
       state: r.state,
-      slug: slugify(`${r.city}-${r.state || ''}`),
+      slug,
       eventCount: r.event_count,
       score,
       tier,
       breakdown,
+      confirmedSearches: searchData?.suggestions || null,
     };
   }).filter((c) => c.tier !== 'do-not-index');
 }
@@ -384,6 +435,7 @@ export async function getLeaguePage(slug) {
   const events = mergeEventsAcrossSources(sample.rows);
   if (events.length === 0) return null;
 
+  const searchData = lookupSearchPatterns('league', slug);
   const { score, tier, breakdown } = scoreOpportunity({
     eventCount: countRow.rows[0].n,
     sourceCount: countRow.rows[0].sources,
@@ -391,9 +443,10 @@ export async function getLeaguePage(slug) {
     clickCount: 0,
     daysToNearest: daysUntil(events[0]?.date),
     heuristicBoost: HEURISTIC_HIGH_DEMAND_LEAGUES.has(slug === 'ncaa-football' ? 'ncaaFootball' : slug),
+    hasConfirmedSearchData: !!searchData,
   });
 
-  return { type: 'league', slug, label: def.label, eventCount: countRow.rows[0].n, events, score, tier, breakdown };
+  return { type: 'league', slug, label: def.label, eventCount: countRow.rows[0].n, events, score, tier, breakdown, confirmedSearches: searchData?.suggestions || null };
 }
 
 // ---- Teams (best-effort, parsed from matchup titles) ----------------------
@@ -441,14 +494,16 @@ export async function discoverTeams({ limit = 500 } = {}) {
     .slice(0, limit);
 
   return candidates.map((c) => {
+    const searchData = lookupSearchPatterns('team', c.slug);
     const { score, tier, breakdown } = scoreOpportunity({
       eventCount: c.eventCount,
       sourceCount: 1, // matchup titles don't carry per-source team attribution reliably enough to count this
       pricedFraction: 0.5, // neutral placeholder; real per-team price coverage computed on the page itself
       clickCount: 0,
       daysToNearest: 30,
+      hasConfirmedSearchData: !!searchData,
     });
-    return { type: 'team', ...c, score, tier, breakdown, heuristic: true };
+    return { type: 'team', ...c, score, tier, breakdown, heuristic: true, confirmedSearches: searchData?.suggestions || null };
   }).filter((t) => t.tier !== 'do-not-index');
 }
 

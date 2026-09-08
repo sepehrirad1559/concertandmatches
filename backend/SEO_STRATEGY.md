@@ -97,6 +97,53 @@ detail page and when a visitor (or Googlebot) actually requests it, the
 detail route 404s with a clean, `noindex`-tagged not-found page rather than
 rendering an empty shell — the same pattern already used by `/guide/:slug`.
 
+## Real search-completion data (added 2026-09-08)
+
+The system now includes one more genuinely real signal: actual Google
+Autocomplete completions for a sample of this platform's top inventory
+entities, stored in `backend/data/search-patterns.json`.
+
+**What this is, precisely.** Google's autocomplete suggest endpoint returns
+real completions based on aggregate searcher behavior — e.g. querying
+"Hamilton tickets" returns things like `hamilton tickets broadway`,
+`hamilton tickets okc`, `hamilton tickets san antonio`. Every phrase stored
+is a verbatim string Google itself returned on the pull date. It carries no
+volume number and no ranking by frequency — autocomplete order is Google's,
+not a popularity score — so it is used only as a **confirmation signal**
+("real searchers do phrase queries about this entity this way") and a
+**content signal** (the literal phrases are shown to visitors under a "How
+people search for this" heading on the relevant page, sourced verbatim, not
+paraphrased or expanded).
+
+**What this deliberately is not.** It is not AI-generated. An earlier
+version of this conversation described a technique of having an AI "predict
+text expansions" of seed topics into thousands of plausible-sounding search
+phrases — that produces invented text with no real searcher behind it, no
+matter how it's phrased. This system does not do that anywhere. Every
+phrase in `search-patterns.json` came back from an actual HTTP call to
+Google's suggest endpoint; nothing here was written by a language model.
+
+**Coverage and cadence — read this before assuming it's comprehensive.**
+This is a small, hand-pulled snapshot (18 entities as of the date above: the
+6 fixed leagues, 6 of the current top real artists/shows, 3 top real teams,
+3 top real cities), not a live or exhaustive system:
+
+- It is **not** called from the production backend on page load. Google's
+  suggest endpoint is undocumented and unofficial — there's no supported
+  contract for repeated automated calls, and doing that from a production
+  server risks rate-limiting or the IP being blocked, which would be a much
+  worse outcome than simply not having this signal. So `search-patterns.json`
+  is a static, checked-in file, and `seoEngine.js` only reads it.
+- Refreshing it means running the same pulls again (one HTTP request per
+  seed keyword) in a research session and replacing the file — there's no
+  cron job or schedule for this. Ask for a refresh, or for it to be
+  expanded to more entities, whenever it's useful; it isn't done
+  automatically, and the file's own `pulledAt` field is the way to tell
+  whether it's stale.
+- An entity with no entry in the file isn't scored as "confirmed no
+  interest" — `scoreOpportunity()` simply doesn't apply the bump, which is
+  the honest default for "not yet checked," not "checked and found nothing."
+
 ## Known limitations (stated plainly, not glossed over)
 
 - No real search-volume data. If GSC or Trends API access becomes

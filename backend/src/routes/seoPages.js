@@ -77,6 +77,20 @@ function cheapestPrice(events) {
   return priced.reduce((a, b) => (Number(a.best_price) <= Number(b.best_price) ? a : b)).best_price;
 }
 
+// Renders real Google Autocomplete completions (see
+// backend/data/search-patterns.json — a dated, hand-pulled snapshot, not a
+// live call and not AI-generated) for the small subset of entities this
+// snapshot covers. Omitted entirely when there's no confirmed data for this
+// page — never backfilled with invented phrases, since the whole point is
+// that every phrase shown here is something a real searcher actually typed.
+function confirmedSearchesSection(confirmedSearches) {
+  if (!confirmedSearches || confirmedSearches.length === 0) return '';
+  const items = confirmedSearches.slice(0, 8).map((s) => `<li>${xmlEscape(s)}</li>`).join('');
+  return `<h2>How people search for this</h2>
+<p>Real search phrases people use (from Google's own autocomplete data):</p>
+<ul>${items}</ul>`;
+}
+
 function pageShell({ title, description, url, h1, intro, bodyHtml, jsonLd, breadcrumbHtml }) {
   return `<!doctype html>
 <html lang="en">
@@ -166,6 +180,7 @@ router.get('/artists/:slug', async (req, res) => {
       breadcrumbHtml: breadcrumb([{ label: 'Artists', href: '/artists' }, { label: page.artistName }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Show</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${cityLinks ? `<h2>Cities on this tour</h2><ul>${cityLinks}</ul>` : ''}
+      ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
@@ -227,6 +242,7 @@ async function renderCityVariant(req, res, variant) {
       breadcrumbHtml: breadcrumb([{ label: 'Cities', href: '/cities' }, { label: place }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${otherVariants ? `<p>${otherVariants}</p>` : ''}
+      ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
@@ -343,6 +359,7 @@ router.get('/leagues/:slug', async (req, res) => {
       breadcrumbHtml: breadcrumb([{ label: 'Leagues', href: '/leagues' }, { label: page.label }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events.slice(0, 300))}</tbody></table>
       ${cityLinks ? `<h2>Cities with ${xmlEscape(page.label)} events</h2><ul>${cityLinks}</ul>` : ''}
+      ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
@@ -397,6 +414,7 @@ router.get('/teams/:slug', async (req, res) => {
       breadcrumbHtml: breadcrumb([{ label: 'Teams', href: '/teams' }, { label: page.name }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Matchup</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p>Team names on this page are extracted from matchup listings (e.g. "Team A at Team B") and may occasionally be imprecise.</p>
+      ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
