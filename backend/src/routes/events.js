@@ -5,10 +5,21 @@ import { isSameEvent } from '../utils/matching.js';
 const router = express.Router();
 
 // Safety cap on how many raw rows (pre-merge, across all sources) a single
-// request will fetch before merging/sorting/paginating in memory. The full
-// events table is a few thousand rows, so this comfortably covers real
-// traffic while bounding worst-case query cost if a filter is very loose.
-const MAX_RAW_ROWS = 5000;
+// request will fetch before merging/sorting/paginating in memory. This used
+// to be 5000, back when the whole events table only ever held a few
+// thousand rows total. Since the query orders by date ASC and takes the
+// EARLIEST rows up to this cap, that low a cap became a silent visibility
+// bug once the comprehensive Ticketmaster/SeatGeek sync grew the table
+// past 100k rows: any event past the first 5000 upcoming rows (across BOTH
+// sources combined) was completely invisible to every listing endpoint, no
+// matter how far a visitor paginated, even though it was sitting right
+// there in the database. Raised now that mergeEventsAcrossSources buckets
+// by (day, city, state) instead of doing an O(n^2) linear scan (see
+// below), so a much higher cap here no longer risks the same request
+// becoming slow/timing out. Still a cap, not "no limit" — the real fix for
+// unbounded growth is proper SQL-level pagination, but this comfortably
+// covers the current catalog size with headroom.
+const MAX_RAW_ROWS = 30000;
 
 // Merge rows that represent the same real-world event (per isSameEvent)
 // into a single card with one `offers` entry per source — the actual
@@ -16,6 +27,26 @@ const MAX_RAW_ROWS = 5000;
 // position is wherever its first-seen row was).
 function mergeEventsAcrossSources(rows) {
   const merged = [];
+
+  // Bucket candidates by (calendar day, city, state) before checking
+  // isSameEvent — that function already REQUIRES an exact match on all
+  // three before it will consider two rows a duplicate at all (see
+  // utils/matching.js), so grouping by the same key first means duplicate
+  // detection only ever scans same-bucket candidates instead of every
+  // event merged so far. Without this, `merged.find(...)` re-scanned the
+  // entire growing `merged` array for every single row — O(n^2) — which
+  // was invisible at a few thousand rows but became a serious problem once
+  // the events table grew past 100k rows (MAX_RAW_ROWS raised below): a
+  // 5000-row page merge was already ~12.5M isSameEvent calls, and raising
+  // the row cap without this fix would have made every listing request
+  // dramatically slower or outright time out.
+  const buckets = new Map();
+  const bucketKey = (row) => {
+    const d = new Date(row.date);
+    const day = Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
+    return `${day}|${(row.city || '').toLowerCase().trim()}|${(row.state || '').toLowerCase().trim()}`;
+  };
+
   for (const row of rows) {
     const offer = {
       // event_row_id/external_id are additive fields (not used by the
@@ -30,7 +61,9 @@ function mergeEventsAcrossSources(rows) {
       currency: row.currency,
     };
 
-    const match = merged.find((m) => isSameEvent(m, row));
+    const key = bucketKey(row);
+    let bucket = buckets.get(key);
+    const match = bucket && bucket.find((m) => isSameEvent(m, row));
     if (match) {
       match.offers.push(offer);
       // Backfill anything the primary row is missing from this duplicate.
@@ -39,7 +72,13 @@ function mergeEventsAcrossSources(rows) {
       if (!match.description && row.description) match.description = row.description;
       if (match.distance_km == null && row.distance_km != null) match.distance_km = row.distance_km;
     } else {
-      merged.push({ ...row, offers: [offer] });
+      const newEvent = { ...row, offers: [offer] };
+      merged.push(newEvent);
+      if (!bucket) {
+        bucket = [];
+        buckets.set(key, bucket);
+      }
+      bucket.push(newEvent);
     }
   }
 
