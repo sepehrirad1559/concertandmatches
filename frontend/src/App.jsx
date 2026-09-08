@@ -418,7 +418,10 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
           <button
             key={cat.id}
             type="button"
-            onClick={() => onSelect(isActive ? null : cat.id)}
+            onClick={() => {
+              onSelect(isActive ? null : cat.id);
+              document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+            }}
             style={{
               background: isActive ? cat.accent : '#fff',
               border: `2px solid ${cat.accent}`,
