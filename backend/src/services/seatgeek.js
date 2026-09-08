@@ -39,10 +39,33 @@ const SPORTS_TAXONOMY_CONFIG = [
 const SPORTS_TAXONOMIES = SPORTS_TAXONOMY_CONFIG.map((c) => c.taxonomy);
 
 // Maps a SeatGeek taxonomy slug to the display category used on the site.
-const SPORTS_CATEGORY_LABELS = {
+// Extended (spec: "add ALL of the SeatGeek events") well beyond the original
+// three sports leagues — the general region fetch below no longer filters
+// by taxonomy at all, so it now pulls every event type SeatGeek has
+// (theater, comedy, festivals, minor/major league sports beyond
+// NFL/NBA/NCAA Football, etc.), and those need real category labels instead
+// of all silently collapsing into the 'Concert' fallback.
+const CATEGORY_LABELS = {
   nfl: 'NFL',
   nba: 'NBA',
   ncaa_football: 'NCAA Football',
+  ncaa_basketball: 'NCAA Basketball',
+  mlb: 'MLB',
+  nhl: 'NHL',
+  mls: 'MLS',
+  boxing: 'Boxing',
+  mma: 'MMA',
+  golf: 'Golf',
+  tennis: 'Tennis',
+  wwe: 'Wrestling',
+  motor_sports_racing: 'Motorsports',
+  theater: 'Theater',
+  broadway_tickets_national: 'Theater',
+  comedy: 'Comedy',
+  classical: 'Concert',
+  concert: 'Concert',
+  family: 'Family',
+  festivals: 'Festival',
 };
 
 // Derives an event's category from the taxonomies SeatGeek attaches to it
@@ -52,10 +75,16 @@ const SPORTS_CATEGORY_LABELS = {
 function categoryFromTaxonomies(taxonomies) {
   if (!Array.isArray(taxonomies)) return null;
   for (const t of taxonomies) {
-    const label = SPORTS_CATEGORY_LABELS[t?.name];
+    const label = CATEGORY_LABELS[t?.name];
     if (label) return label;
   }
-  return null;
+  // Not one of the taxonomies we have a friendly label for — use SeatGeek's
+  // own (highest-priority) taxonomy name rather than silently mislabeling
+  // it as a Concert, title-casing it for display (e.g. 'minor_league_baseball'
+  // -> 'Minor League Baseball').
+  const primary = taxonomies?.[0]?.name;
+  if (!primary) return null;
+  return primary.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 // Fetch a page of concert events from SeatGeek's Platform API.
@@ -125,6 +154,63 @@ export const fetchSeatGeekEventsByState = async (stateCode, perState = 100) => {
     }
   }
 
+  return events;
+};
+
+// Same per-region pagination as fetchSeatGeekEventsByState, but with NO
+// `taxonomies.name` filter — i.e. every event type SeatGeek has, not just
+// concerts. Spec: "add ALL of the SeatGeek events" — the concert-only
+// region fetch below (and the three-league sports-only fetch further down)
+// each deliberately excluded everything outside their one taxonomy, which
+// meant theater, comedy, festivals, and every sport beyond
+// NFL/NBA/NCAA Football were never even requested. This is the actual
+// "get everything" fetch; the older, narrower ones are left in place below
+// since storeEvent upserts on external_id (any overlap just updates the
+// same row) and they're a reasonable fallback if this heavier one partially
+// fails.
+export const fetchAllSeatGeekEventsByState = async (stateCode, perState = 2000) => {
+  const PAGE_SIZE = 100;
+  const events = [];
+  const totalPages = Math.ceil(perState / PAGE_SIZE);
+
+  for (let page = 1; page <= totalPages; page++) {
+    try {
+      const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+        params: {
+          client_id: SEATGEEK_CLIENT_ID,
+          'venue.state': stateCode,
+          per_page: Math.min(PAGE_SIZE, perState - events.length),
+          page,
+          sort: 'datetime_local.asc',
+        },
+      });
+      const pageEvents = response.data?.events || [];
+      events.push(...pageEvents);
+      if (pageEvents.length < PAGE_SIZE) break;
+    } catch (error) {
+      console.error(`SeatGeek API error (all-types, venue.state=${stateCode}, page=${page}):`, error.response?.data || error.message);
+      break;
+    }
+    if (page < totalPages) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+
+  return events;
+};
+
+export const fetchAllSeatGeekEventsByRegion = async (perState = 2000) => {
+  const events = [];
+  const regions = [...US_STATES, ...CANADIAN_PROVINCES];
+
+  for (const stateCode of regions) {
+    console.log(`🌎 Fetching ALL SeatGeek events for ${stateCode}...`);
+    const stateEvents = await fetchAllSeatGeekEventsByState(stateCode, perState);
+    events.push(...stateEvents);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  console.log(`✅ Total SeatGeek events fetched across ${regions.length} regions (all types): ${events.length}`);
   return events;
 };
 
@@ -407,8 +493,19 @@ export const syncSeatGeekEvents = async (perState = 300) => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
+    // The actual comprehensive pull (spec: "add ALL of the SeatGeek
+    // events") — every event type, every region, not just concerts plus
+    // three sports leagues. See fetchAllSeatGeekEventsByRegion above.
+    const allTypeEvents = await fetchAllSeatGeekEventsByRegion();
+    console.log(`Processing ${allTypeEvents.length} SeatGeek events (all types)...`);
+
+    for (const event of allTypeEvents) {
+      await storeEvent(event);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
     console.log('✅ SeatGeek sync complete!');
-    return { success: true, totalEvents: events.length + sportsEvents.length };
+    return { success: true, totalEvents: events.length + sportsEvents.length + allTypeEvents.length };
   } catch (error) {
     console.error('SeatGeek sync failed:', error);
     return { success: false, error: error.message };
@@ -430,6 +527,8 @@ export default {
   fetchManySeatGeekEvents,
   fetchSeatGeekEventsByTaxonomy,
   fetchSeatGeekSportsEvents,
+  fetchAllSeatGeekEventsByState,
+  fetchAllSeatGeekEventsByRegion,
   fetchSeatGeekEventById,
   storeEvent,
   syncSeatGeekEvents,
