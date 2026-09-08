@@ -451,6 +451,8 @@ function EventCard({ event, onSelect }) {
         <img
           src={event.image_url}
           alt={event.title}
+          loading="lazy"
+          decoding="async"
           style={{ width: '100%', height: '150px', objectFit: 'cover' }}
         />
       )}
