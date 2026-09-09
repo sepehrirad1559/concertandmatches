@@ -268,7 +268,18 @@ export default function AdminPage() {
             {stats.eventsBySource?.length ? (
               <div style={{ marginTop: 16 }}>
                 <SimpleTable
-                  columns={[{ key: 'source', label: 'Source' }, { key: 'count', label: 'Events' }]}
+                  columns={[
+                    { key: 'source', label: 'Source' },
+                    { key: 'count', label: 'Events' },
+                    {
+                      key: 'priced', label: 'With price',
+                      render: (r) => {
+                        const priced = stats.eventsWithPriceBySource?.find((p) => p.source === r.source)?.count ?? 0;
+                        const pct = r.count > 0 ? Math.round((priced / r.count) * 100) : 0;
+                        return `${priced} (${pct}%)`;
+                      },
+                    },
+                  ]}
                   rows={stats.eventsBySource}
                 />
               </div>

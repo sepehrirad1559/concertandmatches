@@ -740,10 +740,15 @@ router.get('/health', requireAdminAccess, async (req, res) => {
 // actually has a comparable price yet. All read-only, no side effects.
 router.get('/stats', requireAdminAccess, async (req, res) => {
   try {
-    const [events, priced, bySource, canonical, offers, providers] = await Promise.all([
+    const [events, priced, bySource, pricedBySource, canonical, offers, providers] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS count FROM events'),
       pool.query('SELECT COUNT(*)::int AS count FROM events WHERE min_price IS NOT NULL'),
       pool.query('SELECT source, COUNT(*)::int AS count FROM events GROUP BY source ORDER BY source'),
+      // Same cut as eventsBySource, but only rows with a real price — lets
+      // the dashboard show "X of Y SeatGeek events priced" instead of just
+      // the platform-wide eventsWithPrice total, which on its own can't
+      // tell whether one source's backfill is lagging the other's.
+      pool.query('SELECT source, COUNT(*)::int AS count FROM events WHERE min_price IS NOT NULL GROUP BY source ORDER BY source'),
       pool.query('SELECT COUNT(*)::int AS count FROM canonical_events').catch(() => ({ rows: [{ count: null }] })),
       pool.query('SELECT COUNT(*)::int AS count FROM ticket_offers').catch(() => ({ rows: [{ count: null }] })),
       pool.query('SELECT name, active, affiliate_enabled FROM providers ORDER BY name').catch(() => ({ rows: [] })),
@@ -754,6 +759,7 @@ router.get('/stats', requireAdminAccess, async (req, res) => {
       totalEvents: events.rows[0].count,
       eventsWithPrice: priced.rows[0].count,
       eventsBySource: bySource.rows,
+      eventsWithPriceBySource: pricedBySource.rows,
       canonicalEvents: canonical.rows[0].count,
       ticketOffers: offers.rows[0].count,
       providers: providers.rows,
