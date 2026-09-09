@@ -688,12 +688,27 @@ router.get('/discover', async (req, res) => {
     // ---- Concerts / Sports / Theater / Comedy: exactly 5 each when the
     // platform has that many upcoming, via their own dedicated query so a
     // thin shared pool never shorts one category. ----
+    //
+    // Nearest-first when the visitor's location is known (spec: "closest by
+    // distance from the user's location in each category" — the default
+    // behavior these rows are supposed to have). Before this fix, this loop
+    // re-sorted by click_count/date only, silently throwing away the
+    // distance ordering fetchDiscoverCandidates' SQL query already computed
+    // (that query's own ORDER BY only controls which ~150 raw candidates get
+    // pulled in — it says nothing about the order they're presented in once
+    // this JS-side sort runs afterward). click_count/date remain as
+    // tiebreakers among events at essentially the same distance, and as the
+    // sole sort when no location is known at all.
     const categories = {};
     for (const [key, rule] of Object.entries(DISCOVER_CATEGORY_RULES)) {
       const rawRows = await fetchDiscoverCandidates(pool, { lat, lng, categoryRule: rule, limitRaw: 150 });
       const mergedCategory = mergeEventsAcrossSources(rawRows);
       await attachClickCounts(pool, mergedCategory);
       const sorted = mergedCategory.slice().sort((a, b) => {
+        if (hasCoords) {
+          const distCompare = compareEvents(a, b, 'distance');
+          if (distCompare !== 0) return distCompare;
+        }
         if (b.click_count !== a.click_count) return b.click_count - a.click_count;
         return new Date(a.date) - new Date(b.date);
       });
