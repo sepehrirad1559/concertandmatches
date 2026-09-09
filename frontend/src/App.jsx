@@ -935,7 +935,19 @@ export default function App() {
     const activeCategory = EVENT_CATEGORIES.find((c) => c.id === categoryId);
     if (activeCategory?.category) params.set('category', activeCategory.category.join(','));
     if (activeCategory?.keywords) params.set('keywords', activeCategory.keywords.join(','));
-    if (locationStatus === 'granted' && userLat != null && userLng != null) {
+    // Same location precedence as the discovery sections above (discoverLocation
+    // — a typed ZIP, or browser geolocation once reverse-geocoded to a city —
+    // wins over raw live geolocation coords). Before this fix, this grid only
+    // ever checked locationStatus/userLat/userLng directly, so a visitor who
+    // denied the live location prompt but typed a ZIP code still got a plain
+    // date-ordered "Featured Events" grid with the "Enable location in your
+    // browser" notice, even though the site already had a real location for
+    // them via the ZIP (as proven by the category rows above it, which DO use
+    // discoverLocation, sorting correctly the whole time).
+    if (discoverLocation) {
+      params.set('lat', String(discoverLocation.lat));
+      params.set('lng', String(discoverLocation.lng));
+    } else if (locationStatus === 'granted' && userLat != null && userLng != null) {
       params.set('lat', String(userLat));
       params.set('lng', String(userLng));
     }
@@ -961,9 +973,12 @@ export default function App() {
 
   // Initial load, and reload from the top whenever the active search or
   // category tile changes, or the customer's location resolves (granted/
-  // denied/unavailable).
+  // denied/unavailable) or changes (a typed ZIP, matching the discovery
+  // sections' own wait condition above — see fetchEvents for why
+  // discoverLocation is a dependency here too: without it, submitting a ZIP
+  // code updated the category rows but never re-fetched this grid).
   useEffect(() => {
-    if (locationStatus === 'pending') return;
+    if (!discoverLocation && locationStatus === 'pending') return;
     let cancelled = false;
     const loadEvents = async () => {
       setEventsLoading(true);
@@ -983,7 +998,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch, activeCategoryId, locationStatus, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]);
+  }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -1641,10 +1656,10 @@ export default function App() {
           </p>
         )}
 
-        {locationStatus === 'granted' && (
+        {(discoverLocation || locationStatus === 'granted') && (
           <p style={{ color: '#666', fontSize: '13px' }}>📍 Showing events near you first</p>
         )}
-        {(locationStatus === 'denied' || locationStatus === 'unavailable') && (
+        {!discoverLocation && (locationStatus === 'denied' || locationStatus === 'unavailable') && (
           <p style={{ color: '#666', fontSize: '13px' }}>
             Showing events by date. Enable location in your browser to see events near you first.
           </p>
