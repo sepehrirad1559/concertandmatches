@@ -552,8 +552,8 @@ function EventSection({ title, events, loading, onSelect, categoryId, onViewAll 
               padding: 0,
               margin: 0,
               font: 'inherit',
-              fontSize: '15px',
-              color: '#8b0000',
+              fontSize: '18px',
+              color: '#1a56db',
               fontWeight: 'bold',
               cursor: 'pointer',
             }}>
