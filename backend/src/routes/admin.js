@@ -60,6 +60,27 @@ function requireAdminAccess(req, res, next) {
   return res.status(403).json({ error: 'Invalid or missing credentials' });
 }
 
+// Both services' backfillMissingPrices() (services/ticketmaster.js,
+// services/seatgeek.js) now return apiErrors/noPriceInResponse alongside
+// updated/checked, specifically so a "0 updated" run is diagnosable instead
+// of looking identical to a healthy one. Every call site below used to drop
+// those fields on the floor once result.success was true (errorMessage only
+// ever got set from result.error, which is only set on a hard failure) — so
+// the admin dashboard's sync-health table showed "success, 0 updated, —" for
+// both "everything's fine, these events just don't have pricing yet" and "every
+// API call has been silently failing for days." This makes the distinction
+// visible from the logged row itself.
+export function backfillDiagnosticMessage(result) {
+  const parts = [];
+  if (result.apiErrors > 0) {
+    parts.push(`${result.apiErrors} API error(s) fetching event detail${result.errorSamples?.length ? `: ${JSON.stringify(result.errorSamples)}` : ''}`);
+  }
+  if (result.noPriceInResponse > 0) {
+    parts.push(`${result.noPriceInResponse} of ${result.checked} checked had no price at the source yet (not an error — expected for events before on-sale)`);
+  }
+  return parts.length ? parts.join('; ') : null;
+}
+
 router.post('/auth/login', (req, res) => {
   const dashboardPassword = process.env.ADMIN_DASHBOARD_PASSWORD;
   if (!dashboardPassword) {
@@ -622,7 +643,7 @@ router.post('/backfill/ticketmaster-prices', async (req, res) => {
   await logProviderSync({
     providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
     recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
-    status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+    status: result.success ? 'success' : 'error', errorMessage: result.error ?? backfillDiagnosticMessage(result),
   });
 
   if (!result.success) {
@@ -648,7 +669,7 @@ router.post('/backfill/seatgeek-prices', async (req, res) => {
   await logProviderSync({
     providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
     recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
-    status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+    status: result.success ? 'success' : 'error', errorMessage: result.error ?? backfillDiagnosticMessage(result),
   });
 
   if (!result.success) {

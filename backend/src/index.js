@@ -8,7 +8,7 @@ import { Pool } from 'pg';
 
 // Routes
 import eventsRoutes from './routes/events.js';
-import adminRoutes from './routes/admin.js';
+import adminRoutes, { backfillDiagnosticMessage } from './routes/admin.js';
 import clicksRoutes from './routes/clicks.js';
 import redirectRoutes from './routes/redirect.js';
 import sitemapRoutes from './routes/sitemap.js';
@@ -163,7 +163,7 @@ console.log('Ticketmaster backfill result:', tmResult);
 await logProviderSync({
   providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
   recordsReceived: tmResult.checked ?? null, recordsUpdated: tmResult.updated ?? null,
-  status: tmResult.success ? 'success' : 'error', errorMessage: tmResult.error ?? null,
+  status: tmResult.success ? 'success' : 'error', errorMessage: tmResult.error ?? backfillDiagnosticMessage(tmResult),
 });
 } catch (err) {
 console.error('Ticketmaster backfill failed:', err);
@@ -176,7 +176,7 @@ console.log('SeatGeek backfill result:', sgResult);
 await logProviderSync({
   providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
   recordsReceived: sgResult.checked ?? null, recordsUpdated: sgResult.updated ?? null,
-  status: sgResult.success ? 'success' : 'error', errorMessage: sgResult.error ?? null,
+  status: sgResult.success ? 'success' : 'error', errorMessage: sgResult.error ?? backfillDiagnosticMessage(sgResult),
 });
 } catch (err) {
 console.error('SeatGeek backfill failed:', err);

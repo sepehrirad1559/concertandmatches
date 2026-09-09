@@ -33,14 +33,46 @@ export async function rebuildCanonicalEvents() {
     const rows = eventsResult.rows;
 
     // Group rows representing the same real-world event, same algorithm as
-    // the live API's mergeEventsAcrossSources.
+    // the live API's mergeEventsAcrossSources — INCLUDING its (day, city,
+    // state) bucketing fix, which this function was missing until now.
+    // `groups.find(...)` below used to re-scan the entire, ever-growing
+    // `groups` array for every single row (O(n^2)) — the same bug
+    // mergeEventsAcrossSources had before it was bucketed (see that
+    // function's comment in routes/events.js). At the few-thousand-row
+    // scale this ran at when first written that was slow but tolerable;
+    // at the catalog's current size (100k+ events, the vast majority never
+    // matching any existing group) it's on the order of tens of billions of
+    // isSameEvent() calls — and because this whole loop is synchronous with
+    // no `await` inside it, it doesn't just make ONE request slow, it
+    // blocks Node's single event loop for the entire run, freezing every
+    // other request the server is handling (including totally unrelated
+    // public endpoints) until it finishes. isSameEvent() already REQUIRES
+    // an exact (day, city, state) match before considering two rows a
+    // duplicate at all (see utils/matching.js), so bucketing by that same
+    // key first — exactly as mergeEventsAcrossSources does — means each
+    // row only ever gets compared against same-bucket candidates instead of
+    // every group formed so far.
+    const bucketKey = (row) => {
+      const d = new Date(row.date);
+      const day = Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
+      return `${day}|${(row.city || '').toLowerCase().trim()}|${(row.state || '').toLowerCase().trim()}`;
+    };
     const groups = [];
+    const bucketsByKey = new Map();
     for (const row of rows) {
-      const match = groups.find((g) => isSameEvent(g.primary, row));
+      const key = bucketKey(row);
+      let bucket = bucketsByKey.get(key);
+      const match = bucket && bucket.find((g) => isSameEvent(g.primary, row));
       if (match) {
         match.rows.push(row);
       } else {
-        groups.push({ primary: row, rows: [row] });
+        const group = { primary: row, rows: [row] };
+        groups.push(group);
+        if (!bucket) {
+          bucket = [];
+          bucketsByKey.set(key, bucket);
+        }
+        bucket.push(group);
       }
     }
 

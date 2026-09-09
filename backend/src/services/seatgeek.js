@@ -415,15 +415,31 @@ export const storeEvent = async (sgEvent) => {
 // Fetch a single event by SeatGeek's own id (not our prefixed "sg-<id>").
 // Used for price backfill rather than the bulk sync, which pages through
 // the /events search endpoint.
+// Returns { data, errorInfo } instead of swallowing failures into a bare
+// `null`, matching services/ticketmaster.js's getTicketmasterEventDetails —
+// added for the same reason: a backfill run that comes back "checked: 300,
+// updated: 0" is otherwise indistinguishable from "every one of these 300
+// events genuinely has no price yet at the source" vs. "every single API
+// call is failing" (bad/expired client_id, rate limiting, etc). Before this
+// fix backfillMissingPrices had no way to tell those apart, and neither did
+// anything reading its result (the admin dashboard's sync-health table, or
+// admin.js's log write) — a systemic outage would have looked identical to
+// normal "no price available yet" data-source behavior in every place this
+// result surfaces.
 export const fetchSeatGeekEventById = async (seatgeekId) => {
   try {
     const response = await axios.get(`${SEATGEEK_BASE_URL}/events/${seatgeekId}`, {
       params: { client_id: SEATGEEK_CLIENT_ID },
     });
-    return response.data || null;
+    return { data: response.data || null, errorInfo: null };
   } catch (error) {
-    console.error('SeatGeek event detail error:', error.response?.data || error.message);
-    return null;
+    const status = error.response?.status;
+    const body = error.response?.data;
+    const errorInfo = status
+      ? `HTTP ${status}: ${JSON.stringify(body).slice(0, 300)}`
+      : error.message;
+    console.error('SeatGeek event detail error:', errorInfo);
+    return { data: null, errorInfo };
   }
 };
 
@@ -434,6 +450,13 @@ export const fetchSeatGeekEventById = async (seatgeekId) => {
 // date) — this re-checks each event individually and updates it if pricing
 // is now available. Note: for some events this genuinely never fills in
 // on the free tier; that's a data-source limitation, not a bug here.
+//
+// Returns apiErrors/noPriceInResponse counts alongside `updated`, mirroring
+// backfillMissingPrices in services/ticketmaster.js, so a "0 updated" run is
+// legible from the result alone instead of silently looking identical to a
+// healthy run (see fetchSeatGeekEventById's comment above for why this was
+// added — admin.js's sync-log write previously had nothing to report here
+// beyond a bare "0 updated, no error").
 export const backfillMissingPrices = async (limit = 100) => {
   try {
     if (!SEATGEEK_CLIENT_ID) {
@@ -449,9 +472,21 @@ export const backfillMissingPrices = async (limit = 100) => {
     );
 
     let updated = 0;
+    let apiErrors = 0;
+    let noPriceInResponse = 0;
+    const errorSamples = [];
+
     for (const row of rows) {
       const seatgeekId = row.external_id.replace(/^sg-/, '');
-      const detail = await fetchSeatGeekEventById(seatgeekId);
+      const { data: detail, errorInfo } = await fetchSeatGeekEventById(seatgeekId);
+
+      if (errorInfo) {
+        apiErrors++;
+        if (errorSamples.length < 3) {
+          errorSamples.push({ external_id: row.external_id, error: errorInfo });
+        }
+      }
+
       const stats = detail?.stats;
       const minPrice = stats?.lowest_price != null ? stats.lowest_price : null;
       const maxPrice = stats?.highest_price != null ? stats.highest_price : minPrice;
@@ -462,13 +497,15 @@ export const backfillMissingPrices = async (limit = 100) => {
           [minPrice, maxPrice, row.id]
         );
         updated++;
+      } else if (!errorInfo) {
+        noPriceInResponse++;
       }
 
       // Rate limiting — one detail call per event, be polite to the API.
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
-    return { success: true, checked: rows.length, updated };
+    return { success: true, checked: rows.length, updated, apiErrors, noPriceInResponse, errorSamples };
   } catch (error) {
     console.error('SeatGeek price backfill failed:', error);
     return { success: false, error: error.message };
