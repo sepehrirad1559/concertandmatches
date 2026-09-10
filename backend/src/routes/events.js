@@ -420,8 +420,15 @@ const DISCOVER_CATEGORY_RULES = {
   comedy: { categories: [], keywords: ['Comedy', 'Stand-Up', 'Stand Up'] },
 };
 
-// How many events each discover section should return.
-const DISCOVER_SECTION_COUNT = 5;
+// How many events each discover section should return. The frontend now
+// pages through each section client-side (see DISCOVER_PAGE_SIZE/
+// DISCOVER_MAX_PAGES in App.jsx's EventSection — a "‹ 1 of 7 ›" control
+// replaced the old single "View all" link), so a section needs enough
+// events to actually fill up to 7 pages, not just the 5 that used to be
+// shown outright.
+const DISCOVER_PAGE_SIZE = 5;
+const DISCOVER_MAX_PAGES = 7;
+const DISCOVER_SECTION_COUNT = DISCOVER_PAGE_SIZE * DISCOVER_MAX_PAGES;
 
 function buildCategoryWhere(rule, paramCountStart, params) {
   let paramCount = paramCountStart;
@@ -607,7 +614,7 @@ function backfillByDate(picked, candidatePool, count) {
 }
 
 // Homepage event-discovery sections (spec: Popular Events, Recommended for
-// You, Trending Events Near [City], and one 5-event row per Concerts/
+// You, Trending Events Near [City], and one paginated row per Concerts/
 // Sports/Theater/Comedy). Registered ahead of GET /:eventId below so
 // "discover" is never swallowed as an :eventId path param.
 //
@@ -685,9 +692,10 @@ router.get('/discover', async (req, res) => {
     }
     const recommended = backfillByDate(pickDiverse(merged, DISCOVER_SECTION_COUNT), merged, DISCOVER_SECTION_COUNT);
 
-    // ---- Concerts / Sports / Theater / Comedy: exactly 5 each when the
-    // platform has that many upcoming, via their own dedicated query so a
-    // thin shared pool never shorts one category. ----
+    // ---- Concerts / Sports / Theater / Comedy: up to DISCOVER_SECTION_COUNT
+    // each (enough for the frontend's 7-page cap) when the platform has that
+    // many upcoming, via their own dedicated query so a thin shared pool
+    // never shorts one category. ----
     //
     // Nearest-first when the visitor's location is known (spec: "closest by
     // distance from the user's location in each category" — the default
@@ -701,7 +709,7 @@ router.get('/discover', async (req, res) => {
     // sole sort when no location is known at all.
     const categories = {};
     for (const [key, rule] of Object.entries(DISCOVER_CATEGORY_RULES)) {
-      const rawRows = await fetchDiscoverCandidates(pool, { lat, lng, categoryRule: rule, limitRaw: 150 });
+      const rawRows = await fetchDiscoverCandidates(pool, { lat, lng, categoryRule: rule, limitRaw: 400 });
       const mergedCategory = mergeEventsAcrossSources(rawRows);
       await attachClickCounts(pool, mergedCategory);
       const sorted = mergedCategory.slice().sort((a, b) => {

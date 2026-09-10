@@ -588,37 +588,106 @@ function EventCard({ event, onSelect }) {
 // plus up to 5 EventCards in the same responsive grid the main listing
 // uses. Renders nothing while loading or once it's clear the platform has
 // no events at all for this section, rather than showing an empty heading.
-function EventSection({ title, events, loading, onSelect, categoryId, onViewAll }) {
+// Every discover section (Popular/Recommended/Trending/by-category) pages
+// its own events client-side, PAGE_SIZE at a time, capped at MAX_PAGES —
+// replaces the old "View all {title} →" link with a "‹ 1 of 7 ›" control so
+// a visitor can browse each row in place instead of jumping down to the
+// Featured Events grid. Featured Events itself is unaffected — it keeps its
+// own "Load More" pagination further down the page.
+const DISCOVER_PAGE_SIZE = 5;
+const DISCOVER_MAX_PAGES = 7;
+
+function EventSection({ title, events, loading, onSelect }) {
+  const [page, setPage] = useState(0);
+  // Reset to page 1 whenever this section gets a fresh events array (e.g.
+  // the discover fetch re-ran for a new location) so a stale page index
+  // from the previous data set can't leave the row showing nothing.
+  useEffect(() => {
+    setPage(0);
+  }, [events]);
+
   if (!loading && (!events || events.length === 0)) return null;
+
+  const totalPages = events && events.length > 0
+    ? Math.min(DISCOVER_MAX_PAGES, Math.ceil(events.length / DISCOVER_PAGE_SIZE))
+    : 1;
+  const clampedPage = Math.min(page, totalPages - 1);
+  const pageEvents = events
+    ? events.slice(clampedPage * DISCOVER_PAGE_SIZE, clampedPage * DISCOVER_PAGE_SIZE + DISCOVER_PAGE_SIZE)
+    : [];
+  const atFirstPage = clampedPage === 0;
+  const atLastPage = clampedPage === totalPages - 1;
+
   return (
     <div style={{ marginBottom: '32px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
         <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.01em' }}>{title}</h3>
-        {categoryId && (
-          <button
-            type="button"
-            className="cm-link-underline"
-            onClick={() => onViewAll(categoryId)}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              margin: 0,
-              font: 'inherit',
-              fontSize: '15px',
-              color: '#1a56db',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-            }}>
-            View all {title} →
-          </button>
+        {!loading && totalPages > 1 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 8px',
+            borderRadius: '999px',
+            border: '1px solid var(--cm-border)',
+            backgroundColor: '#fff',
+            boxShadow: 'var(--cm-shadow-sm)',
+          }}>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={atFirstPage}
+              aria-label={`Previous page of ${title}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: 'transparent',
+                cursor: atFirstPage ? 'default' : 'pointer',
+                color: atFirstPage ? '#ccc' : '#1a0733',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                lineHeight: 1,
+              }}>
+              ‹
+            </button>
+            <span style={{ fontSize: '13px', color: '#666', fontWeight: 'bold', minWidth: '54px', textAlign: 'center' }}>
+              {clampedPage + 1} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={atLastPage}
+              aria-label={`Next page of ${title}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: 'transparent',
+                cursor: atLastPage ? 'default' : 'pointer',
+                color: atLastPage ? '#ccc' : '#1a0733',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                lineHeight: 1,
+              }}>
+              ›
+            </button>
+          </div>
         )}
       </div>
       {loading ? (
         <p style={{ color: '#666' }}>Loading…</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          {events.map((event) => (
+          {pageEvents.map((event) => (
             <EventCard key={`${event.id}-${event.source || ''}`} event={event} onSelect={onSelect} />
           ))}
         </div>
@@ -735,15 +804,6 @@ export default function App() {
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [activeSearch, setActiveSearch] = useState(initialQuery);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
-  // "View all <Category>" link on a homepage discover section (which only
-  // ever shows DISCOVER_SECTION_COUNT=5 events): jump straight to that
-  // category's full, paginated list in Featured Events, same as clicking
-  // the category tile/quick-link — always sets it (never toggles off, so
-  // clicking a second "View all" link doesn't silently clear the filter).
-  const handleViewAllCategory = (categoryId) => {
-    setActiveCategoryId(categoryId);
-    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-  };
   // Accounts aren't built yet — clicking "Sign In" just lets the visitor
   // know that, rather than pretending a login flow exists.
   const [showSignInNotice, setShowSignInNotice] = useState(false);
@@ -1737,48 +1797,36 @@ export default function App() {
         events={discoverData?.categories?.nfl}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
-        categoryId="nfl"
-        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="Concerts"
         events={discoverData?.categories?.concerts}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
-        categoryId="concerts"
-        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="NBA"
         events={discoverData?.categories?.nba}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
-        categoryId="nba"
-        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="NCAA Football"
         events={discoverData?.categories?.ncaaFootball}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
-        categoryId="ncaaf"
-        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="Theater"
         events={discoverData?.categories?.theater}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
-        categoryId="theater"
-        onViewAll={handleViewAllCategory}
       />
       <EventSection
         title="Comedy"
         events={discoverData?.categories?.comedy}
         loading={discoverLoading}
         onSelect={handleSelectEvent}
-        categoryId="comedy"
-        onViewAll={handleViewAllCategory}
       />
 
       <div id="featured-events" style={{ marginTop: '20px' }}>
