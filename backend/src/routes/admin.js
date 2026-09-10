@@ -72,6 +72,9 @@ function requireAdminAccess(req, res, next) {
 // visible from the logged row itself.
 export function backfillDiagnosticMessage(result) {
   const parts = [];
+  if (result.quotaExhausted) {
+    parts.push(`QUOTA EXHAUSTED — ${result.quotaExhaustedNote || 'stopped early, retrying now will only fail identically until the provider quota resets'}`);
+  }
   if (result.apiErrors > 0) {
     parts.push(`${result.apiErrors} API error(s) fetching event detail${result.errorSamples?.length ? `: ${JSON.stringify(result.errorSamples)}` : ''}`);
   }

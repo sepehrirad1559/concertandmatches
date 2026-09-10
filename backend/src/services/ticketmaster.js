@@ -578,17 +578,21 @@ export const syncAllEvents = async () => {
 // to tell whether that meant "API calls are failing" or "these events truly
 // have no price yet at the source".
 //
-// Retries once on a 429 "spike arrest" violation. Discovered via a real
-// backfill run's logged error: Ticketmaster's per-key rate limit here isn't
-// a generous rolling quota, it's `MessageRate{messagesPerPeriod=5,
-// periodInMicroseconds=1000000, maxBurstMessageCount=1.0}` — 5 requests per
-// second with ZERO burst tolerance. backfillMissingPrices' 200ms
-// between-call delay sits exactly on that boundary (5/sec), so ordinary
-// network jitter alone pushed ~26% of a 600-event batch over the line into
-// a 429 in practice. Those calls weren't actually failing to find a price —
-// they never reached Ticketmaster's pricing logic at all. A short backoff
-// and one retry recovers almost all of them without materially slowing the
-// batch down (most calls never hit this path).
+// Ticketmaster's gateway (Apigee) returns HTTP 429 for two genuinely
+// different conditions, distinguishable only by `detail.errorcode` in the
+// response body — conflating them was a real bug found by watching a live
+// backfill run fail every single call for 20+ minutes straight:
+//   - SpikeArrestViolation: the per-second burst limit (5 req/sec, zero
+//     burst tolerance — see backfillMissingPrices' delay comment). Transient
+//     and near-instantly recoverable: a short backoff and retry works.
+//   - QuotaViolation: the account's daily/period call quota is exhausted.
+//     NOT recoverable by retrying — every subsequent call fails identically
+//     until the quota window resets (hours), so retrying just burns time
+//     for nothing and blindly retrying every call in a large batch after
+//     the quota trips turns a few wasted calls into the whole batch
+//     silently spinning for as long as it takes to grind through its list.
+const QUOTA_EXHAUSTED_ERRORCODE = 'policies.ratelimit.QuotaViolation';
+
 export const getTicketmasterEventDetails = async (eventId, _isRetry = false) => {
   try {
     const response = await axios.get(`${TICKETMASTER_BASE_URL}/events/${eventId}`, {
@@ -599,6 +603,11 @@ export const getTicketmasterEventDetails = async (eventId, _isRetry = false) => 
   } catch (error) {
     const status = error.response?.status;
     const body = error.response?.data;
+    const errorcode = body?.fault?.detail?.errorcode;
+
+    if (status === 429 && errorcode === QUOTA_EXHAUSTED_ERRORCODE) {
+      return { data: null, errorInfo: `HTTP 429: ${JSON.stringify(body).slice(0, 300)}`, quotaExhausted: true };
+    }
 
     if (status === 429 && !_isRetry) {
       await new Promise((resolve) => setTimeout(resolve, 600));
@@ -680,14 +689,27 @@ export const backfillMissingPrices = async (limit = 100) => {
     const errorSamples = [];
     const noPriceSamples = [];
 
+    let quotaExhaustedAt = null;
+
     for (const row of rows) {
-      const { data: detail, errorInfo } = await getTicketmasterEventDetails(row.external_id);
+      const { data: detail, errorInfo, quotaExhausted } = await getTicketmasterEventDetails(row.external_id);
 
       if (errorInfo) {
         apiErrors++;
         if (errorSamples.length < 3) {
           errorSamples.push({ external_id: row.external_id, error: errorInfo });
         }
+      }
+
+      // Stop the batch as soon as the daily quota trips instead of grinding
+      // through the rest of `rows` one 429 at a time — every remaining call
+      // would fail identically until the quota window resets (hours away),
+      // so continuing only wastes time without any chance of succeeding.
+      // Confirmed against a live run that hammered ~20 minutes of guaranteed
+      // failures before this existed.
+      if (quotaExhausted) {
+        quotaExhaustedAt = row.external_id;
+        break;
       }
 
       const priceRanges = detail?.priceRanges;
@@ -741,6 +763,10 @@ export const backfillMissingPrices = async (limit = 100) => {
       noPriceInResponse,
       errorSamples,
       noPriceSamples,
+      ...(quotaExhaustedAt ? {
+        quotaExhausted: true,
+        quotaExhaustedNote: `Stopped early at external_id ${quotaExhaustedAt} — Ticketmaster's daily API quota is exhausted. This batch's remaining rows were not attempted; retrying now would only fail identically. Wait for the quota to reset (see Ticketmaster developer dashboard) before running another manual backfill — the scheduled job will resume automatically once it does.`,
+      } : {}),
     };
   } catch (error) {
     console.error('Ticketmaster price backfill failed:', error);
