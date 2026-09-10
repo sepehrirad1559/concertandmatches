@@ -626,6 +626,17 @@ router.post('/cleanup/official-source-data', async (req, res) => {
 // sync — call it repeatedly (e.g. from cron) to keep working through the
 // backlog, and again periodically since some prices genuinely don't exist
 // yet at sync time (on-sale dates, etc.) and appear only later.
+//
+// Respond immediately and run in the background (same fix as /sync/* above)
+// rather than awaiting the whole batch synchronously. This used to await —
+// fine for the default limit=100 (~100 events * ~200-500ms/call is well
+// under any proxy timeout), but clearing a real backlog by hand needs a much
+// larger limit, and at that size the batch can run for several minutes,
+// which is exactly the shape of request Railway's proxy won't hold open
+// (see the /sync/* comments above). A synchronous large-limit call was
+// timing out client-side with no way to tell whether the batch even
+// finished server-side. Check GET /admin/health or Railway logs for the
+// real result instead of the HTTP response.
 router.post('/backfill/ticketmaster-prices', async (req, res) => {
   const providedKey = req.headers['x-sync-key'];
   const expectedKey = process.env.SYNC_SECRET_KEY;
@@ -639,17 +650,21 @@ router.post('/backfill/ticketmaster-prices', async (req, res) => {
 
   const limit = Number(req.query.limit) || 100;
   const startedAt = new Date();
-  const result = await getProvider('ticketmaster').backfillPrices(limit);
-  await logProviderSync({
-    providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
-    recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
-    status: result.success ? 'success' : 'error', errorMessage: result.error ?? backfillDiagnosticMessage(result),
-  });
+  res.json({ success: true, message: `Ticketmaster price backfill started in the background (limit=${limit}). Check GET /admin/health or Railway logs for completion.` });
 
-  if (!result.success) {
-    return res.status(500).json(result);
-  }
-  res.json(result);
+  getProvider('ticketmaster').backfillPrices(limit)
+    .then((result) => logProviderSync({
+      providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+      recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
+      status: result.success ? 'success' : 'error', errorMessage: result.error ?? backfillDiagnosticMessage(result),
+    }))
+    .catch((error) => {
+      console.error('Background Ticketmaster price backfill failed:', error);
+      return logProviderSync({
+        providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 router.post('/backfill/seatgeek-prices', async (req, res) => {
@@ -665,17 +680,21 @@ router.post('/backfill/seatgeek-prices', async (req, res) => {
 
   const limit = Number(req.query.limit) || 100;
   const startedAt = new Date();
-  const result = await getProvider('seatgeek').backfillPrices(limit);
-  await logProviderSync({
-    providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
-    recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
-    status: result.success ? 'success' : 'error', errorMessage: result.error ?? backfillDiagnosticMessage(result),
-  });
+  res.json({ success: true, message: `SeatGeek price backfill started in the background (limit=${limit}). Check GET /admin/health or Railway logs for completion.` });
 
-  if (!result.success) {
-    return res.status(500).json(result);
-  }
-  res.json(result);
+  getProvider('seatgeek').backfillPrices(limit)
+    .then((result) => logProviderSync({
+      providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+      recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
+      status: result.success ? 'success' : 'error', errorMessage: result.error ?? backfillDiagnosticMessage(result),
+    }))
+    .catch((error) => {
+      console.error('Background SeatGeek price backfill failed:', error);
+      return logProviderSync({
+        providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 // One-time schema migration: provider_sync_logs (spec §5, §35 — provider
