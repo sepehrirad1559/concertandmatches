@@ -1337,7 +1337,7 @@ export default function App() {
                           style={{
                             display: 'block',
                             padding: '13px 16px',
-                            borderRadius: showTierBreakdown || (!showTierBreakdown && priceLabel) ? '12px 12px 0 0' : '12px',
+                            borderRadius: (showTierBreakdown || !isOfficialLink) ? '12px 12px 0 0' : '12px',
                             border: isOfficialLink ? '1px solid #555' : (highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000'),
                             backgroundColor: isOfficialLink ? '#444' : (highlightBest ? '#2e7d32' : '#8b0000'),
                             color: 'white',
@@ -1370,13 +1370,17 @@ export default function App() {
                             ))}
                           </div>
                         )}
-                        {!showTierBreakdown && priceLabel && (
+                        {!showTierBreakdown && !isOfficialLink && (
                           <div style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                             padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 12px 12px',
                             backgroundColor: '#fff',
                           }}>
-                            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>{priceLabel}</span>
+                            {priceLabel ? (
+                              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>{priceLabel}</span>
+                            ) : (
+                              <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#999' }}>Price not listed</span>
+                            )}
                             {highlightBest && (
                               <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white', backgroundColor: '#2e7d32', padding: '2px 8px', borderRadius: '10px' }}>
                                 BEST PRICE
