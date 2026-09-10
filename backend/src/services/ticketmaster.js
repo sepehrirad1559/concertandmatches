@@ -577,7 +577,19 @@ export const syncAllEvents = async () => {
 // added after a backfill run came back "checked: 100, updated: 0" with no way
 // to tell whether that meant "API calls are failing" or "these events truly
 // have no price yet at the source".
-export const getTicketmasterEventDetails = async (eventId) => {
+//
+// Retries once on a 429 "spike arrest" violation. Discovered via a real
+// backfill run's logged error: Ticketmaster's per-key rate limit here isn't
+// a generous rolling quota, it's `MessageRate{messagesPerPeriod=5,
+// periodInMicroseconds=1000000, maxBurstMessageCount=1.0}` — 5 requests per
+// second with ZERO burst tolerance. backfillMissingPrices' 200ms
+// between-call delay sits exactly on that boundary (5/sec), so ordinary
+// network jitter alone pushed ~26% of a 600-event batch over the line into
+// a 429 in practice. Those calls weren't actually failing to find a price —
+// they never reached Ticketmaster's pricing logic at all. A short backoff
+// and one retry recovers almost all of them without materially slowing the
+// batch down (most calls never hit this path).
+export const getTicketmasterEventDetails = async (eventId, _isRetry = false) => {
   try {
     const response = await axios.get(`${TICKETMASTER_BASE_URL}/events/${eventId}`, {
       params: { apikey: TICKETMASTER_API_KEY }
@@ -587,6 +599,12 @@ export const getTicketmasterEventDetails = async (eventId) => {
   } catch (error) {
     const status = error.response?.status;
     const body = error.response?.data;
+
+    if (status === 429 && !_isRetry) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      return getTicketmasterEventDetails(eventId, true);
+    }
+
     const errorInfo = status
       ? `HTTP ${status}: ${JSON.stringify(body).slice(0, 300)}`
       : error.message;
@@ -609,7 +627,23 @@ export const getTicketmasterEventDetails = async (eventId) => {
 // (bad/missing API key, rate limiting, etc — a real bug); noPriceInResponse
 // means the calls succeeded but Ticketmaster itself has no price for that
 // event yet (not a bug, just data that isn't available yet at the source).
+// Guards against two backfill runs overlapping (e.g. the 6-hourly scheduled
+// job and a manual /api/admin/backfill/ticketmaster-prices call landing at
+// the same time, or two manual calls in a row before the first finishes).
+// Concurrent runs would independently SELECT the same oldest NULL-price
+// rows (nothing has updated yet to change the query's result) and fire
+// their detail-call loops at the same time, roughly doubling the real
+// request rate against Ticketmaster's 5-requests/second limit — directly
+// causing more of the 429 "spike arrest" errors this file already retries
+// around. A plain module-level flag is enough here since this runs as a
+// single Node process per Railway replica.
+let backfillInProgress = false;
+
 export const backfillMissingPrices = async (limit = 100) => {
+  if (backfillInProgress) {
+    return { success: false, error: 'A Ticketmaster price backfill is already running — try again once it finishes (check GET /admin/health).' };
+  }
+  backfillInProgress = true;
   try {
     if (!TICKETMASTER_API_KEY) {
       return { success: false, error: 'TICKETMASTER_API_KEY not configured' };
@@ -691,7 +725,12 @@ export const backfillMissingPrices = async (limit = 100) => {
       }
 
       // Rate limiting — one detail call per event, be polite to the API.
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // 250ms (4/sec) rather than 200ms (exactly 5/sec): Ticketmaster's
+      // spike-arrest policy on this endpoint allows 5/sec with NO burst
+      // tolerance at all, so sitting exactly on that boundary meant ordinary
+      // network jitter alone was enough to trip it — see
+      // getTicketmasterEventDetails' 429-retry comment for the full story.
+      await new Promise((resolve) => setTimeout(resolve, 250));
     }
 
     return {
@@ -706,6 +745,8 @@ export const backfillMissingPrices = async (limit = 100) => {
   } catch (error) {
     console.error('Ticketmaster price backfill failed:', error);
     return { success: false, error: error.message };
+  } finally {
+    backfillInProgress = false;
   }
 };
 

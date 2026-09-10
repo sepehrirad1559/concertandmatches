@@ -426,7 +426,13 @@ export const storeEvent = async (sgEvent) => {
 // admin.js's log write) — a systemic outage would have looked identical to
 // normal "no price available yet" data-source behavior in every place this
 // result surfaces.
-export const fetchSeatGeekEventById = async (seatgeekId) => {
+// Retries once on a 429 rather than counting it straight into apiErrors — a
+// real backfill run showed a batch of "API rate limit exceeded" responses
+// while SeatGeek's own hours-long nationwide discovery sync was running
+// concurrently on the same client_id, which is exactly the kind of
+// transient contention a short backoff clears up rather than a real,
+// permanent failure worth reporting as one.
+export const fetchSeatGeekEventById = async (seatgeekId, _isRetry = false) => {
   try {
     const response = await axios.get(`${SEATGEEK_BASE_URL}/events/${seatgeekId}`, {
       params: { client_id: SEATGEEK_CLIENT_ID },
@@ -435,6 +441,12 @@ export const fetchSeatGeekEventById = async (seatgeekId) => {
   } catch (error) {
     const status = error.response?.status;
     const body = error.response?.data;
+
+    if (status === 429 && !_isRetry) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return fetchSeatGeekEventById(seatgeekId, true);
+    }
+
     const errorInfo = status
       ? `HTTP ${status}: ${JSON.stringify(body).slice(0, 300)}`
       : error.message;
@@ -457,7 +469,17 @@ export const fetchSeatGeekEventById = async (seatgeekId) => {
 // healthy run (see fetchSeatGeekEventById's comment above for why this was
 // added — admin.js's sync-log write previously had nothing to report here
 // beyond a bare "0 updated, no error").
+// Same concurrency guard as ticketmaster.js's backfillMissingPrices — see
+// its comment for why overlapping runs (scheduled + manual, or two manual
+// calls) actively make rate-limiting worse rather than just being wasted
+// duplicate work.
+let backfillInProgress = false;
+
 export const backfillMissingPrices = async (limit = 100) => {
+  if (backfillInProgress) {
+    return { success: false, error: 'A SeatGeek price backfill is already running — try again once it finishes (check GET /admin/health).' };
+  }
+  backfillInProgress = true;
   try {
     if (!SEATGEEK_CLIENT_ID) {
       return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
@@ -517,6 +539,8 @@ export const backfillMissingPrices = async (limit = 100) => {
   } catch (error) {
     console.error('SeatGeek price backfill failed:', error);
     return { success: false, error: error.message };
+  } finally {
+    backfillInProgress = false;
   }
 };
 
