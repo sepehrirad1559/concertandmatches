@@ -140,16 +140,31 @@ console.log(`📦 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.
 // report — e.g. before an on-sale date, neither source has one yet). This
 // runs the same backfill the /api/admin/backfill/* endpoints expose, but
 // automatically, so pricing keeps filling in over time without anyone
-// needing to trigger it by hand. Batched (300 events per source per run) and
-// rate-limited internally, so each run only takes a couple of minutes.
+// needing to trigger it by hand. Batched (600 events per source per run) and
+// rate-limited internally.
+//
+// Raised from 300 to 600 alongside the date >= NOW() fix in each service's
+// backfillMissingPrices() (see services/ticketmaster.js/seatgeek.js): before
+// that fix, a stuck backlog of past events with permanently-unpriced rows
+// could occupy the whole date-ASC queue forever, so no batch size would
+// have helped — upcoming events (including next-day ones) were never
+// reached no matter how many runs went by. With that starvation fixed, a
+// bigger batch now actually buys real throughput: it clears the current
+// backlog of near-term events noticeably faster (within roughly a day of
+// scheduled runs instead of several), while staying just as safe against
+// getting stuck again in the future, since any event that ages into the
+// past simply drops out of the query on its own.
 // Was once/day; raised to every 6 hours (4x/day) so prices on existing
 // events fill in and refresh far sooner after a sync — see
 // EVENT_SYNC_INTERVAL_MS below for the shared reasoning on how far this can
 // go before risking Ticketmaster's daily API quota (roughly 5,000 calls/day
 // on the free Discovery API tier; each backfilled event costs one call per
-// source, so a full 300-event batch on both sources is up to ~600 calls).
+// source, so a full 600-event batch on both sources is up to ~1,200 calls —
+// ~2,400 Ticketmaster calls/day at 4 runs/day, plus ~240/day from the event
+// sync below, comfortably under the 5,000/day quota with headroom left for
+// manual /admin/sync|backfill/* triggers too).
 const BACKFILL_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const BACKFILL_BATCH_SIZE = 300;
+const BACKFILL_BATCH_SIZE = 600;
 
 async function runScheduledPriceBackfill() {
 console.log('🔄 Running scheduled price backfill...');
