@@ -895,9 +895,38 @@ export default function App() {
   // name — but only once we know it (locationStatus 'granted') and only if
   // the visitor hasn't already given us a ZIP code (a typed ZIP is a more
   // deliberate, more precise signal than "wherever the browser says you are
-  // right now", so it always wins).
+  // right now", so it always wins and is never silently replaced here).
+  //
+  // ROOT CAUSE of the recurring "doesn't show closest events" bug: the
+  // cached discoverLocation (localStorage, see loadCachedLocation above) has
+  // no expiry. Previously this effect bailed out as soon as ANY cached
+  // location existed ("if (discoverLocation || ...) return"), which meant an
+  // auto-detected (source: 'geolocation') city cached on some earlier visit
+  // — potentially a different city, a different device, or months stale —
+  // would silently win over the browser's CURRENT, live position forever,
+  // since it's never a deliberate override the way a typed ZIP is. Every
+  // "closest events" computation (both this /discover call and the main
+  // /events grid, which reuses discoverLocation the same way) then measured
+  // distance from that stale point instead of where the visitor actually is
+  // right now — explaining why this kept resurfacing "again and again"
+  // rather than being a one-time glitch.
+  //
+  // Fix: a ZIP-sourced location still always wins (unchanged). A
+  // geolocation-sourced one is now re-resolved against the CURRENT
+  // userLat/userLng on every fresh grant, and only skipped when it's
+  // already resolved for essentially this same position (~1km tolerance,
+  // to avoid refetching on GPS jitter alone).
   useEffect(() => {
-    if (discoverLocation || locationStatus !== 'granted' || userLat == null || userLng == null) return;
+    if (locationStatus !== 'granted' || userLat == null || userLng == null) return;
+    if (discoverLocation && discoverLocation.source === 'zip') return;
+    if (
+      discoverLocation &&
+      discoverLocation.source === 'geolocation' &&
+      Math.abs(discoverLocation.lat - userLat) < 0.01 &&
+      Math.abs(discoverLocation.lng - userLng) < 0.01
+    ) {
+      return;
+    }
     let cancelled = false;
     reverseGeocodeCity(userLat, userLng)
       .then((loc) => {
