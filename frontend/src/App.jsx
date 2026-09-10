@@ -1287,7 +1287,7 @@ export default function App() {
             <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
             {(selectedEvent.min_price != null || selectedEvent.max_price != null) && (
-              <p><strong>{findTicketsLinks.length > 1 ? '💰 Best Price:' : '💰 Price:'}</strong> {formatPrice(selectedEvent)}</p>
+              <p><strong>{findTicketsLinks.length > 1 ? '💰 Price Range:' : '💰 Price:'}</strong> {formatPrice(selectedEvent)}</p>
             )}
           </div>
 
@@ -1317,7 +1317,6 @@ export default function App() {
                           ? `$${Number(link.minPrice).toFixed(0)} - $${Number(link.maxPrice).toFixed(0)}`
                           : `$${Number(link.minPrice != null ? link.minPrice : link.maxPrice).toFixed(0)}`)
                       : null;
-                    const highlightBest = link.isBest && findTicketsLinks.length > 1;
                     const isOfficialLink = link.source === 'official';
                     return (
                       <div key={link.source}>
@@ -1337,9 +1336,9 @@ export default function App() {
                           style={{
                             display: 'block',
                             padding: '13px 16px',
-                            borderRadius: (showTierBreakdown || !isOfficialLink) ? '12px 12px 0 0' : '12px',
-                            border: isOfficialLink ? '1px solid #555' : (highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000'),
-                            backgroundColor: isOfficialLink ? '#444' : (highlightBest ? '#2e7d32' : '#8b0000'),
+                            borderRadius: '12px',
+                            border: isOfficialLink ? '1px solid #555' : '1px solid #8b0000',
+                            backgroundColor: isOfficialLink ? '#444' : '#8b0000',
                             color: 'white',
                             textDecoration: 'none',
                             fontWeight: 'bold',
@@ -1348,7 +1347,7 @@ export default function App() {
                           {isOfficialLink ? `Visit ${link.name} ↗` : `Buy Your Ticket on ${link.name} ↗`}
                         </a>
                         {showTierBreakdown && (
-                          <div style={{ padding: '8px 6px 4px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
+                          <div style={{ marginTop: '6px', padding: '8px 6px 4px', border: '1px solid #ddd', borderRadius: '12px' }}>
                             {priceTiers.map((tier, i) => (
                               <div
                                 key={`${tier.label}-${i}`}
@@ -1373,18 +1372,13 @@ export default function App() {
                         {!showTierBreakdown && !isOfficialLink && (
                           <div style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 12px 12px',
+                            marginTop: '6px', padding: '6px 10px', border: '1px solid #ddd', borderRadius: '12px',
                             backgroundColor: '#fff',
                           }}>
                             {priceLabel ? (
-                              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>{priceLabel}</span>
+                              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>Price range: {priceLabel}</span>
                             ) : (
                               <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#999' }}>Price not listed</span>
-                            )}
-                            {highlightBest && (
-                              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white', backgroundColor: '#2e7d32', padding: '2px 8px', borderRadius: '10px' }}>
-                                BEST PRICE
-                              </span>
                             )}
                           </div>
                         )}
