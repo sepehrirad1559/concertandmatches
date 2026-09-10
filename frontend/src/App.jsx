@@ -171,7 +171,14 @@ async function reverseGeocodeCity(lat, lng) {
 function formatDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const d = new Date(dateStr);
+    const datePart = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    // Some providers only give us a bare date with no real time-of-day, which
+    // lands on local midnight — showing "12:00 AM" for those would be
+    // misleading, so only append a time when one was actually reported.
+    if (d.getHours() === 0 && d.getMinutes() === 0) return datePart;
+    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return `${datePart} • ${timePart}`;
   } catch {
     return dateStr;
   }
