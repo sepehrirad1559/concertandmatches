@@ -1314,7 +1314,7 @@ export default function App() {
                     const showTierBreakdown = findTicketsLinks.length === 1 && priceTiers.length > 0;
                     const priceLabel = link.minPrice != null || link.maxPrice != null
                       ? (link.minPrice != null && link.maxPrice != null && link.minPrice !== link.maxPrice
-                          ? `from $${Number(link.minPrice).toFixed(0)}`
+                          ? `$${Number(link.minPrice).toFixed(0)} - $${Number(link.maxPrice).toFixed(0)}`
                           : `$${Number(link.minPrice != null ? link.minPrice : link.maxPrice).toFixed(0)}`)
                       : null;
                     const highlightBest = link.isBest && findTicketsLinks.length > 1;
@@ -1345,7 +1345,7 @@ export default function App() {
                             fontWeight: 'bold',
                             textAlign: 'center',
                           }}>
-                          {isOfficialLink ? `Visit ${link.name} ↗` : 'Buy Your Ticket ↗'}
+                          {isOfficialLink ? `Visit ${link.name} ↗` : `Buy Your Ticket on ${link.name} ↗`}
                         </a>
                         {showTierBreakdown && (
                           <div style={{ padding: '8px 6px 4px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
