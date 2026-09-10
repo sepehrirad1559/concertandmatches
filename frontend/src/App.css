@@ -4,8 +4,23 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* Same brand colors the app already used inline everywhere — named here
+     purely so the new hover/shadow utility classes below have something
+     consistent to reference. No color values changed, nothing recolored. */
+  --cm-purple: #1a0733;
+  --cm-red: #8b0000;
+  --cm-red-dark: #6e0000;
+  --cm-blue: #1a56db;
+  --cm-border: #e6e2ee;
+  --cm-shadow-sm: 0 1px 2px rgba(26, 7, 51, 0.06), 0 1px 3px rgba(26, 7, 51, 0.08);
+  --cm-shadow-md: 0 4px 10px rgba(26, 7, 51, 0.08), 0 2px 4px rgba(26, 7, 51, 0.06);
+  --cm-shadow-lg: 0 12px 24px rgba(26, 7, 51, 0.12), 0 4px 8px rgba(26, 7, 51, 0.06);
+  --cm-radius: 14px;
+}
+
 body {
-  font-family: Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   /* Researched the 5 leading ticket-selling platforms (Ticketmaster,
      StubHub, SeatGeek, Vivid Seats, AXS) before choosing this: every one of
      them uses a light/white page background with a single bold brand
@@ -23,10 +38,71 @@ body {
   background-color: #f8f5fb;
   color: #1a0733;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+/* ---- Pure-visual polish utilities (appearance only — no behavior here) ----
+   Added for the design refresh inspired by tallyseats.com: soft elevation,
+   rounded corners, and a hover "lift" on cards/buttons. Applied alongside
+   existing inline styles via className, so none of the existing inline
+   colors/spacing/logic had to move. */
+
+.cm-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cm-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--cm-shadow-lg);
+}
+
+.cm-btn {
+  transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.cm-btn:hover {
+  filter: brightness(1.08);
+  box-shadow: var(--cm-shadow-md);
+}
+.cm-btn:active {
+  transform: translateY(1px);
+}
+
+.cm-chip {
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.cm-chip:hover {
+  box-shadow: var(--cm-shadow-sm);
+}
+
+.cm-tile {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cm-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cm-shadow-md);
+}
+
+.cm-link-underline {
+  position: relative;
+  text-decoration: none;
+}
+.cm-link-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.15s ease;
+}
+.cm-link-underline:hover::after {
+  transform: scaleX(1);
 }

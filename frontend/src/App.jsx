@@ -415,22 +415,23 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
       }}>
       <button
         type="button"
+        className="cm-tile"
         onClick={() => {
           onSelect(null);
           document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
         }}
         style={{
           background: activeCategoryId === null ? '#1a0733' : '#fff',
-          border: '2px solid #1a0733',
-          borderRadius: '10px',
-          padding: '16px 8px',
+          border: activeCategoryId === null ? '2px solid #1a0733' : '1px solid var(--cm-border)',
+          borderRadius: '16px',
+          padding: '18px 8px',
           color: activeCategoryId === null ? '#fff' : '#222',
           cursor: 'pointer',
           textAlign: 'center',
-          boxShadow: activeCategoryId === null ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
+          boxShadow: activeCategoryId === null ? 'var(--cm-shadow-md)' : 'var(--cm-shadow-sm)',
         }}>
-        <div style={{ fontSize: '34px', marginBottom: '8px' }}>🎟️</div>
-        <div style={{ fontWeight: 'bold', fontSize: '20px' }}>All</div>
+        <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎟️</div>
+        <div style={{ fontWeight: 'bold', fontSize: '18px' }}>All</div>
       </button>
       {EVENT_CATEGORIES.map((cat) => {
         const isActive = activeCategoryId === cat.id;
@@ -438,22 +439,23 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
           <button
             key={cat.id}
             type="button"
+            className="cm-tile"
             onClick={() => {
               onSelect(isActive ? null : cat.id);
               document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
             }}
             style={{
               background: isActive ? cat.accent : '#fff',
-              border: `2px solid ${cat.accent}`,
-              borderRadius: '10px',
-              padding: '16px 8px',
+              border: isActive ? `2px solid ${cat.accent}` : '1px solid var(--cm-border)',
+              borderRadius: '16px',
+              padding: '18px 8px',
               color: isActive ? '#fff' : '#222',
               cursor: 'pointer',
               textAlign: 'center',
-              boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
+              boxShadow: isActive ? 'var(--cm-shadow-md)' : 'var(--cm-shadow-sm)',
             }}>
-            <div style={{ fontSize: '34px', marginBottom: '8px' }}>{cat.emoji}</div>
-            <div style={{ fontWeight: 'bold', fontSize: '20px' }}>{cat.label}</div>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>{cat.emoji}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '18px' }}>{cat.label}</div>
           </button>
         );
       })}
@@ -466,29 +468,70 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
 // category) can share the exact same card instead of duplicating this
 // markup seven more times.
 function EventCard({ event, onSelect }) {
+  const priceLabel = (event.min_price != null || event.max_price != null) ? formatPrice(event) : null;
+  const fromPrice = event.min_price != null ? event.min_price : event.max_price;
   return (
     <div
+      className="cm-card"
       onClick={() => onSelect(event)}
-      style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer' }}>
-      {event.image_url && (
-        <img
-          src={event.image_url}
-          alt={event.title}
-          loading="lazy"
-          decoding="async"
-          style={{ width: '100%', height: '150px', objectFit: 'cover' }}
-        />
-      )}
-      <div style={{ padding: '12px 0 0' }}>
-        <h4>{event.title}</h4>
-        <p>📅 {formatDate(event.date)}</p>
-        <p>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
-        {formatDistance(event.distance_km) && (
-          <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>🚗 {formatDistance(event.distance_km)}</p>
+      style={{
+        border: '1px solid var(--cm-border)',
+        borderRadius: 'var(--cm-radius)',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        backgroundColor: '#fff',
+        boxShadow: 'var(--cm-shadow-sm)',
+      }}>
+      <div style={{ position: 'relative' }}>
+        {event.image_url && (
+          <img
+            src={event.image_url}
+            alt={event.title}
+            loading="lazy"
+            decoding="async"
+            style={{ width: '100%', height: '150px', objectFit: 'cover', display: 'block' }}
+          />
         )}
-        {(event.min_price != null || event.max_price != null) && (
-        <p>
-          💰 {formatPrice(event)}
+        {priceLabel && (
+          <span style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            backgroundColor: 'rgba(26,7,51,0.82)',
+            color: 'white',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            letterSpacing: '0.02em',
+            padding: '5px 10px',
+            borderRadius: '999px',
+            backdropFilter: 'blur(2px)',
+          }}>
+            FROM ${Number(fromPrice).toFixed(0)}
+          </span>
+        )}
+        {formatDistance(event.distance_km) && (
+          <span style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            backgroundColor: 'rgba(76,175,80,0.92)',
+            color: 'white',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            padding: '5px 10px',
+            borderRadius: '999px',
+          }}>
+            🚗 {formatDistance(event.distance_km)}
+          </span>
+        )}
+      </div>
+      <div style={{ padding: '14px 16px 16px' }}>
+        <h4 style={{ fontSize: '16px', lineHeight: 1.3, marginBottom: '6px' }}>{event.title}</h4>
+        <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📅 {formatDate(event.date)}</p>
+        <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
+        {priceLabel && (
+        <p style={{ margin: '8px 0 0', fontWeight: 'bold' }}>
+          💰 {priceLabel}
           {Array.isArray(event.offers) && event.offers.length > 1 && (
             <span style={{
               marginLeft: '8px',
@@ -496,8 +539,8 @@ function EventCard({ event, onSelect }) {
               fontWeight: 'bold',
               color: 'white',
               backgroundColor: '#2e7d32',
-              padding: '2px 6px',
-              borderRadius: '8px',
+              padding: '3px 8px',
+              borderRadius: '999px',
               verticalAlign: 'middle',
             }}>
               BEST PRICE
@@ -511,9 +554,10 @@ function EventCard({ event, onSelect }) {
           </p>
         )}
         <button
+          className="cm-btn"
           onClick={(e) => { e.stopPropagation(); onSelect(event); }}
           style={{
-            marginTop: '10px',
+            marginTop: '12px',
             padding: '10px 16px',
             cursor: 'pointer',
             width: '100%',
@@ -522,7 +566,8 @@ function EventCard({ event, onSelect }) {
             backgroundColor: '#8b0000',
             color: 'white',
             fontWeight: 'bold',
-            borderRadius: '8px',
+            borderRadius: '10px',
+            letterSpacing: '0.01em',
           }}>
           Find Tickets
         </button>
@@ -541,10 +586,11 @@ function EventSection({ title, events, loading, onSelect, categoryId, onViewAll 
   return (
     <div style={{ marginBottom: '32px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-        <h3 style={{ margin: 0, fontSize: '26px' }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.01em' }}>{title}</h3>
         {categoryId && (
           <button
             type="button"
+            className="cm-link-underline"
             onClick={() => onViewAll(categoryId)}
             style={{
               background: 'none',
@@ -552,7 +598,7 @@ function EventSection({ title, events, loading, onSelect, categoryId, onViewAll 
               padding: 0,
               margin: 0,
               font: 'inherit',
-              fontSize: '18px',
+              fontSize: '15px',
               color: '#1a56db',
               fontWeight: 'bold',
               cursor: 'pointer',
@@ -626,18 +672,28 @@ function BrandLink({ onClick }) {
 }
 
 function Footer() {
+  const linkStyle = { color: '#888', marginRight: '16px', textDecoration: 'none' };
   return (
-    <footer style={{ marginTop: '40px', padding: '20px 0', borderTop: '1px solid #eee', fontSize: '12px', color: '#888' }}>
+    <footer style={{
+      marginTop: '48px',
+      padding: '24px 20px',
+      borderTop: '1px solid var(--cm-border)',
+      backgroundColor: '#fff',
+      borderRadius: 'var(--cm-radius)',
+      boxShadow: 'var(--cm-shadow-sm)',
+      fontSize: '12px',
+      color: '#888',
+    }}>
       <p>ConcertAndMatches is an independent event discovery site and is not affiliated with any ticket seller. We may earn a commission when you buy tickets through links on this site.</p>
-      <p style={{ marginTop: '8px' }}>
-        <a href="/guide" style={{ color: '#888', marginRight: '16px' }}>Ticket Price Guides</a>
-        <a href="/artists" style={{ color: '#888', marginRight: '16px' }}>Artists</a>
-        <a href="/cities" style={{ color: '#888', marginRight: '16px' }}>Cities</a>
-        <a href="/venues" style={{ color: '#888', marginRight: '16px' }}>Venues</a>
-        <a href="/leagues" style={{ color: '#888', marginRight: '16px' }}>Leagues</a>
-        <a href="/teams" style={{ color: '#888', marginRight: '16px' }}>Teams</a>
-        <a href="/terms.html" style={{ color: '#888', marginRight: '16px' }}>Terms of Service</a>
-        <a href="/privacy.html" style={{ color: '#888' }}>Privacy Policy</a>
+      <p style={{ marginTop: '10px' }}>
+        <a href="/guide" className="cm-link-underline" style={linkStyle}>Ticket Price Guides</a>
+        <a href="/artists" className="cm-link-underline" style={linkStyle}>Artists</a>
+        <a href="/cities" className="cm-link-underline" style={linkStyle}>Cities</a>
+        <a href="/venues" className="cm-link-underline" style={linkStyle}>Venues</a>
+        <a href="/leagues" className="cm-link-underline" style={linkStyle}>Leagues</a>
+        <a href="/teams" className="cm-link-underline" style={linkStyle}>Teams</a>
+        <a href="/terms.html" className="cm-link-underline" style={linkStyle}>Terms of Service</a>
+        <a href="/privacy.html" className="cm-link-underline" style={{ color: '#888', textDecoration: 'none' }}>Privacy Policy</a>
       </p>
     </footer>
   );
@@ -1144,12 +1200,12 @@ export default function App() {
           </button>
         </nav>
 
-        <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid #ddd', padding: '30px', borderRadius: '8px' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid var(--cm-border)', padding: '30px', borderRadius: 'var(--cm-radius)', backgroundColor: '#fff', boxShadow: 'var(--cm-shadow-sm)' }}>
           {selectedEvent.image_url && (
             <img
               src={selectedEvent.image_url}
               alt={selectedEvent.title}
-              style={{ width: '100%', borderRadius: '8px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
+              style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
             />
           )}
           <h1>{selectedEvent.title}</h1>
@@ -1160,7 +1216,7 @@ export default function App() {
             <p style={{ fontSize: '15px', color: '#666' }}>{selectedEvent.description}</p>
           )}
 
-          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
+          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '14px', color: '#222' }}>
             <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
             {(selectedEvent.min_price != null || selectedEvent.max_price != null) && (
@@ -1168,7 +1224,7 @@ export default function App() {
             )}
           </div>
 
-          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px', color: '#222' }}>
+          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '14px', color: '#222' }}>
             <h3 style={{ marginTop: 0 }}>Find Tickets</h3>
             {findTicketsLinks.length === 0 ? (
               <p style={{ fontSize: '14px', color: '#666' }}>
@@ -1199,6 +1255,7 @@ export default function App() {
                     return (
                       <div key={link.source}>
                         <a
+                          className="cm-btn"
                           href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
                           target="_blank"
                           rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
@@ -1212,8 +1269,8 @@ export default function App() {
                           }}
                           style={{
                             display: 'block',
-                            padding: '12px 16px',
-                            borderRadius: showTierBreakdown || (!showTierBreakdown && priceLabel) ? '8px 8px 0 0' : '8px',
+                            padding: '13px 16px',
+                            borderRadius: showTierBreakdown || (!showTierBreakdown && priceLabel) ? '12px 12px 0 0' : '12px',
                             border: isOfficialLink ? '1px solid #555' : (highlightBest ? '1px solid #2e7d32' : '1px solid #8b0000'),
                             backgroundColor: isOfficialLink ? '#444' : (highlightBest ? '#2e7d32' : '#8b0000'),
                             color: 'white',
@@ -1224,7 +1281,7 @@ export default function App() {
                           {isOfficialLink ? `Visit ${link.name} ↗` : 'Buy Your Ticket ↗'}
                         </a>
                         {showTierBreakdown && (
-                          <div style={{ padding: '8px 6px 4px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+                          <div style={{ padding: '8px 6px 4px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 12px 12px' }}>
                             {priceTiers.map((tier, i) => (
                               <div
                                 key={`${tier.label}-${i}`}
@@ -1249,7 +1306,7 @@ export default function App() {
                         {!showTierBreakdown && priceLabel && (
                           <div style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 8px 8px',
+                            padding: '6px 10px', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 12px 12px',
                             backgroundColor: '#fff',
                           }}>
                             <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>{priceLabel}</span>
@@ -1287,12 +1344,25 @@ export default function App() {
   // HOME PAGE
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+      <nav style={{
+        marginBottom: '24px',
+        display: 'flex',
+        gap: '16px',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        padding: '14px 18px',
+        backgroundColor: '#fff',
+        borderRadius: '16px',
+        boxShadow: 'var(--cm-shadow-sm)',
+        border: '1px solid var(--cm-border)',
+      }}>
         <BrandLink onClick={() => navigate('/')} />
-        <div aria-label="Quick category filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 20px', alignItems: 'center' }}>
+        <div aria-label="Quick category filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           <span
             role="link"
             tabIndex={0}
+            className="cm-chip"
             onClick={() => {
               setActiveCategoryId(null);
               document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
@@ -1306,9 +1376,12 @@ export default function App() {
             }}
             style={{
               cursor: 'pointer',
-              fontWeight: activeCategoryId === null ? 'bold' : 'normal',
-              textDecoration: activeCategoryId === null ? 'underline' : 'none',
-              color: activeCategoryId === null ? '#8b0000' : '#1a0733',
+              fontWeight: 'bold',
+              fontSize: '13px',
+              padding: '7px 14px',
+              borderRadius: '999px',
+              backgroundColor: activeCategoryId === null ? '#8b0000' : '#f5f2f9',
+              color: activeCategoryId === null ? '#fff' : '#1a0733',
             }}>
             All
           </span>
@@ -1319,6 +1392,7 @@ export default function App() {
                 key={cat.id}
                 role="link"
                 tabIndex={0}
+                className="cm-chip"
                 onClick={() => {
                   setActiveCategoryId(isActive ? null : cat.id);
                   document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
@@ -1332,9 +1406,12 @@ export default function App() {
                 }}
                 style={{
                   cursor: 'pointer',
-                  fontWeight: isActive ? 'bold' : 'normal',
-                  textDecoration: isActive ? 'underline' : 'none',
-                  color: isActive ? '#8b0000' : '#1a0733',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  padding: '7px 14px',
+                  borderRadius: '999px',
+                  backgroundColor: isActive ? '#8b0000' : '#f5f2f9',
+                  color: isActive ? '#fff' : '#1a0733',
                 }}>
                 {cat.label}
               </span>
@@ -1344,6 +1421,7 @@ export default function App() {
         <div style={{ display: 'flex', gap: '18px', alignItems: 'center' }}>
           <a
             href="mailto:sepehrirad15@gmail.com"
+            className="cm-link-underline"
             style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }}>
             <span aria-hidden="true">✉️</span> Contact Us
           </a>
@@ -1387,23 +1465,32 @@ export default function App() {
             style={{
               background: '#fff',
               color: '#222',
-              padding: '24px',
-              borderRadius: '10px',
+              padding: '28px',
+              borderRadius: '18px',
               maxWidth: '320px',
               textAlign: 'center',
+              boxShadow: 'var(--cm-shadow-lg)',
             }}>
-            <p style={{ marginBottom: '16px' }}>Accounts and sign-in are coming soon — check back shortly!</p>
+            <p style={{ marginBottom: '18px' }}>Accounts and sign-in are coming soon — check back shortly!</p>
             <button
               type="button"
+              className="cm-btn"
               onClick={() => setShowSignInNotice(false)}
-              style={{ padding: '8px 20px', cursor: 'pointer', border: 'none', borderRadius: '6px', backgroundColor: '#8b0000', color: 'white', fontWeight: 'bold' }}>
+              style={{ padding: '10px 24px', cursor: 'pointer', border: 'none', borderRadius: '999px', backgroundColor: '#8b0000', color: 'white', fontWeight: 'bold' }}>
               Got it
             </button>
           </div>
         </div>
       )}
 
-      <h1 style={{ textAlign: 'center', fontSize: '40px', margin: '10px 0 12px' }}>
+      <h1 style={{
+        textAlign: 'center',
+        fontSize: 'clamp(30px, 5vw, 44px)',
+        fontWeight: 800,
+        letterSpacing: '-0.01em',
+        lineHeight: 1.15,
+        margin: '28px 0 14px',
+      }}>
         Be The First To Buy Your Ticket
       </h1>
 
@@ -1416,24 +1503,33 @@ export default function App() {
             onChange={(e) => setSearchInput(e.target.value)}
             onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
             onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+            style={{
+              width: '100%',
+              padding: '14px 20px',
+              boxSizing: 'border-box',
+              borderRadius: '999px',
+              border: '1px solid var(--cm-border)',
+              boxShadow: 'var(--cm-shadow-sm)',
+              fontSize: '15px',
+              outline: 'none',
+            }}
             autoComplete="off"
           />
           {showAutocomplete && autocompleteSuggestions.length > 0 && (
             <ul
               style={{
                 position: 'absolute',
-                top: 'calc(100% + 2px)',
+                top: 'calc(100% + 6px)',
                 left: 0,
                 right: 0,
                 zIndex: 20,
                 margin: 0,
-                padding: '4px 0',
+                padding: '6px 0',
                 listStyle: 'none',
                 background: 'white',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                border: '1px solid var(--cm-border)',
+                borderRadius: '14px',
+                boxShadow: 'var(--cm-shadow-lg)',
                 maxHeight: '280px',
                 overflowY: 'auto',
               }}
@@ -1443,7 +1539,7 @@ export default function App() {
                   key={`${s.type}-${s.label}-${i}`}
                   onMouseDown={() => handleSuggestionClick(s.label)}
                   style={{
-                    padding: '8px 12px',
+                    padding: '9px 16px',
                     cursor: 'pointer',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -1457,21 +1553,46 @@ export default function App() {
             </ul>
           )}
         </div>
-        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
+        <button
+          type="submit"
+          className="cm-btn"
+          style={{
+            padding: '14px 26px',
+            cursor: 'pointer',
+            borderRadius: '999px',
+            border: 'none',
+            backgroundColor: '#8b0000',
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: '15px',
+          }}>
           Search
         </button>
         {activeSearch && (
-          <button type="button" onClick={handleClearSearch} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+          <button
+            type="button"
+            className="cm-btn"
+            onClick={handleClearSearch}
+            style={{
+              padding: '14px 22px',
+              cursor: 'pointer',
+              borderRadius: '999px',
+              border: '1px solid var(--cm-border)',
+              backgroundColor: '#fff',
+            }}>
             Clear
           </button>
         )}
         <button
           type="button"
+          className="cm-btn"
           onClick={() => setShowFilters((v) => !v)}
           style={{
-            padding: '10px 20px',
+            padding: '14px 22px',
             cursor: 'pointer',
-            backgroundColor: activeFilterCount > 0 ? '#1a73e8' : undefined,
+            borderRadius: '999px',
+            border: activeFilterCount > 0 ? 'none' : '1px solid var(--cm-border)',
+            backgroundColor: activeFilterCount > 0 ? '#1a73e8' : '#fff',
             color: activeFilterCount > 0 ? 'white' : undefined,
             fontWeight: activeFilterCount > 0 ? 'bold' : undefined,
           }}>
@@ -1484,26 +1605,28 @@ export default function App() {
           onSubmit={handleApplyFilters}
           style={{
             display: 'flex',
-            gap: '16px',
+            gap: '18px',
             flexWrap: 'wrap',
             alignItems: 'flex-end',
-            padding: '16px',
+            padding: '18px 20px',
             marginBottom: '16px',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '8px',
+            backgroundColor: '#fff',
+            borderRadius: '16px',
+            border: '1px solid var(--cm-border)',
+            boxShadow: 'var(--cm-shadow-sm)',
             color: '#222',
           }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Location</label>
             <input
               type="text"
               placeholder="City or state"
               value={draftLocation}
               onChange={(e) => setDraftLocation(e.target.value)}
-              style={{ padding: '8px', width: '160px', boxSizing: 'border-box' }}
+              style={{ padding: '9px 12px', width: '160px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Min Price ($)</label>
             <input
               type="number"
@@ -1511,10 +1634,10 @@ export default function App() {
               placeholder="0"
               value={draftMinPrice}
               onChange={(e) => setDraftMinPrice(e.target.value)}
-              style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
+              style={{ padding: '9px 12px', width: '100px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Price ($)</label>
             <input
               type="number"
@@ -1522,33 +1645,33 @@ export default function App() {
               placeholder="Any"
               value={draftMaxPrice}
               onChange={(e) => setDraftMaxPrice(e.target.value)}
-              style={{ padding: '8px', width: '100px', boxSizing: 'border-box' }}
+              style={{ padding: '9px 12px', width: '100px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>From Date</label>
             <input
               type="date"
               value={draftStartDate}
               onChange={(e) => setDraftStartDate(e.target.value)}
-              style={{ padding: '8px', boxSizing: 'border-box' }}
+              style={{ padding: '9px 12px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>To Date</label>
             <input
               type="date"
               value={draftEndDate}
               onChange={(e) => setDraftEndDate(e.target.value)}
-              style={{ padding: '8px', boxSizing: 'border-box' }}
+              style={{ padding: '9px 12px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Sort By</label>
             <select
               value={draftSort}
               onChange={(e) => setDraftSort(e.target.value)}
-              style={{ padding: '8px', boxSizing: 'border-box' }}>
+              style={{ padding: '9px 12px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}>
               <option value="">
                 {locationStatus === 'granted' ? 'Nearest first (default)' : 'Date (default)'}
               </option>
@@ -1560,11 +1683,18 @@ export default function App() {
             </select>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            <button
+              type="submit"
+              className="cm-btn"
+              style={{ padding: '10px 20px', cursor: 'pointer', borderRadius: '999px', border: 'none', backgroundColor: '#8b0000', color: '#fff', fontWeight: 'bold' }}>
               Apply Filters
             </button>
             {activeFilterCount > 0 && (
-              <button type="button" onClick={handleClearFilters} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+              <button
+                type="button"
+                className="cm-btn"
+                onClick={handleClearFilters}
+                style={{ padding: '10px 20px', cursor: 'pointer', borderRadius: '999px', border: '1px solid var(--cm-border)', backgroundColor: '#fff' }}>
                 Clear Filters
               </button>
             )}
