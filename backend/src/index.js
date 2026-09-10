@@ -91,22 +91,19 @@ res.json({ status: 'OK', timestamp: new Date().toISOString() });
 app.use('/api/events', eventsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/clicks', clicksRoutes);
-// Deliberately NOT mounted. /go/event/:id and /go/:offerId aren't linked
-// from the frontend anywhere (the site's real outbound ticket links are
-// built client-side in App.jsx) — but they're public, unauthenticated GET
-// endpoints with no rate limiting, and for a ticketmaster.com event
-// /go/event/:id redirects straight through the real revenue-earning
-// Impact.com tracked affiliate link. Click-analytics investigation on
-// 2026-09-07 found ~2,075 clicks logged with no referrer and no session id
-// (impossible for a real click through the site's UI, which always sets
-// both client-side) — an automated script/scanner had found and was
-// hammering this route directly, generating what looks to Impact.com like
-// fraudulent/bot clicks on the real Ticketmaster affiliate link, risking
-// the account being flagged. Unmounted until there's an actual feature
-// that needs it and it's given proper anti-abuse protection (referer/
-// signed-token check, rate limiting) — re-enable with app.use('/go',
-// redirectRoutes) once that's in place.
-// app.use('/go', redirectRoutes);
+// /go/event/:id IS the frontend's real "Buy Your Ticket" link (built in
+// App.jsx via GO_BASE) — for a ticketmaster.com event it redirects straight
+// through the real revenue-earning Impact.com tracked affiliate link. It
+// was unmounted on 2026-09-07 after a click-analytics investigation found
+// ~2,075 clicks logged with no referrer/session id and assumed, incorrectly,
+// that the route wasn't linked from the frontend and could only be a bot
+// scanning it directly — in fact it silently 404'd every real customer's
+// ticket-purchase click from that point on (caught 2026-09-10: "when I
+// click on buy your ticket it does not work"). Re-mounted with the actual
+// missing anti-abuse protection instead: a dedicated rate limiter and a
+// referer check (both in routes/redirect.js) rather than leaving the real
+// buy-ticket flow broken.
+app.use('/go', redirectRoutes);
 app.use('/', sitemapRoutes);
 app.use('/', guidesRoutes);
 // Programmatic SEO pages (artists/cities/venues/leagues/teams) — see

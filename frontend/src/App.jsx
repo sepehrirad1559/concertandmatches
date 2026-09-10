@@ -1201,7 +1201,7 @@ export default function App() {
                         <a
                           href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
                           target="_blank"
-                          rel="noopener noreferrer sponsored"
+                          rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
                           onClick={() => {
                             // The /go/event/:id redirect above logs the click
                             // server-side. Only fall back to the client-side

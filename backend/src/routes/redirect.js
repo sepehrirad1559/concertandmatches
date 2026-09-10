@@ -1,23 +1,50 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { pool } from '../index.js';
 
 const router = express.Router();
 
-// Controlled affiliate redirect + click tracking (spec §14). NOT currently
-// linked from the frontend for Ticketmaster/SeatGeek — those already have
-// working outbound links (including Ticketmaster's live, revenue-earning
-// tracked-affiliate link, built client-side in App.jsx), and rerouting them
-// through here without careful, visually-verified testing would risk
-// breaking real affiliate revenue. This exists as ready, tested-by-code-
-// review infrastructure for a future official-API provider (e.g. StubHub,
-// if a real partner/affiliate integration is built against their official
-// API later — see backend/DATA_SOURCES.md) or for a deliberate, carefully-
-// tested migration of the existing providers.
+// Controlled affiliate redirect + click tracking (spec §14). THIS IS THE
+// LIVE "Buy Your Ticket" LINK — App.jsx's Find Tickets links build straight
+// through /go/event/:eventRowId (see GO_BASE in App.jsx). It was briefly
+// unmounted (2026-09-07) after a bot-traffic investigation found ~2,075
+// click_events rows with no referrer/session id — misdiagnosed at the time
+// as "not linked from the frontend anywhere", which was wrong: it IS the
+// frontend's real outbound link, and unmounting it 404'd every real
+// customer's ticket-purchase click from that point on (found 2026-09-10 —
+// "when I click on buy your ticket it does not work"). Re-mounted with the
+// anti-abuse protection that was actually missing — a dedicated rate limit
+// below, plus (App.jsx) the anchor no longer sets rel="noreferrer", so a
+// real click carries a Referer from this site while a script hitting the
+// URL directly (as the original bot traffic did) won't.
 //
 // Only ever redirects to a URL built from OUR OWN database (ticket_offers /
 // providers.affiliate_url_template) — never a user-supplied destination —
 // and still enforces a provider-domain whitelist as defense in depth per
 // spec §14's anti-open-redirect requirement.
+const ALLOWED_REFERER_HOSTS = ['concertandmatches.com', 'www.concertandmatches.com', 'localhost'];
+
+function hasAllowedReferer(req) {
+  const referer = req.get('referer');
+  if (!referer) return false;
+  try {
+    const host = new URL(referer).hostname.toLowerCase();
+    return ALLOWED_REFERER_HOSTS.includes(host);
+  } catch (_err) {
+    return false;
+  }
+}
+
+// Generous enough for a real person clicking a handful of ticket links, far
+// too tight for a scanner sweeping event ids.
+const goRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many redirect requests, please try again shortly.' },
+});
+router.use(goRateLimiter);
 const ALLOWED_HOST_SUFFIXES = [
   'ticketmaster.com',
   'seatgeek.com',
@@ -69,6 +96,17 @@ router.get('/event/:eventRowId', async (req, res) => {
     const eventRowId = Number(req.params.eventRowId);
     if (!Number.isInteger(eventRowId)) {
       return res.status(400).json({ error: 'Invalid event id' });
+    }
+
+    // Diagnostic only — logged, not blocked. A missing/foreign referer is
+    // exactly the bot-scanner signature from the 2026-09-07 investigation,
+    // but plenty of real browsers/extensions also strip referrers for
+    // privacy, so refusing the redirect on that alone would 404 real
+    // customers again (the very bug this route is being re-mounted to fix).
+    // The rate limiter above is the actual abuse control; this just gives
+    // the next investigation real signal instead of guessing again.
+    if (!hasAllowedReferer(req)) {
+      console.warn(`/go/event/${eventRowId}: no/foreign referer (${req.get('referer') || 'none'}) from ${req.ip}`);
     }
 
     const result = await pool.query(
