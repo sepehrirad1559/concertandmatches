@@ -463,9 +463,17 @@ export const backfillMissingPrices = async (limit = 100) => {
       return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
     }
 
+    // date >= NOW() — see the matching comment in
+    // services/ticketmaster.js's backfillMissingPrices: without this, rows
+    // for past events that never got a price (and never will) pile up at
+    // the front of the date-ASC queue forever, since they're re-selected by
+    // every run and never leave the NULL set. Past a few hundred of those,
+    // no upcoming event is ever reached again. Excluding past events also
+    // just makes sense on its own — nobody can buy a ticket to a show that
+    // already happened.
     const { rows } = await pool.query(
       `SELECT id, external_id FROM events
-       WHERE source = 'seatgeek' AND min_price IS NULL
+       WHERE source = 'seatgeek' AND min_price IS NULL AND date >= NOW()
        ORDER BY date ASC
        LIMIT $1`,
       [limit]

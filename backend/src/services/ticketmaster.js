@@ -615,9 +615,26 @@ export const backfillMissingPrices = async (limit = 100) => {
       return { success: false, error: 'TICKETMASTER_API_KEY not configured' };
     }
 
+    // date >= NOW() matters here, not just as a "don't bother with past
+    // events" optimization: without it, this is a starvation bug. Some
+    // Ticketmaster events genuinely never get a price back from the detail
+    // endpoint (pulled listings, off-sale, etc.), so their row stays
+    // min_price IS NULL forever. Ordering by date ASC with no other filter
+    // means those permanently-null rows — once their date is in the past —
+    // sort to the very front and get re-selected by every single run
+    // forever, since they never succeed and never leave the NULL set. Once
+    // there are more of those than `limit`, no event past them in the
+    // date-ASC order is EVER reached again, no matter how soon it is or how
+    // many backfill runs go by — which is exactly what happened here: a
+    // comedy show tomorrow with real, current Ticketmaster pricing sat with
+    // min_price NULL because the backfill queue was permanently stuck behind
+    // older dead rows. Excluding past events removes them from the query
+    // entirely (their pricing is moot anyway — nobody can buy a ticket to a
+    // show that already happened), which keeps the queue moving through
+    // upcoming events instead of spinning on the same stuck ones.
     const { rows } = await pool.query(
       `SELECT id, external_id FROM events
-       WHERE source = 'ticketmaster' AND min_price IS NULL
+       WHERE source = 'ticketmaster' AND min_price IS NULL AND date >= NOW()
        ORDER BY date ASC
        LIMIT $1`,
       [limit]
