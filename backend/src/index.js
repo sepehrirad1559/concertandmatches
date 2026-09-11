@@ -224,21 +224,43 @@ setInterval(runScheduledPriceBackfill, BACKFILL_INTERVAL_MS);
 // the canonical_events/ticket_offers tables afterward so the admin-facing
 // derived tables reflect the new data immediately rather than only on the
 // next manual /admin/canonicalize/rebuild call.
-// Was once/day; raised to every 6 hours (4x/day) so new events, sold-out
-// events dropping off, and price movement all show up within hours instead
-// of up to a full day. A full run costs roughly ~60 Ticketmaster calls
-// (25 US + 3 Canada markets, x2 for the sports variants) and ~100-150
-// SeatGeek calls (state/province-segmented, early-exit per region once a
-// page comes back under-full) — call it ~200/run, x4/day ≈ 800/day, plus
-// up to ~600/day from the price-backfill job above. That's comfortably
-// under Ticketmaster's ~5,000-call/day free-tier quota with real headroom
-// for manual /admin/sync/* triggers too. Going more frequent than this
-// (e.g. hourly) would start eating into that headroom fast and risks
-// hitting the quota outright — if you upgrade to a paid Ticketmaster tier
-// with a higher quota, this can safely go lower than 6h; watch
-// GET /admin/health / provider_sync_logs for status:'error' rows after any
-// change here, since a rate-limited run fails loudly there, not silently.
-const EVENT_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
+// ROOT CAUSE (found 2026-09-11) of Ticketmaster prices essentially never
+// filling in — this WAS 6 hours (4x/day), on the theory (see the old
+// comment, preserved in git history) that a full run cost "~60 Ticketmaster
+// calls". That estimate only counted fetchAllUSEvents/fetchAllCanadianEvents/
+// the per-market sports variants — it completely left out the two heaviest
+// calls syncTicketmasterEvents (syncAllEvents in services/ticketmaster.js)
+// also makes every run: fetchTicketmasterSportsEventsNationwide (2
+// countries x 2 classifications x 8 months = 32 calls) and, far bigger,
+// fetchAllTicketmasterEventsNationwide — EVERY segment x EVERY country x
+// EVERY month ahead, each paged up to 5 deep (2 x 5 x 9 = 90 combos, up to
+// 450 calls at peak). Real cost per run is ~250-550 Ticketmaster calls, not
+// ~60 — at 4 runs/day that's up to ~2,200/day from discovery ALONE, before
+// the price-backfill job above (up to ~2,400/day) gets a single call in.
+// Confirmed live via GET /admin/diagnostics/providers returning a bare
+// Ticketmaster 429 "Rate limit quota violation" on the simplest possible
+// single-event call, and backfill logs showing it exhausted on the very
+// FIRST call of nearly every scheduled run — i.e. the comprehensive
+// discovery sync was routinely burning the entire daily quota before
+// backfill (the thing that actually puts a visible price on an event) ever
+// got to run, which is exactly why Ticketmaster price coverage was stuck
+// around ~6% (2,961 of 47,147) despite the COALESCE clobbering fix earlier
+// this session working correctly.
+//
+// Fix: back to once/24h. Event LISTINGS (what discovery finds) don't
+// meaningfully change hour to hour the way ticket PRICES do, so there's
+// little real value in re-running the full nationwide/every-segment sweep
+// 4x/day — but there's a lot of value in leaving the day's quota mostly
+// free for backfillMissingPrices to actually work through the ~44k
+// currently-unpriced events. New math: ~250-550/day from discovery + up to
+// ~2,400/day from backfill (unchanged, still every 6h) ≈ 2,650-2,950/day,
+// comfortably under the ~5,000/day quota with real headroom left for manual
+// /admin/sync|backfill/* triggers and this diagnostic route. If you upgrade
+// to a paid Ticketmaster tier with a higher quota, this can safely go lower
+// again — watch GET /admin/health / provider_sync_logs for status:'error'
+// rows (or a 429 in error_message) after any change here, since a
+// rate-limited run fails loudly there, not silently.
+const EVENT_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const SEATGEEK_PER_STATE = 300;
 
 async function runScheduledEventSync() {
