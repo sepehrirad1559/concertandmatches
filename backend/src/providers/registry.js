@@ -1,5 +1,6 @@
 import { TicketmasterProvider } from './TicketmasterProvider.js';
 import { SeatGeekProvider } from './SeatGeekProvider.js';
+import { TicketNetworkProvider } from './TicketNetworkProvider.js';
 
 // Single shared instance per provider — these wrappers are stateless
 // (they just delegate to the underlying service functions), so there's no
@@ -10,11 +11,14 @@ import { SeatGeekProvider } from './SeatGeekProvider.js';
 // JSON-LD-scraping provider used to be registered too; both were removed
 // (StubHub was an unverified/unofficial skeleton never wired into any
 // sync job, and the official-sites provider scraped arbitrary third-party
-// pages' HTML for structured data) so the registry can't be pointed at
-// anything but Ticketmaster/SeatGeek without adding a new provider file.
+// pages' HTML for structured data). TicketNetwork was registered once its
+// provider stopped being an inert MWS-pending scaffold and started
+// delegating to a real, working integration (Impact.com's affiliate
+// catalog API — see TicketNetworkProvider.js/services/ticketnetwork.js).
 const providers = {
   ticketmaster: new TicketmasterProvider(),
   seatgeek: new SeatGeekProvider(),
+  ticketnetwork: new TicketNetworkProvider(),
 };
 
 // Look up a provider by name (case-insensitive). Returns undefined for an

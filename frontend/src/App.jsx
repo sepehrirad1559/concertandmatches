@@ -286,6 +286,15 @@ function buildFindTicketsLinks(event) {
       name: 'SeatGeek',
       buildUrl: (url) => url || `https://seatgeek.com/search?search=${q}`,
     },
+    // TicketNetwork, via the (already-approved) Impact.com affiliate
+    // catalog — see backend/src/services/ticketnetwork.js. Unlike
+    // Ticketmaster, the stored source_url IS ALREADY the full Impact.com
+    // tracked affiliate link (goto.ticketnetwork.com/...), so this needs no
+    // extra wrapping, same as SeatGeek's link above.
+    ticketnetwork: {
+      name: 'TicketNetwork',
+      buildUrl: (url) => url || `https://www.ticketnetwork.com/tickets/search?q=${q}`,
+    },
     // Official festival/venue/artist/band sites (see services/officialSites.js
     // on the backend) — these are NOT a seller and have no affiliate
     // relationship, so this deliberately never wraps the URL in a tracked

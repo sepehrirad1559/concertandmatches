@@ -192,6 +192,75 @@ router.post('/sync/ticketmaster', async (req, res) => {
     });
 });
 
+// One-time seed: adds a 'ticketnetwork' row to `providers` so
+// canonicalize.js's ticket_offers join (providerIdByName.get(row.source))
+// doesn't silently skip TicketNetwork offers the way it does for any source
+// with no matching providers row (see that file's skippedNoProvider
+// counter). No affiliate_url_template — TicketNetwork's catalog Url field
+// is already the full Impact.com tracked affiliate link, unlike
+// Ticketmaster's raw seller URL which needs wrapping (see App.jsx's
+// trackedTicketmasterLink / providers.affiliate_url_template).
+router.post('/schema/add-ticketnetwork-provider', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+  try {
+    await pool.query(`
+      INSERT INTO providers (name, provider_type, api_endpoint, commercial_use_allowed, redistribution_allowed, affiliate_enabled, attribution_required, active)
+      VALUES ('ticketnetwork', 'official_api', 'https://api.impact.com', true, true, true, false, true)
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    res.json({ success: true, message: 'ticketnetwork provider row seeded (or already existed)' });
+  } catch (error) {
+    console.error('Error seeding ticketnetwork provider row:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/sync/ticketnetwork', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  // ?maxPages= lets a caller run a small partial sync first (e.g. a few
+  // pages) to sanity-check results before committing to the full ~210k-item
+  // catalog, which at ~1000 items/page can take a while to page through
+  // completely. Omit it (or pass 0) for a full sync.
+  const maxPages = Number(req.query.maxPages) || null;
+  const pageSize = Number(req.query.pageSize) || 1000;
+  const startedAt = new Date();
+
+  // Same background-response pattern as /sync/seatgeek and /sync/ticketmaster
+  // above — paging through the full catalog can take many minutes, longer
+  // than Railway's proxy will hold a synchronous request open.
+  res.json({ success: true, message: `TicketNetwork sync started in the background (maxPages=${maxPages ?? 'unlimited — full catalog'}, pageSize=${pageSize}). Check GET /admin/health or Railway logs for completion.` });
+
+  getProvider('ticketnetwork').sync({ maxPages, pageSize })
+    .then((result) => logProviderSync({
+      providerName: 'ticketnetwork', syncType: 'discovery', startedAt, finishedAt: new Date(),
+      recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error',
+      errorMessage: result.error ?? (result.apiErrorCount > 0 ? `${result.apiErrorCount} API error(s): ${JSON.stringify(result.sampleApiErrors)}` : null),
+    }))
+    .catch((error) => {
+      console.error('Background TicketNetwork sync failed:', error);
+      return logProviderSync({
+        providerName: 'ticketnetwork', syncType: 'discovery', startedAt, finishedAt: new Date(),
+        recordsReceived: null, status: 'error', errorMessage: error.message,
+      });
+    });
+});
+
 // Removed (see backend/DATA_SOURCES.md): official_sources schema/CRUD
 // routes and the /sync/official-sites and /discover/artist-sites sync
 // routes. That feature fetched arbitrary third-party pages and parsed

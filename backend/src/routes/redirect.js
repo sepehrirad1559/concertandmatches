@@ -52,6 +52,7 @@ const ALLOWED_HOST_SUFFIXES = [
   'vividseats.com',
   'tickpick.com',
   'evyy.net', // Impact.com tracked-link domain used by the Ticketmaster affiliate program
+  'ticketnetwork.com', // covers goto.ticketnetwork.com (Impact.com's tracked-link subdomain for the TicketNetwork affiliate catalog, see services/ticketnetwork.js) and ticketnetwork.com itself, via the .suffix match below
 ];
 
 function isAllowedDestination(destinationUrl) {
