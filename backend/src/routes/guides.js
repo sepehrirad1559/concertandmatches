@@ -80,6 +80,13 @@ function eventSlug(event) {
 // request rather than cached, since the whole point is that this always
 // reflects real current inventory.
 async function topArtistCityCombos(limit = 300) {
+  // t.price IS NOT NULL is required IN THE WHERE CLAUSE (not just checked
+  // later when rendering) — without it, two sources can both list the same
+  // canonical event with neither having a price yet, which satisfies
+  // "2 distinct sources" here but leaves eventsForArtistCity's own
+  // has-a-price filter with nothing to show, 404-ing a combo this query
+  // just told the index page/sitemap was live. Filtering here keeps this
+  // list and what eventsForArtistCity actually renders in sync.
   const result = await pool.query(`
     SELECT ce.artist_name, ce.city, ce.state,
            COUNT(DISTINCT p.name) AS source_count, COUNT(*) AS row_count
@@ -90,6 +97,7 @@ async function topArtistCityCombos(limit = 300) {
       AND ce.artist_name IS NOT NULL AND ce.artist_name != ''
       AND ce.city IS NOT NULL AND ce.city != ''
       AND p.name != 'official'
+      AND t.price IS NOT NULL
     GROUP BY ce.artist_name, ce.city, ce.state
     HAVING COUNT(DISTINCT p.name) >= 2
     ORDER BY source_count DESC, row_count DESC
