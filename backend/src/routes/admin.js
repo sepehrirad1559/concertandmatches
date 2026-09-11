@@ -1055,6 +1055,52 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
     }
   }
 
+  // TicketNetwork, via the Impact.com affiliate Partner API (their real
+  // catalog-based integration, not just tracked links). Confirmed working
+  // credentials/endpoint live-tested from the browser against Impact.com's
+  // dashboard; this repeats that same call server-to-server via axios,
+  // since the browser-side call to the bulk Items endpoint failed with what
+  // looked like a CORS restriction specific to that large resource (the
+  // small /Campaigns and /Catalogs metadata endpoints worked fine in the
+  // browser). Catalog 1872 ("Ticketnetwork Product Catalog API") is the
+  // ~210k-item, auto-updating catalog meant for programmatic consumption.
+  const tnSid = process.env.TICKETNETWORK_ACCOUNT_SID;
+  const tnToken = process.env.TICKETNETWORK_AUTH_TOKEN;
+  results.ticketnetwork = { keyConfigured: !!(tnSid && tnToken) };
+  if (tnSid && tnToken) {
+    try {
+      const auth = 'Basic ' + Buffer.from(`${tnSid}:${tnToken}`).toString('base64');
+      const r = await axios.get(`https://api.impact.com/Mediapartners/${tnSid}/Catalogs/1872/Items`, {
+        params: { PageSize: 5 },
+        headers: { Authorization: auth, Accept: 'application/json' },
+      });
+      results.ticketnetwork.status = r.status;
+      results.ticketnetwork.rawTopLevelKeys = Object.keys(r.data || {});
+      results.ticketnetwork.total = r.data?.['@total'] ?? null;
+      // Impact's Items response shape isn't confirmed yet, so dump whatever
+      // array-shaped field is actually present, plus one full sample item's
+      // field list, so the real schema (price/name/date/venue/url fields)
+      // can be read directly off this diagnostic before writing the
+      // ingestion service.
+      const possibleArrayKeys = Object.keys(r.data || {}).filter((k) => Array.isArray(r.data[k]));
+      results.ticketnetwork.arrayFieldsFound = possibleArrayKeys;
+      let items = null;
+      for (const k of possibleArrayKeys) {
+        if (r.data[k].length) { items = r.data[k]; break; }
+      }
+      if (items && items[0]) {
+        results.ticketnetwork.sampleItemKeys = Object.keys(items[0]);
+        results.ticketnetwork.sampleItem = items[0];
+        results.ticketnetwork.sampleItemCount = items.length;
+      } else {
+        results.ticketnetwork.rawBodySnippet = JSON.stringify(r.data).slice(0, 2000);
+      }
+    } catch (error) {
+      results.ticketnetwork.status = error.response?.status ?? null;
+      results.ticketnetwork.error = error.response?.data ?? error.message;
+    }
+  }
+
   res.json({ success: true, results });
 });
 
