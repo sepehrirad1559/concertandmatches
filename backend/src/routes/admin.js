@@ -1035,6 +1035,20 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
       }
       results.seatgeek.sampleEvents = sampleEvents;
       results.seatgeek.detailChecks = detailChecks;
+      // Rules out "pricing moved to a different field" — dumps every
+      // top-level key SeatGeek's detail response actually has, plus the raw
+      // stats object's own keys (if it has any at all), for the first
+      // sample event only.
+      if (sampleEvents[0]) {
+        try {
+          const d = await axios.get(`https://api.seatgeek.com/2/events/${sampleEvents[0].id}`, { params: { client_id: sgKey } });
+          results.seatgeek.rawTopLevelKeys = Object.keys(d.data || {});
+          results.seatgeek.rawStatsKeys = Object.keys(d.data?.stats || {});
+          results.seatgeek.rawStatsValue = d.data?.stats;
+        } catch (e3) {
+          results.seatgeek.rawDumpError = e3.response?.status ?? e3.message;
+        }
+      }
     } catch (error) {
       results.seatgeek.status = error.response?.status ?? null;
       results.seatgeek.error = error.response?.data ?? error.message;
