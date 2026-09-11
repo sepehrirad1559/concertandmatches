@@ -626,6 +626,18 @@ router.post('/schema/add-offer-details', async (req, res) => {
 // incrementally patch them, since they're a materialized view of `events`,
 // not independently-edited data. Does NOT touch `events`, click_events, or
 // the live /api/events route.
+//
+// Was synchronous (awaited the whole rebuild before responding) — fine back
+// when `events` was ~130k rows, but the TicketNetwork catalog ingest
+// (2026-09-11, services/ticketnetwork.js) brought the table to ~340k rows,
+// and a manual rebuild call at that size was observed live to hang for
+// minutes and make the REST OF THE SITE briefly unresponsive (other
+// requests, including GET /admin/stats, started timing out/502-ing while it
+// ran) — the per-row sequential INSERTs inside one long request apparently
+// saturate the single Node process/DB pool enough to starve everything
+// else. Same background-response fix as /sync/* and /backfill/* above:
+// respond immediately, keep running server-side, check GET /admin/health
+// (syncType 'canonicalize') or Railway logs for the real result.
 router.post('/canonicalize/rebuild', async (req, res) => {
   const providedKey = req.headers['x-sync-key'];
   const expectedKey = process.env.SYNC_SECRET_KEY;
@@ -636,13 +648,22 @@ router.post('/canonicalize/rebuild', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
-  try {
-    const result = await rebuildCanonicalEvents();
-    res.json({ success: true, ...result });
-  } catch (error) {
-    console.error('Canonical rebuild failed:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+  const startedAt = new Date();
+  res.json({ success: true, message: 'Canonical rebuild started in the background. Check GET /admin/health or Railway logs for completion.' });
+
+  rebuildCanonicalEvents()
+    .then((result) => logProviderSync({
+      providerName: 'canonicalize', syncType: 'rebuild', startedAt, finishedAt: new Date(),
+      recordsReceived: result.rawEventRows ?? null, recordsUpdated: result.canonicalEvents ?? null,
+      status: 'success', errorMessage: result.skippedNoProvider > 0 ? `${result.skippedNoProvider} offer(s) skipped — no matching providers row` : null,
+    }))
+    .catch((error) => {
+      console.error('Background canonical rebuild failed:', error);
+      return logProviderSync({
+        providerName: 'canonicalize', syncType: 'rebuild', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 // One-time cleanup: SeatGeek events synced before the pricing fix have a

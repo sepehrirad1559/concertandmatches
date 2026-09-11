@@ -53,32 +53,78 @@ function eventSlug(event) {
 // Artist+city combos worth a dedicated guide page: at least one upcoming
 // event, and — the actual value proposition of this site — at least two
 // distinct non-official sources so there's a real price to compare.
+//
+// ROOT CAUSE (found 2026-09-11) of this returning 0 combos, permanently,
+// no matter how much inventory the site had: this used to GROUP BY the
+// raw `events.artist_name` string and require an EXACT match across rows
+// to count as "the same artist" for the >= 2-source check. That's much
+// stricter than how the rest of the site already decides two rows are the
+// same real event — routes/events.js's live merge and
+// services/canonicalize.js's rebuild both use utils/matching.js's
+// isSameEvent, a fuzzy title/venue/date matcher specifically built to
+// survive naming differences between sources (accents, "Theatre" vs
+// "Theater", stopwords, etc.) — and TicketNetwork's events (see
+// services/ticketnetwork.js) don't populate artist_name at all, so they
+// could never contribute a second source under the old exact-match query
+// even when the SAME show was genuinely listed on both.
+//
+// Fix: read from canonical_events/ticket_offers (services/canonicalize.js)
+// instead of raw `events` — that's the table already built by running the
+// real isSameEvent matching once per rebuild (POST /admin/canonicalize/
+// rebuild, also run automatically after every scheduled discovery sync),
+// so "2 distinct sources for the same artist+city" here means 2 sources
+// that were ALREADY confirmed to be the same real-world show, not just 2
+// rows that happen to spell the artist's name identically.
+//
 // Capped generously below the sitemap limit; re-derived live on every
-// request rather than cached/precomputed, since the whole point is that
-// this always reflects real current inventory.
+// request rather than cached, since the whole point is that this always
+// reflects real current inventory.
 async function topArtistCityCombos(limit = 300) {
   const result = await pool.query(`
-    SELECT artist_name, city, state, COUNT(DISTINCT source) AS source_count, COUNT(*) AS row_count
-    FROM events
-    WHERE date >= NOW()
-      AND artist_name IS NOT NULL AND artist_name != ''
-      AND city IS NOT NULL AND city != ''
-      AND source != 'official'
-    GROUP BY artist_name, city, state
-    HAVING COUNT(DISTINCT source) >= 2
+    SELECT ce.artist_name, ce.city, ce.state,
+           COUNT(DISTINCT p.name) AS source_count, COUNT(*) AS row_count
+    FROM canonical_events ce
+    JOIN ticket_offers t ON t.canonical_event_id = ce.id
+    JOIN providers p ON p.id = t.provider_id
+    WHERE ce.event_date >= NOW()
+      AND ce.artist_name IS NOT NULL AND ce.artist_name != ''
+      AND ce.city IS NOT NULL AND ce.city != ''
+      AND p.name != 'official'
+    GROUP BY ce.artist_name, ce.city, ce.state
+    HAVING COUNT(DISTINCT p.name) >= 2
     ORDER BY source_count DESC, row_count DESC
     LIMIT $1
   `, [limit]);
   return result.rows;
 }
 
+// Finds the raw `events` rows behind every canonical event for this
+// artist+city (already fuzzy cross-source matched — see
+// topArtistCityCombos above) via ticket_offers.source_event_row_id, then
+// merges them the same way the live site does. This replaces the old
+// exact `events.artist_name = $1` lookup, which would miss legitimate
+// group members whose raw artist_name differs (or is NULL, as with every
+// TicketNetwork row) from whichever spelling this artist+city pair is
+// keyed by.
 async function eventsForArtistCity(artistName, city) {
-  const result = await pool.query(
-    `SELECT * FROM events
-     WHERE date >= NOW() AND artist_name = $1 AND city = $2
-     ORDER BY date ASC
-     LIMIT 200`,
+  const canonicalRows = await pool.query(
+    `SELECT id FROM canonical_events WHERE artist_name = $1 AND city = $2 AND event_date >= NOW()`,
     [artistName, city],
+  );
+  const canonicalIds = canonicalRows.rows.map((r) => r.id);
+  if (canonicalIds.length === 0) return [];
+
+  const offerRows = await pool.query(
+    `SELECT DISTINCT source_event_row_id FROM ticket_offers
+     WHERE canonical_event_id = ANY($1) AND source_event_row_id IS NOT NULL`,
+    [canonicalIds],
+  );
+  const eventRowIds = offerRows.rows.map((r) => r.source_event_row_id);
+  if (eventRowIds.length === 0) return [];
+
+  const result = await pool.query(
+    `SELECT * FROM events WHERE id = ANY($1) AND date >= NOW() ORDER BY date ASC LIMIT 200`,
+    [eventRowIds],
   );
   return mergeEventsAcrossSources(result.rows).filter((e) => e.offers.some((o) => o.min_price != null));
 }
