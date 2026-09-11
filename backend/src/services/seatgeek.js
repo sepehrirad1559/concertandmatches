@@ -385,9 +385,26 @@ export const storeEvent = async (sgEvent) => {
     );
 
     if (existingEvent.rows.length > 0) {
+      // ROOT CAUSE (permanent, structural) of SeatGeek prices repeatedly
+      // vanishing after being backfilled — see the matching comment in
+      // services/ticketmaster.js's storeEvent, same bug, same fix. SeatGeek's
+      // bulk /events listing (what the daily scheduleSeatGeekSync loop and
+      // every /admin/sync call use) "often returns an empty stats object"
+      // (see the comment above on rawMinPrice) even for events that DO have
+      // a real price once fetched individually — which is exactly what
+      // backfillMissingPrices below does. Before this fix, this UPDATE set
+      // min_price/max_price unconditionally from THIS call's (usually
+      // empty) stats, so every daily re-sync silently wiped out whatever the
+      // backfill job had just filled in, sending the event straight back
+      // into the "min_price IS NULL" backfill queue — an endless loop that
+      // meant SeatGeek events essentially never kept a price. COALESCE fixes
+      // it: only overwrite when this call actually found a price; otherwise
+      // keep whatever is already stored.
       await pool.query(
         `UPDATE events SET
-         min_price = $1, max_price = $2, latitude = $3, longitude = $4, updated_at = NOW()
+         min_price = COALESCE($1, min_price),
+         max_price = COALESCE($2, max_price),
+         latitude = $3, longitude = $4, updated_at = NOW()
          WHERE external_id = $5`,
         [minPrice, maxPrice, latitude, longitude, externalId]
       );

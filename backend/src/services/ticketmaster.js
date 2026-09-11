@@ -447,10 +447,32 @@ export const storeEvent = async (tmEvent) => {
     );
 
     if (existingEvent.rows.length > 0) {
-      // Update existing event
+      // Update existing event.
+      //
+      // ROOT CAUSE (permanent, structural) of prices repeatedly vanishing
+      // for events that DID have a price backfilled: this UPDATE used to set
+      // min_price/max_price/price_breakdown UNCONDITIONALLY from THIS call's
+      // data. Ticketmaster's bulk discovery/search endpoint (what the daily
+      // scheduleEventSync loop and every /admin/sync call run) frequently
+      // omits priceRanges even for events that DO have real pricing — the
+      // per-event detail endpoint (what backfillMissingPrices below calls)
+      // is what reliably returns it. So the sequence was: backfill finds and
+      // saves a real price -> next scheduled discovery sync re-fetches the
+      // same event from the bulk endpoint, gets no priceRanges, and this
+      // UPDATE overwrote the real price back to NULL -> the event looks
+      // unpriced again -> the backfill queue (WHERE min_price IS NULL)
+      // picks it back up and the whole cycle repeats. This is why the same
+      // events kept losing their price "again and again" instead of it
+      // being a one-time gap. Fix: COALESCE — only overwrite a field when
+      // THIS call actually has a value for it; otherwise keep whatever is
+      // already stored (from an earlier discovery pass or a backfill call).
       await pool.query(
         `UPDATE events SET
-         min_price = $1, max_price = $2, latitude = $3, longitude = $4, price_breakdown = $5, updated_at = NOW()
+         min_price = COALESCE($1, min_price),
+         max_price = COALESCE($2, max_price),
+         latitude = $3, longitude = $4,
+         price_breakdown = COALESCE($5, price_breakdown),
+         updated_at = NOW()
          WHERE external_id = $6`,
         [minPrice, maxPrice, latitude, longitude, priceBreakdown, id]
       );
