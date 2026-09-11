@@ -1070,8 +1070,9 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
   if (tnSid && tnToken) {
     try {
       const auth = 'Basic ' + Buffer.from(`${tnSid}:${tnToken}`).toString('base64');
+      const pageSize = Math.min(parseInt(req.query.tnPageSize, 10) || 50, 100);
       const r = await axios.get(`https://api.impact.com/Mediapartners/${tnSid}/Catalogs/1872/Items`, {
-        params: { PageSize: 5 },
+        params: { PageSize: pageSize },
         headers: { Authorization: auth, Accept: 'application/json' },
       });
       results.ticketnetwork.status = r.status;
@@ -1092,6 +1093,19 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
         results.ticketnetwork.sampleItemKeys = Object.keys(items[0]);
         results.ticketnetwork.sampleItem = items[0];
         results.ticketnetwork.sampleItemCount = items.length;
+        // From the first-pass sample, Text1 looked like a "$min- $max" price
+        // range string (CurrentPrice/OriginalPrice were both empty) and
+        // Category looked like it holds the event type ("CONCERTS"). This
+        // checks those hunches across a bigger, mixed sample before we build
+        // the real mapping.
+        results.ticketnetwork.categories = [...new Set(items.map((i) => i.Category))];
+        results.ticketnetwork.text1Samples = items.slice(0, 20).map((i) => i.Text1);
+        const priced = items.filter((i) => i.Text1 && i.Text1 !== '$0.00- $0.00' && i.Text1.trim() !== '');
+        results.ticketnetwork.pricedCount = priced.length;
+        results.ticketnetwork.pricedSampleItems = priced.slice(0, 5).map((i) => ({
+          Name: i.Name, Labels: i.Labels, LaunchDate: i.LaunchDate, Gtin: i.Gtin, Mpn: i.Mpn,
+          Category: i.Category, Text1: i.Text1, CurrentPrice: i.CurrentPrice, OriginalPrice: i.OriginalPrice,
+        }));
       } else {
         results.ticketnetwork.rawBodySnippet = JSON.stringify(r.data).slice(0, 2000);
       }
