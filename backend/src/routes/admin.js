@@ -994,8 +994,19 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
       // Sorted soonest-first (matches backfillMissingPrices' own queue order)
       // and per_page raised to 5 so we get real upcoming events to inspect,
       // not just whatever SeatGeek's default ordering happens to return.
+      // 'taxonomies.name': 'concert' matches what services/seatgeek.js's own
+      // sync calls actually filter on (see fetchSeatGeekConcerts etc.) —
+      // omitting it the first time round surfaced SeatGeek's own unfiltered
+      // "PARKING" pass listings instead of real events, which was a false
+      // lead, not a real finding.
       const r = await axios.get('https://api.seatgeek.com/2/events', {
-        params: { client_id: sgKey, per_page: 5, sort: 'datetime_local.asc', 'datetime_local.gte': new Date().toISOString() },
+        params: {
+          client_id: sgKey,
+          per_page: 5,
+          'taxonomies.name': 'concert',
+          sort: 'datetime_local.asc',
+          'datetime_local.gte': new Date().toISOString().slice(0, 10),
+        },
       });
       results.seatgeek.status = r.status;
       results.seatgeek.eventCount = r.data?.events?.length ?? 0;
