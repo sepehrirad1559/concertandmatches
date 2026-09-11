@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool } from '../index.js';
 import { isSameEvent } from '../utils/matching.js';
+import { normalizeState } from '../utils/states.js';
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ function mergeEventsAcrossSources(rows) {
   const bucketKey = (row) => {
     const d = new Date(row.date);
     const day = Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
-    return `${day}|${(row.city || '').toLowerCase().trim()}|${(row.state || '').toLowerCase().trim()}`;
+    return `${day}|${(row.city || '').toLowerCase().trim()}|${normalizeState(row.state)}`;
   };
 
   for (const row of rows) {

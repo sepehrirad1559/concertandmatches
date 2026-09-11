@@ -3,6 +3,8 @@
 // into a single card with one offer per source — the actual comparison
 // layer — instead of showing the same concert twice.
 
+import { normalizeState } from './states.js';
+
 // Low-signal words stripped before comparing titles/artist names. Removing
 // these means "Beyoncé World Tour" and "Beyoncé" score as a strong match
 // instead of being dragged down by words one source includes and the other
@@ -118,6 +120,23 @@ export function isCloseInTime(dateA, dateB, toleranceMs = SAME_TIME_TOLERANCE_MS
   return Math.abs(a.getTime() - b.getTime()) <= toleranceMs;
 }
 
+// TicketNetwork's catalog (services/ticketnetwork.js) gives a LaunchDate
+// with no real start time — it lands as exactly midnight UTC (see e.g. the
+// "Western Illinois Leathernecks at Wisconsin Badgers Football" case: a
+// Ticketmaster/SeatGeek row at 2026-09-12T18:15:00.000Z vs. the matching
+// TicketNetwork row at 2026-09-12T00:00:00.000Z — an 18+ hour gap that blew
+// straight through the 6-hour doubleheader-guard tolerance above and, even
+// after the (day, city, state) bucket-key state-format fix, still silently
+// blocked the merge). A row with an exact midnight-UTC timestamp doesn't
+// carry a real time signal to compare, so treat it as "time unknown" rather
+// than "time = 00:00" for this check.
+function isMidnightUTC(date) {
+  const d = new Date(date);
+  return !Number.isNaN(d.getTime()) &&
+    d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
+    d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+}
+
 // Best-effort "is this the same real-world event" check across two rows
 // from DIFFERENT sources. Two listings are only merged when they're on the
 // same day and in the same city/state (cheap, exact, and reliable), AND
@@ -146,9 +165,17 @@ export function isSameEvent(a, b) {
   if (!a || !b) return false;
   if (a.source === b.source) return false; // only merge ACROSS sources
   if (!isSameDay(a.date, b.date)) return false;
-  if (!isCloseInTime(a.date, b.date)) return false;
+  // Skip the doubleheader-guard time check when either side's timestamp has
+  // no real time-of-day component (see isMidnightUTC above) — a source that
+  // only gives a date, not a start time, can't be compared on time at all,
+  // and treating its implicit "00:00" as a real value would wrongly reject
+  // same-day matches against sources that do report a real start time.
+  if (!isMidnightUTC(a.date) && !isMidnightUTC(b.date) && !isCloseInTime(a.date, b.date)) return false;
   if ((a.city || '').toLowerCase().trim() !== (b.city || '').toLowerCase().trim()) return false;
-  if ((a.state || '').toLowerCase().trim() !== (b.state || '').toLowerCase().trim()) return false;
+  // normalizeState handles sources that disagree on format (e.g.
+  // TicketNetwork's "Wisconsin" vs. Ticketmaster/SeatGeek's "WI") — see
+  // utils/states.js for the full story.
+  if (normalizeState(a.state) !== normalizeState(b.state)) return false;
 
   const venueScore = tokenSimilarity(a.venue_name, b.venue_name);
 

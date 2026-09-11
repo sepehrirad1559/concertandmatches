@@ -1,5 +1,6 @@
 import { pool } from '../index.js';
 import { isSameEvent } from '../utils/matching.js';
+import { normalizeState } from '../utils/states.js';
 
 // Builds the normalized canonical_events / ticket_offers tables (spec
 // §4-§8) from the existing `events` table — the real source of truth,
@@ -55,7 +56,7 @@ export async function rebuildCanonicalEvents() {
     const bucketKey = (row) => {
       const d = new Date(row.date);
       const day = Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
-      return `${day}|${(row.city || '').toLowerCase().trim()}|${(row.state || '').toLowerCase().trim()}`;
+      return `${day}|${(row.city || '').toLowerCase().trim()}|${normalizeState(row.state)}`;
     };
     const groups = [];
     const bucketsByKey = new Map();

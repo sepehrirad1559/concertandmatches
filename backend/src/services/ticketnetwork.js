@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { pool } from '../index.js';
+import { normalizeState } from '../utils/states.js';
 
 // TicketNetwork's real ticket inventory, accessed through the Impact.com
 // affiliate Partner API — NOT the Mercury Web Services (MWS) integration
@@ -142,7 +143,14 @@ export const storeEvent = async (item) => {
     const venueName = item.Labels?.[0] || 'Unknown Venue';
     const venueAddress = item.Manufacturer || '';
     const city = item.Gtin || 'Unknown';
-    const state = item.Mpn || 'Unknown';
+    // Normalized to a two-letter code at ingestion so newly-synced rows
+    // already match Ticketmaster/SeatGeek's format directly — the bucket-key
+    // functions also normalize defensively (see utils/states.js) so this
+    // isn't required for matching to work, but keeping the stored value
+    // consistent avoids the same confusion resurfacing elsewhere (e.g. any
+    // future feature that reads `state` without going through those
+    // helpers).
+    const state = item.Mpn ? (normalizeState(item.Mpn).toUpperCase() || item.Mpn) : 'Unknown';
     const country = countryFromRaw(item.Asin);
     const category = categoryFromRaw(item.Category);
     const imageUrl = item.ImageUrl || null;
