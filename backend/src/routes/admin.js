@@ -991,12 +991,39 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
   results.seatgeek = { keyConfigured: !!sgKey };
   if (sgKey) {
     try {
+      // Sorted soonest-first (matches backfillMissingPrices' own queue order)
+      // and per_page raised to 5 so we get real upcoming events to inspect,
+      // not just whatever SeatGeek's default ordering happens to return.
       const r = await axios.get('https://api.seatgeek.com/2/events', {
-        params: { client_id: sgKey, per_page: 1 },
+        params: { client_id: sgKey, per_page: 5, sort: 'datetime_local.asc', 'datetime_local.gte': new Date().toISOString() },
       });
       results.seatgeek.status = r.status;
       results.seatgeek.eventCount = r.data?.events?.length ?? 0;
       results.seatgeek.meta = r.data?.meta ?? null;
+      // Diagnostic for "backfill always reports no price at the source":
+      // shows the LISTING endpoint's own stats for a few real soon-upcoming
+      // events (what storeEvent/sync sees) side by side with the per-event
+      // DETAIL endpoint's stats for the same ids (what backfillMissingPrices
+      // actually reads via fetchSeatGeekEventById) — if these disagree with
+      // what the backfill logs report, the bug is in how we read the detail
+      // response, not a real data-source gap.
+      const sampleEvents = (r.data?.events || []).map((e) => ({
+        id: e.id,
+        title: e.title,
+        datetime_local: e.datetime_local,
+        listingStats: e.stats ?? null,
+      }));
+      const detailChecks = [];
+      for (const ev of sampleEvents) {
+        try {
+          const d = await axios.get(`https://api.seatgeek.com/2/events/${ev.id}`, { params: { client_id: sgKey } });
+          detailChecks.push({ id: ev.id, detailStats: d.data?.stats ?? null, hasDataKey: Object.prototype.hasOwnProperty.call(d.data || {}, 'stats') });
+        } catch (e2) {
+          detailChecks.push({ id: ev.id, detailError: e2.response?.status ?? e2.message });
+        }
+      }
+      results.seatgeek.sampleEvents = sampleEvents;
+      results.seatgeek.detailChecks = detailChecks;
     } catch (error) {
       results.seatgeek.status = error.response?.status ?? null;
       results.seatgeek.error = error.response?.data ?? error.message;
