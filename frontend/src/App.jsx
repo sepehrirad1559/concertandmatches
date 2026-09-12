@@ -1195,6 +1195,22 @@ export default function App() {
     return () => { cancelled = true; };
   }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation, discoverShownIds]);
 
+  // Scrolling to Featured Events right when a search is submitted races a
+  // layout shift: the "Clear" button next to the search box only appears
+  // once activeSearch is non-empty, which can wrap the search row onto an
+  // extra line and change the page's layout above the fold at the exact
+  // moment the smooth scroll starts. The browser's own scroll-anchoring
+  // then "corrects" for that shift mid-animation and freezes the scroll a
+  // short way down instead of reaching Featured Events at all. Deferring
+  // the scroll one tick (after React has committed the re-render that adds
+  // the Clear button) lets that layout settle first, so the scroll starts
+  // from a stable page and actually reaches its target.
+  const scrollToFeaturedEvents = () => {
+    setTimeout(() => {
+      document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  };
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setActiveSearch(searchInput.trim());
@@ -1204,7 +1220,7 @@ export default function App() {
     // page, so jump there — otherwise a customer who searches from up near
     // the top never sees anything happen and assumes the search did
     // nothing.
-    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+    scrollToFeaturedEvents();
   };
 
   const handleClearSearch = () => {
@@ -1218,7 +1234,7 @@ export default function App() {
     setSearchInput(label);
     setActiveSearch(label);
     setShowAutocomplete(false);
-    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+    scrollToFeaturedEvents();
   };
 
   // Debounced fetch of autocomplete suggestions as the customer types.
