@@ -1586,10 +1586,10 @@ export default function App() {
       <p style={{
         textAlign: 'center',
         fontSize: 'clamp(13px, 2vw, 16px)',
-        color: '#666',
+        color: '#000',
         margin: '0 0 20px',
       }}>
-        Compare Leading Ticket Marketplaces and Find the Best Available Tickets.
+        Compare Leading Ticket Marketplaces and Find the Best Available Ticket.
       </p>
 
       <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginTop: 0, marginBottom: '16px', flexWrap: 'wrap' }}>
