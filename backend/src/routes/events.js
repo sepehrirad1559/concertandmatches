@@ -182,6 +182,59 @@ function compareEvents(a, b, effectiveSort) {
   return new Date(a.date) - new Date(b.date);
 }
 
+// The standing ordering rule for every category view (homepage category
+// rows AND the main listing whenever a category/keywords filter is active):
+//   1. Closest to the visitor's location first.
+//   2. Among events at a given proximity, prefer the ones listed with more
+//      retailers (a merged event's `offers.length`) — a real multi-seller
+//      comparison is worth more than a single-seller listing at the same
+//      distance.
+//   3. Once that ordering is set, don't let one retailer's events cluster
+//      together — walk it round-robin by each event's primary retailer so
+//      the list cycles through sellers (1 from retailer A, 1 from retailer
+//      B, 1 from retailer C, then back to A, ...) rather than showing many
+//      consecutive events from the same single seller. Each retailer's own
+//      queue keeps its internal order from steps 1-2, so the closest/most-
+//      multi-retailer events from each seller still come up first within
+//      their own turn.
+// Applied only for category-scoped views, not the unfiltered homepage/
+// browse list — "for each category" is the requested scope.
+function applyLocationRetailerOrder(events, hasCoords) {
+  const distanceOf = (e) => (e.distance_km != null ? e.distance_km : Infinity);
+
+  const byDistanceThenRetailers = events.slice().sort((a, b) => {
+    if (hasCoords) {
+      const d = distanceOf(a) - distanceOf(b);
+      if (d !== 0) return d;
+    }
+    const retailersA = (a.offers || []).length;
+    const retailersB = (b.offers || []).length;
+    if (retailersB !== retailersA) return retailersB - retailersA;
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  const queuesBySource = new Map();
+  for (const event of byDistanceThenRetailers) {
+    const primarySource = event.offers?.[0]?.source || event.source || 'unknown';
+    if (!queuesBySource.has(primarySource)) queuesBySource.set(primarySource, []);
+    queuesBySource.get(primarySource).push(event);
+  }
+
+  const queues = [...queuesBySource.values()];
+  const result = [];
+  let anyRemaining = true;
+  while (anyRemaining) {
+    anyRemaining = false;
+    for (const queue of queues) {
+      if (queue.length > 0) {
+        result.push(queue.shift());
+        anyRemaining = true;
+      }
+    }
+  }
+  return result;
+}
+
 // Get All Events with Filters
 router.get('/', async (req, res) => {
   try {
@@ -358,7 +411,16 @@ router.get('/', async (req, res) => {
       merged = merged.filter((e) => e.best_price != null && Number(e.best_price) <= max);
     }
 
-    merged.sort((a, b) => compareEvents(a, b, effectiveSort));
+    // A category (or keyword-based category tile) filter is active and the
+    // visitor hasn't explicitly picked a different sort — apply the
+    // standing per-category ordering rule instead of the generic default.
+    // An explicit `sort` (e.g. "Price: Low to High" from the dropdown)
+    // always wins over this, since that's the visitor's own direct choice.
+    if ((category || keywords) && !sort) {
+      merged = applyLocationRetailerOrder(merged, hasLocation);
+    } else {
+      merged.sort((a, b) => compareEvents(a, b, effectiveSort));
+    }
 
     const total = merged.length;
     const pageEvents = merged.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
@@ -748,15 +810,11 @@ router.get('/discover', async (req, res) => {
       const rawRows = await fetchDiscoverCandidates(pool, { lat, lng, categoryRule: rule, limitRaw: 400 });
       const mergedCategory = mergeEventsAcrossSources(rawRows);
       await attachClickCounts(pool, mergedCategory);
-      const sorted = mergedCategory.slice().sort((a, b) => {
-        if (hasCoords) {
-          const distCompare = compareEvents(a, b, 'distance');
-          if (distCompare !== 0) return distCompare;
-        }
-        if (b.click_count !== a.click_count) return b.click_count - a.click_count;
-        return new Date(a.date) - new Date(b.date);
-      });
-      categories[key] = sorted.slice(0, DISCOVER_SECTION_COUNT);
+      // Standing per-category ordering rule (see applyLocationRetailerOrder
+      // above): closest first, then more-retailers-first among those, then
+      // round-robin by retailer so the row doesn't cluster on one seller.
+      const ordered = applyLocationRetailerOrder(mergedCategory, hasCoords);
+      categories[key] = ordered.slice(0, DISCOVER_SECTION_COUNT);
     }
 
     // Strip internal-only scoring/click bookkeeping before responding —
