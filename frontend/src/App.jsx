@@ -1,5 +1,5 @@
 // build-refresh marker 2
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminPage from './AdminPage.jsx';
 import './App.css';
@@ -1195,20 +1195,31 @@ export default function App() {
     return () => { cancelled = true; };
   }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation, discoverShownIds]);
 
-  // Scrolling to Featured Events right when a search is submitted races a
-  // layout shift: the "Clear" button next to the search box only appears
-  // once activeSearch is non-empty, which can wrap the search row onto an
-  // extra line and change the page's layout above the fold at the exact
-  // moment the smooth scroll starts. The browser's own scroll-anchoring
-  // then "corrects" for that shift mid-animation and freezes the scroll a
-  // short way down instead of reaching Featured Events at all. Deferring
-  // the scroll one tick (after React has committed the re-render that adds
-  // the Clear button) lets that layout settle first, so the scroll starts
-  // from a stable page and actually reaches its target.
+  // Scrolling to Featured Events right when a search is submitted went
+  // through two failed attempts before this one. A fixed 50ms deferral
+  // (to let the "Clear" button's layout shift settle before a *smooth*
+  // scroll starts) still froze the animation partway every time, live-
+  // tested at the exact same ~123px offset — and disabling CSS scroll
+  // anchoring site-wide didn't fix it either. The remaining, confirmed-
+  // live difference from the category tiles' scroll (which does work) is
+  // that search results stream in asynchronously and keep resizing the
+  // very section being scrolled to for as long as fetchEvents is in
+  // flight — so instead of guessing another delay, wait for the actual
+  // signal that matters (eventsLoading flipping back to false below) and
+  // then jump straight there with an INSTANT scroll: unlike a smooth one,
+  // an instant scrollIntoView can't be interrupted mid-animation by a
+  // later layout shift, since there's no animation in flight to interrupt.
+  const searchScrollPendingRef = useRef(false);
+
+  useEffect(() => {
+    if (!eventsLoading && searchScrollPendingRef.current) {
+      searchScrollPendingRef.current = false;
+      document.getElementById('featured-events')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, [eventsLoading]);
+
   const scrollToFeaturedEvents = () => {
-    setTimeout(() => {
-      document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-    }, 50);
+    searchScrollPendingRef.current = true;
   };
 
   const handleSearchSubmit = (e) => {
