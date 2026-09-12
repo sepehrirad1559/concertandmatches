@@ -4,6 +4,7 @@ import { mergeEventsAcrossSources } from './events.js';
 import { topArtistCityCombos, guideSlugify } from './guides.js';
 import { discoverArtists, discoverCities, discoverVenues, LEAGUE_DEFS, discoverTeams } from '../services/seoEngine.js';
 import { ACTIVE_SOURCES } from '../config/sourceVisibility.js';
+import { appendPricedOnlyFilter } from '../config/priceVisibility.js';
 
 const router = express.Router();
 
@@ -42,14 +43,20 @@ router.get('/sitemap.xml', async (req, res) => {
   try {
     // TEMPORARY (see config/sourceVisibility.js): don't keep advertising
     // hidden-source events to search engines while they're hidden on-site.
-    const result = ACTIVE_SOURCES
-      ? await pool.query(
-          `SELECT * FROM events WHERE date >= NOW() AND source = ANY($1::text[]) ORDER BY date ASC LIMIT 8000`,
-          [ACTIVE_SOURCES]
-        )
-      : await pool.query(
-          `SELECT * FROM events WHERE date >= NOW() ORDER BY date ASC LIMIT 8000`
-        );
+    // PERMANENT (see config/priceVisibility.js): same for sold-out/unpriced
+    // events — never worth a crawl budget slot or a search-result click that
+    // leads to "Price TBA".
+    let sitemapWhere = 'WHERE date >= NOW()';
+    sitemapWhere = appendPricedOnlyFilter(sitemapWhere);
+    const sitemapParams = [];
+    if (ACTIVE_SOURCES) {
+      sitemapWhere += ` AND source = ANY($1::text[])`;
+      sitemapParams.push(ACTIVE_SOURCES);
+    }
+    const result = await pool.query(
+      `SELECT * FROM events ${sitemapWhere} ORDER BY date ASC LIMIT 8000`,
+      sitemapParams
+    );
     const merged = mergeEventsAcrossSources(result.rows).slice(0, SITEMAP_URL_CAP);
 
     const urlEntries = merged.map((event) => {

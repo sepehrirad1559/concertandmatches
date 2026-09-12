@@ -3,6 +3,7 @@ import { pool } from '../index.js';
 import { isSameEvent } from '../utils/matching.js';
 import { normalizeState } from '../utils/states.js';
 import { ACTIVE_SOURCES, appendSourceFilter } from '../config/sourceVisibility.js';
+import { appendPricedOnlyFilter } from '../config/priceVisibility.js';
 
 const router = express.Router();
 
@@ -308,6 +309,10 @@ router.get('/', async (req, res) => {
     // browse/search listing to only the active source(s).
     ({ whereClause, paramCount } = appendSourceFilter(whereClause, params, paramCount));
 
+    // PERMANENT (see config/priceVisibility.js): never list an event with no
+    // tickets actually available for sale (no price from its source at all).
+    whereClause = appendPricedOnlyFilter(whereClause);
+
     // Distance from the customer's location, via the Haversine formula. Only
     // events with stored venue coordinates get a real value; others come
     // back NULL and sort to the end rather than being excluded.
@@ -411,7 +416,16 @@ async function getMergedEventById(eventRowId) {
   const merged = mergeEventsAcrossSources([base, ...candidatesResult.rows]);
   // mergeEventsAcrossSources always keeps the first row (base, here) as
   // the primary/merged[0] since it's first in the input array.
-  return merged[0];
+  const result = merged[0];
+
+  // PERMANENT (see config/priceVisibility.js): checked AFTER merging, not on
+  // `base` alone — an unpriced base row can still be genuinely for-sale if a
+  // priced row from another source merged into it (mergeEventsAcrossSources
+  // promotes the cheapest priced offer's price up to the merged event's own
+  // min_price/max_price). Only hide it if NO offer, from any source, has a
+  // real price — no tickets are actually available for it anywhere we know.
+  if (result.min_price == null && result.max_price == null) return null;
+  return result;
 }
 
 // ---- Homepage event-discovery sections (Popular / Recommended / Trending /
@@ -482,6 +496,10 @@ async function fetchDiscoverCandidates(dbPool, { lat, lng, categoryRule = null, 
   // discover section (Popular/Recommended/Trending/category rows), since
   // they all funnel through this one shared candidate fetch.
   ({ whereClause, paramCount } = appendSourceFilter(whereClause, params, paramCount));
+
+  // PERMANENT (see config/priceVisibility.js): no sold-out/unpriced events
+  // in any discover section either.
+  whereClause = appendPricedOnlyFilter(whereClause);
 
   if (categoryRule) {
     const built = buildCategoryWhere(categoryRule, paramCount, params);
