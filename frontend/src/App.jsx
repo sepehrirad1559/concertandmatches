@@ -581,16 +581,22 @@ function EventCard({ event, onSelect }) {
 }
 
 // One event-discovery row (Popular Events / Recommended for You / Trending
-// Events Near {city} / Concerts / Sports / Theater / Comedy) — a heading
-// plus up to 5 EventCards in the same responsive grid the main listing
-// uses. Renders nothing while loading or once it's clear the platform has
-// no events at all for this section, rather than showing an empty heading.
-// Every discover section (Popular/Recommended/Trending/by-category) pages
-// its own events client-side, PAGE_SIZE at a time, capped at MAX_PAGES —
-// replaces the old "View all {title} →" link with a "‹ 1 of 7 ›" control so
-// a visitor can browse each row in place instead of jumping down to the
-// Featured Events grid. Featured Events itself is unaffected — it keeps its
-// own "Load More" pagination further down the page.
+// Events Near {city} / NFL / Concerts / NBA / NCAA Football / Theater /
+// Comedy) — a heading plus up to 5 EventCards in the same responsive grid
+// the main listing uses. The heading always renders, in the same fixed
+// order, once the discover fetch has resolved — a section with no nearby
+// events shows a short "nothing right now" message instead of a card grid
+// rather than disappearing entirely, so a visitor (or the site owner
+// scanning the page) can always see all six category rows are there, not
+// wonder whether one silently vanished. Renders nothing at all only while
+// the discover fetch is still loading, to avoid a flash of empty sections
+// before real data arrives. Every discover section (Popular/Recommended/
+// Trending/by-category) pages its own events client-side, PAGE_SIZE at a
+// time, capped at MAX_PAGES — replaces the old "View all {title} →" link
+// with a "‹ 1 of 7 ›" control so a visitor can browse each row in place
+// instead of jumping down to the Featured Events grid. Featured Events
+// itself is unaffected — it keeps its own "Load More" pagination further
+// down the page.
 const DISCOVER_PAGE_SIZE = 5;
 const DISCOVER_MAX_PAGES = 7;
 
@@ -603,7 +609,9 @@ function EventSection({ title, events, loading, onSelect }) {
     setPage(0);
   }, [events]);
 
-  if (!loading && (!events || events.length === 0)) return null;
+  if (loading) return null;
+
+  const isEmpty = !events || events.length === 0;
 
   const totalPages = events && events.length > 0
     ? Math.min(DISCOVER_MAX_PAGES, Math.ceil(events.length / DISCOVER_PAGE_SIZE))
@@ -619,7 +627,7 @@ function EventSection({ title, events, loading, onSelect }) {
     <div style={{ marginBottom: '32px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
         <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.01em' }}>{title}</h3>
-        {!loading && totalPages > 1 && (
+        {!isEmpty && totalPages > 1 && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -680,8 +688,8 @@ function EventSection({ title, events, loading, onSelect }) {
           </div>
         )}
       </div>
-      {loading ? (
-        <p style={{ color: '#666' }}>Loading…</p>
+      {isEmpty ? (
+        <p style={{ color: '#666', margin: 0 }}>Nothing here near you right now — check back soon.</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           {pageEvents.map((event) => (
