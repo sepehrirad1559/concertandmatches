@@ -116,6 +116,8 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${xmlEscape(title)}" />
 <meta name="twitter:description" content="${xmlEscape(description)}" />
+<meta name="twitter:image" content="${xmlEscape(event.image_url || 'https://www.concertandmatches.com/og-image.png')}" />
+<meta name="robots" content="index, follow" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>
 <body>

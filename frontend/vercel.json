@@ -15,6 +15,17 @@
     { "source": "/cities/:slug/events", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/events" },
     { "source": "/cities/:slug/concerts", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/concerts" },
     { "source": "/cities/:slug/sports", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/sports" },
+    {
+      "source": "/event/:idSlug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(bot|Bot|BOT|crawler|Crawler|spider|Spider|facebookexternalhit|WhatsApp|Pinterest|ia_archiver|Slurp|Embedly|SkypeUriPreview|vkShare)"
+        }
+      ],
+      "destination": "https://concertandmatches-production.up.railway.app/prerender/event/:idSlug"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
