@@ -68,7 +68,33 @@ function mergeEventsAcrossSources(rows) {
     let bucket = buckets.get(key);
     const match = bucket && bucket.find((m) => isSameEvent(m, row));
     if (match) {
-      match.offers.push(offer);
+      // A second row from a source that's ALREADY represented on this
+      // merged event (e.g. the same TicketNetwork performance listed twice
+      // under two external_ids) is a duplicate listing, not a second
+      // retailer — collapsing it into the existing offer is what keeps the
+      // price-comparison line and offer list to one entry per real seller.
+      // Without this, two same-source rows that both satisfy isSameEvent
+      // show up as "ticketnetwork from $X · ticketnetwork from $X" on the
+      // same card. Keep whichever row has the lower price (or the one with
+      // an actual price, if only one of them has one).
+      const existingSameSource = match.offers.find((o) => o.source === row.source);
+      if (existingSameSource) {
+        const existingPrice = existingSameSource.min_price != null ? Number(existingSameSource.min_price) : null;
+        const newPrice = row.min_price != null ? Number(row.min_price) : null;
+        const preferNew = existingPrice == null && newPrice != null
+          ? true
+          : (newPrice != null && existingPrice != null && newPrice < existingPrice);
+        if (preferNew) {
+          existingSameSource.event_row_id = row.id;
+          existingSameSource.external_id = row.external_id;
+          existingSameSource.source_url = row.source_url;
+          existingSameSource.min_price = row.min_price;
+          existingSameSource.max_price = row.max_price;
+          existingSameSource.currency = row.currency;
+        }
+      } else {
+        match.offers.push(offer);
+      }
       // Backfill anything the primary row is missing from this duplicate.
       if (!match.image_url && row.image_url) match.image_url = row.image_url;
       if (!match.artist_name && row.artist_name) match.artist_name = row.artist_name;
