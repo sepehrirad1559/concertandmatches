@@ -214,7 +214,14 @@ function getTicketPriceTiers(event) {
   return tiers
     .filter((t) => t.min != null || t.max != null)
     .map((t) => ({
-      label: t.type || 'Price',
+      // Ticketmaster's own priceRanges entries default to type "Standard"
+      // when Ticketmaster itself doesn't name the tier (see storeEvent in
+      // services/ticketmaster.js) — that's not a real tier name, just a
+      // placeholder, so treat it the same as "no tier name at all" and show
+      // the generic "Price" label (which then becomes "Price range" below
+      // when there are two distinct values). A genuinely named tier (e.g.
+      // "VIP") keeps its own name.
+      label: (t.type && t.type !== 'Standard') ? t.type : 'Price',
       min: t.min != null ? Number(t.min) : null,
       max: t.max != null ? Number(t.max) : null,
     }))
