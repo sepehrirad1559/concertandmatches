@@ -264,7 +264,20 @@ function applyLocationRetailerOrder(events, hasCoords) {
 // Get All Events with Filters
 router.get('/', async (req, res) => {
   try {
-    const { city, state, country, category, keywords, minPrice, maxPrice, startDate, endDate, search, location, sort, lat, lng, limit = 20, offset = 0 } = req.query;
+    const { city, state, country, category, keywords, minPrice, maxPrice, startDate, endDate, search, location, sort, lat, lng, limit = 20, offset = 0, excludeIds } = req.query;
+
+    // Every event should be listed in only one homepage section. The
+    // frontend collects the ids already shown in the discover carousels
+    // (Popular/Recommended/Trending/by-category — see routes/events.js's
+    // /discover, which dedups those against each other server-side) and
+    // sends them here so the Featured Events grid ("All" and every
+    // category tile) never repeats one of those events.
+    const excludeIdSet = new Set(
+      (excludeIds || '')
+        .split(',')
+        .map((id) => parseInt(id, 10))
+        .filter((id) => Number.isInteger(id))
+    );
 
     // Customer location, if the browser shared it. When present, results
     // default to nearest-first unless the caller asked for a different sort.
@@ -426,6 +439,10 @@ router.get('/', async (req, res) => {
     // Merge Ticketmaster + SeatGeek rows for the same real event into one
     // card with an `offers` array — the actual price-comparison feature.
     let merged = mergeEventsAcrossSources(result.rows);
+
+    if (excludeIdSet.size > 0) {
+      merged = merged.filter((e) => !excludeIdSet.has(e.id));
+    }
 
     // Price filters apply post-merge, against each event's best price.
     if (minPrice) {
@@ -772,17 +789,32 @@ router.get('/discover', async (req, res) => {
     const merged = mergeEventsAcrossSources(rawCandidates);
     await attachClickCounts(pool, merged);
 
+    // Every event should be listed in only one homepage section — never
+    // repeated across Popular/Recommended/Trending/NFL/Concerts/NBA/NCAA
+    // Football/Theater/Comedy. `usedIds` tracks every id already claimed by
+    // an earlier (higher-priority) section so later sections pick from
+    // what's left; `takeUnused`/`markUsed` are small helpers around that.
+    // Priority follows the order these sections appear on the page: Popular
+    // > Recommended > Trending > NFL > Concerts > NBA > NCAA Football >
+    // Theater > Comedy. (The Featured Events grid further down the page is
+    // the true catch-all — it excludes everything claimed here via its own
+    // `excludeIds` param, see routes/events.js's GET '/' handler.)
+    const usedIds = new Set();
+    const takeUnused = (list) => list.filter((e) => !usedIds.has(e.id));
+    const markUsed = (list) => { for (const e of list) usedIds.add(e.id); };
+
     // ---- Popular Events: click_count first, soonest as a tiebreak; only
     // events with at least one real click count as "popular" — backfilled
     // with the soonest nearby upcoming events to reach 5 when click data is
     // thin (e.g. a brand-new platform or region). ----
-    const popularSorted = merged.slice().sort((a, b) => {
+    const popularCandidates = takeUnused(merged);
+    const popularSorted = popularCandidates.slice().sort((a, b) => {
       if (b.click_count !== a.click_count) return b.click_count - a.click_count;
       return new Date(a.date) - new Date(b.date);
     });
     const popularPicked = backfillByDate(
       popularSorted.filter((e) => e.click_count > 0).slice(0, DISCOVER_SECTION_COUNT),
-      merged,
+      popularCandidates,
       DISCOVER_SECTION_COUNT
     );
     // Standing ordering rule applies to this section too: click_count only
@@ -790,21 +822,7 @@ router.get('/discover', async (req, res) => {
     // present them closest-first / most-retailers-first / retailer-round-
     // robin, same as every category row.
     const popular = applyLocationRetailerOrder(popularPicked, hasCoords);
-
-    // ---- Trending Events Near [City]: recent (7-day) click velocity, same
-    // backfill approach as Popular. ----
-    const trendingSorted = merged.slice().sort((a, b) => {
-      if (b.recent_click_count !== a.recent_click_count) return b.recent_click_count - a.recent_click_count;
-      if (b.click_count !== a.click_count) return b.click_count - a.click_count;
-      return new Date(a.date) - new Date(b.date);
-    });
-    const trendingPicked = backfillByDate(
-      trendingSorted.filter((e) => e.recent_click_count > 0).slice(0, DISCOVER_SECTION_COUNT),
-      merged,
-      DISCOVER_SECTION_COUNT
-    );
-    // Same standing ordering rule applied on top of the trending selection.
-    const trending = applyLocationRetailerOrder(trendingPicked, hasCoords);
+    markUsed(popular);
 
     // ---- Recommended for You: popularity + "happening soon" recency +
     // category diversity, with a small boost for categories the visitor has
@@ -822,12 +840,35 @@ router.get('/discover', async (req, res) => {
       const prefBoost = prefCategories.includes(event.category) ? 1 : 0;
       event._score = popularityScore * 2 + recencyScore + prefBoost;
     }
-    const recommendedPicked = backfillByDate(pickDiverse(merged, DISCOVER_SECTION_COUNT), merged, DISCOVER_SECTION_COUNT);
+    const recommendedCandidates = takeUnused(merged);
+    const recommendedPicked = backfillByDate(
+      pickDiverse(recommendedCandidates, DISCOVER_SECTION_COUNT),
+      recommendedCandidates,
+      DISCOVER_SECTION_COUNT
+    );
     // Same standing ordering rule applied on top of the recommended
     // selection — pickDiverse/backfillByDate still decide WHICH events make
     // the cut (score + category diversity), this only decides the order
     // they're displayed in.
     const recommended = applyLocationRetailerOrder(recommendedPicked, hasCoords);
+    markUsed(recommended);
+
+    // ---- Trending Events Near [City]: recent (7-day) click velocity, same
+    // backfill approach as Popular. ----
+    const trendingCandidates = takeUnused(merged);
+    const trendingSorted = trendingCandidates.slice().sort((a, b) => {
+      if (b.recent_click_count !== a.recent_click_count) return b.recent_click_count - a.recent_click_count;
+      if (b.click_count !== a.click_count) return b.click_count - a.click_count;
+      return new Date(a.date) - new Date(b.date);
+    });
+    const trendingPicked = backfillByDate(
+      trendingSorted.filter((e) => e.recent_click_count > 0).slice(0, DISCOVER_SECTION_COUNT),
+      trendingCandidates,
+      DISCOVER_SECTION_COUNT
+    );
+    // Same standing ordering rule applied on top of the trending selection.
+    const trending = applyLocationRetailerOrder(trendingPicked, hasCoords);
+    markUsed(trending);
 
     // ---- Concerts / Sports / Theater / Comedy: up to DISCOVER_SECTION_COUNT
     // each (enough for the frontend's 7-page cap) when the platform has that
@@ -849,11 +890,17 @@ router.get('/discover', async (req, res) => {
       const rawRows = await fetchDiscoverCandidates(pool, { lat, lng, categoryRule: rule, limitRaw: 400 });
       const mergedCategory = mergeEventsAcrossSources(rawRows);
       await attachClickCounts(pool, mergedCategory);
+      // Same cross-section dedup as Popular/Recommended/Trending above:
+      // skip anything already claimed by a higher-priority section (NFL >
+      // Concerts > NBA > NCAA Football > Theater > Comedy, in that order —
+      // matching the loop's own key order in DISCOVER_CATEGORY_RULES).
+      const categoryCandidates = takeUnused(mergedCategory);
       // Standing per-category ordering rule (see applyLocationRetailerOrder
       // above): closest first, then more-retailers-first among those, then
       // round-robin by retailer so the row doesn't cluster on one seller.
-      const ordered = applyLocationRetailerOrder(mergedCategory, hasCoords);
+      const ordered = applyLocationRetailerOrder(categoryCandidates, hasCoords);
       categories[key] = ordered.slice(0, DISCOVER_SECTION_COUNT);
+      markUsed(categories[key]);
     }
 
     // Strip internal-only scoring/click bookkeeping before responding —

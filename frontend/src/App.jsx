@@ -1,5 +1,5 @@
 // build-refresh marker 2
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminPage from './AdminPage.jsx';
 import './App.css';
@@ -1078,6 +1078,27 @@ export default function App() {
     }
   }, [selectedEvent]);
 
+  // Every event should be listed in only one homepage section. The
+  // discover carousels (Popular/Recommended/Trending/by-category) already
+  // dedup against each other server-side; this collects everything they
+  // ended up showing so the Featured Events grid below — "All" and every
+  // category tile — never repeats one of those events, no matter which
+  // tile is selected.
+  const discoverShownIds = useMemo(() => {
+    if (!discoverData) return [];
+    const ids = [];
+    const collect = (list) => {
+      if (Array.isArray(list)) for (const e of list) ids.push(e.id);
+    };
+    collect(discoverData.popular);
+    collect(discoverData.recommended);
+    collect(discoverData.trending);
+    if (discoverData.categories) {
+      for (const list of Object.values(discoverData.categories)) collect(list);
+    }
+    return ids;
+  }, [discoverData]);
+
   const fetchEvents = async (offset, search, categoryId, filters) => {
     const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
     if (search) params.set('search', search);
@@ -1106,6 +1127,7 @@ export default function App() {
     if (filters?.endDate) params.set('endDate', filters.endDate);
     if (filters?.sort) params.set('sort', filters.sort);
     if (filters?.location) params.set('location', filters.location);
+    if (discoverShownIds.length > 0) params.set('excludeIds', discoverShownIds.join(','));
     const response = await fetch(`${API_URL}/events?${params.toString()}`);
     if (!response.ok) throw new Error('Request failed');
     return response.json();
@@ -1147,7 +1169,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]);
+  }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation, discoverShownIds]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
