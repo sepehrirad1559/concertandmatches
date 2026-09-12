@@ -225,64 +225,6 @@ function getTicketPriceTiers(event) {
     });
 }
 
-// Every distinct real price point we actually know about for an event, low
-// to high — the event page shows this as "Available tickets: $A, $B, $C"
-// instead of a single "$min - $max" range. Built from whatever pricing
-// granularity the source actually gives us:
-//  - Ticketmaster sometimes reports several named tiers (Standard, VIP, ...)
-//    in `price_breakdown` — each tier's own min/max are both real boundary
-//    prices Ticketmaster reported, so a 2-tier event naturally yields up to
-//    4 distinct values.
-//  - SeatGeek/TicketNetwork (and any Ticketmaster event with no tier
-//    breakdown) only ever give a single min/max range — for those, this
-//    returns just that range's real endpoint(s), never invented numbers in
-//    between. There's no itemized per-seat price data behind any of our
-//    sources, so this never fabricates values beyond what was reported.
-// Considers every offer (every source this event is listed with), not just
-// the primary row, since a visitor comparing sellers should see every real
-// price across all of them.
-function getAllAvailablePrices(event) {
-  const prices = new Set();
-  const addTiersOrRange = (obj) => {
-    let tiers = [];
-    if (obj?.price_breakdown) {
-      try {
-        const parsed = typeof obj.price_breakdown === 'string'
-          ? JSON.parse(obj.price_breakdown)
-          : obj.price_breakdown;
-        if (Array.isArray(parsed)) tiers = parsed;
-      } catch {
-        tiers = [];
-      }
-    }
-    if (tiers.length > 0) {
-      tiers.forEach((t) => {
-        if (t.min != null) prices.add(Number(t.min));
-        if (t.max != null) prices.add(Number(t.max));
-      });
-    } else {
-      if (obj?.min_price != null) prices.add(Number(obj.min_price));
-      if (obj?.max_price != null) prices.add(Number(obj.max_price));
-    }
-  };
-
-  addTiersOrRange(event);
-  if (Array.isArray(event.offers)) {
-    event.offers.forEach((offer) => addTiersOrRange(offer));
-  }
-
-  return [...prices].filter((p) => Number.isFinite(p) && p >= 0).sort((a, b) => a - b);
-}
-
-// "Available tickets: $50, $75, $120" — the comma-separated list itself.
-// Returns null when we don't know any real price for this event at all
-// (callers should fall back to something like "Price TBA").
-function formatAvailableTicketsList(event) {
-  const prices = getAllAvailablePrices(event);
-  if (prices.length === 0) return null;
-  return prices.map((p) => `$${p.toFixed(0)}`).join(', ');
-}
-
 // Compact "Ticketmaster from $45 · SeatGeek from $52" line for the event
 // card grid, cheapest first — the at-a-glance comparison. Returns null
 // when there's nothing to compare (a single offer, or no priced offers).
@@ -1363,9 +1305,6 @@ export default function App() {
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '14px', color: '#222' }}>
             <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
-            {formatAvailableTicketsList(selectedEvent) && (
-              <p><strong>💰 Available tickets:</strong> {formatAvailableTicketsList(selectedEvent)}</p>
-            )}
           </div>
 
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '14px', color: '#222' }}>
