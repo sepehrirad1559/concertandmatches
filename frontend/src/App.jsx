@@ -1199,6 +1199,12 @@ export default function App() {
     e.preventDefault();
     setActiveSearch(searchInput.trim());
     setShowAutocomplete(false);
+    // Same behavior as clicking a category tile (see CategoryTiles above):
+    // the search results land in the Featured Events grid further down the
+    // page, so jump there — otherwise a customer who searches from up near
+    // the top never sees anything happen and assumes the search did
+    // nothing.
+    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleClearSearch = () => {
@@ -1212,6 +1218,7 @@ export default function App() {
     setSearchInput(label);
     setActiveSearch(label);
     setShowAutocomplete(false);
+    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // Debounced fetch of autocomplete suggestions as the customer types.
