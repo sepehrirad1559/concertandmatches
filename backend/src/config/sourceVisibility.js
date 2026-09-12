@@ -1,13 +1,15 @@
-// TEMPORARY site-wide visibility toggle. Requested 2026-09-12: hide every
-// SeatGeek and Ticketmaster event and show only TicketNetwork events across
-// the platform's public browsing surfaces (homepage list/search/discover
-// sections, autocomplete, event detail/merge, sitemap).
+// TEMPORARY site-wide visibility toggle. Originally set 2026-09-12 to hide
+// both SeatGeek and Ticketmaster, showing only TicketNetwork. Updated the
+// same day to bring Ticketmaster back (after a full comprehensive
+// Ticketmaster catalog sync) while SeatGeek stays hidden — SeatGeek's
+// affiliate pricing is still blocked on its own pending account approval, so
+// its events would show with no price anyway.
 //
-// To restore normal behavior (show all sources again), set this back to
-// null — every call site below treats null as "no restriction" and reverts
-// to its original query. That's the entire revert; nothing else needs to
-// change.
-export const ACTIVE_SOURCES = ['ticketnetwork'];
+// To restore normal behavior (show all three sources again), set this back
+// to null — every call site below treats null as "no restriction" and
+// reverts to its original query. That's the entire revert; nothing else
+// needs to change.
+export const ACTIVE_SOURCES = ['ticketnetwork', 'ticketmaster'];
 
 // Appends a `source = ANY(...)` condition to an existing WHERE clause
 // string, pushing ACTIVE_SOURCES onto `params` and returning the next free
