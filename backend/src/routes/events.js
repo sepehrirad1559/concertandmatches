@@ -779,11 +779,16 @@ router.get('/discover', async (req, res) => {
       if (b.click_count !== a.click_count) return b.click_count - a.click_count;
       return new Date(a.date) - new Date(b.date);
     });
-    const popular = backfillByDate(
+    const popularPicked = backfillByDate(
       popularSorted.filter((e) => e.click_count > 0).slice(0, DISCOVER_SECTION_COUNT),
       merged,
       DISCOVER_SECTION_COUNT
     );
+    // Standing ordering rule applies to this section too: click_count only
+    // decides WHICH events qualify as "popular"; once that set is picked,
+    // present them closest-first / most-retailers-first / retailer-round-
+    // robin, same as every category row.
+    const popular = applyLocationRetailerOrder(popularPicked, hasCoords);
 
     // ---- Trending Events Near [City]: recent (7-day) click velocity, same
     // backfill approach as Popular. ----
@@ -792,11 +797,13 @@ router.get('/discover', async (req, res) => {
       if (b.click_count !== a.click_count) return b.click_count - a.click_count;
       return new Date(a.date) - new Date(b.date);
     });
-    const trending = backfillByDate(
+    const trendingPicked = backfillByDate(
       trendingSorted.filter((e) => e.recent_click_count > 0).slice(0, DISCOVER_SECTION_COUNT),
       merged,
       DISCOVER_SECTION_COUNT
     );
+    // Same standing ordering rule applied on top of the trending selection.
+    const trending = applyLocationRetailerOrder(trendingPicked, hasCoords);
 
     // ---- Recommended for You: popularity + "happening soon" recency +
     // category diversity, with a small boost for categories the visitor has
@@ -814,7 +821,12 @@ router.get('/discover', async (req, res) => {
       const prefBoost = prefCategories.includes(event.category) ? 1 : 0;
       event._score = popularityScore * 2 + recencyScore + prefBoost;
     }
-    const recommended = backfillByDate(pickDiverse(merged, DISCOVER_SECTION_COUNT), merged, DISCOVER_SECTION_COUNT);
+    const recommendedPicked = backfillByDate(pickDiverse(merged, DISCOVER_SECTION_COUNT), merged, DISCOVER_SECTION_COUNT);
+    // Same standing ordering rule applied on top of the recommended
+    // selection — pickDiverse/backfillByDate still decide WHICH events make
+    // the cut (score + category diversity), this only decides the order
+    // they're displayed in.
+    const recommended = applyLocationRetailerOrder(recommendedPicked, hasCoords);
 
     // ---- Concerts / Sports / Theater / Comedy: up to DISCOVER_SECTION_COUNT
     // each (enough for the frontend's 7-page cap) when the platform has that
