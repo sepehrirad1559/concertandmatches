@@ -4,6 +4,23 @@
   box-sizing: border-box;
 }
 
+/* The browser's own scroll-anchoring feature watches for layout shifts
+   above/within the viewport during a scroll and "corrects" the scroll
+   position to compensate — which is exactly what was freezing the
+   search-triggered smooth scroll to #featured-events partway down the
+   page (always at the same ~123px, reproduced every time). A 50ms
+   setTimeout deferral (see handleSearchSubmit) wasn't enough: search
+   results keep streaming in and resizing sections while the ~10,000px
+   smooth-scroll animation is still in flight, so anchoring kept
+   re-triggering throughout the animation, not just at its start.
+   Disabling anchoring document-wide removes the race at its root instead
+   of chasing timing — the one thing this feature is for (keeping reading
+   position stable while you read and content above shifts) isn't a
+   behavior this app relies on anywhere. */
+html {
+  overflow-anchor: none;
+}
+
 :root {
   /* Same brand colors the app already used inline everywhere — named here
      purely so the new hover/shadow utility classes below have something
