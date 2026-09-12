@@ -437,12 +437,13 @@ router.get('/', async (req, res) => {
       merged = merged.filter((e) => e.best_price != null && Number(e.best_price) <= max);
     }
 
-    // A category (or keyword-based category tile) filter is active and the
-    // visitor hasn't explicitly picked a different sort — apply the
-    // standing per-category ordering rule instead of the generic default.
-    // An explicit `sort` (e.g. "Price: Low to High" from the dropdown)
-    // always wins over this, since that's the visitor's own direct choice.
-    if ((category || keywords) && !sort) {
+    // Standing ordering rule (closest -> most-retailers -> retailer-round-
+    // robin) applies to every listing view by default, including the "All"
+    // tile and the plain Featured Events grid with no category tile
+    // selected at all — not just an explicit category/keyword filter. An
+    // explicit `sort` (e.g. "Price: Low to High" from the dropdown) always
+    // wins over this, since that's the visitor's own direct choice.
+    if (!sort) {
       merged = applyLocationRetailerOrder(merged, hasLocation);
     } else {
       merged.sort((a, b) => compareEvents(a, b, effectiveSort));
