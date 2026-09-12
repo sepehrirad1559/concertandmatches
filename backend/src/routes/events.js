@@ -218,69 +218,26 @@ function compareEvents(a, b, effectiveSort) {
 //      retailers (a merged event's `offers.length`) — a real multi-seller
 //      comparison is worth more than a single-seller listing at that same
 //      distance.
-//   3. Within that same distance tie, don't let one retailer's events
-//      cluster together — walk it round-robin by each event's primary
-//      retailer so the tie group cycles through sellers instead of
-//      grouping one seller's events back to back.
-// Retailer diversity (steps 2-3) never reorders across DIFFERENT distances
-// — it only breaks ties within one distance value. Before this fix, the
-// round-robin step regrouped the WHOLE list by retailer and interleaved
-// those queues globally, which could put a retailer's far-away event ahead
-// of another retailer's much closer one, silently undoing step 1 for any
-// visitor whose nearby events weren't evenly split across retailers.
+// There is deliberately no retailer round-robin/interleaving step anymore
+// — an earlier version reordered same-distance ties by primary retailer to
+// avoid one seller's events clustering together, but any such shuffling
+// risks looking like it's overriding the distance ordering, so plain
+// distance-then-retailer-count-then-date is all this does now.
 // Applied only for category-scoped views, not the unfiltered homepage/
 // browse list — "for each category" is the requested scope.
 function applyLocationRetailerOrder(events, hasCoords) {
   const distanceOf = (e) => (e.distance_km != null ? e.distance_km : Infinity);
 
-  const sortedByDistance = events.slice().sort((a, b) => (hasCoords ? distanceOf(a) - distanceOf(b) : 0));
-
-  // Group consecutive same-distance events (stable sort above keeps a
-  // group's events adjacent). With no visitor location at all, every event
-  // shares the same (Infinity) "distance", so this naturally becomes one
-  // single group — i.e. the old whole-list round-robin behavior, which is
-  // the right fallback when there's no distance to sort by in the first
-  // place.
-  const groups = [];
-  for (const event of sortedByDistance) {
-    const d = hasCoords ? distanceOf(event) : 0;
-    const currentGroup = groups[groups.length - 1];
-    if (currentGroup && currentGroup.distance === d) {
-      currentGroup.events.push(event);
-    } else {
-      groups.push({ distance: d, events: [event] });
+  return events.slice().sort((a, b) => {
+    if (hasCoords) {
+      const d = distanceOf(a) - distanceOf(b);
+      if (d !== 0) return d;
     }
-  }
-
-  const result = [];
-  for (const group of groups) {
-    const byRetailers = group.events.slice().sort((a, b) => {
-      const retailersA = (a.offers || []).length;
-      const retailersB = (b.offers || []).length;
-      if (retailersB !== retailersA) return retailersB - retailersA;
-      return new Date(a.date) - new Date(b.date);
-    });
-
-    const queuesBySource = new Map();
-    for (const event of byRetailers) {
-      const primarySource = event.offers?.[0]?.source || event.source || 'unknown';
-      if (!queuesBySource.has(primarySource)) queuesBySource.set(primarySource, []);
-      queuesBySource.get(primarySource).push(event);
-    }
-
-    const queues = [...queuesBySource.values()];
-    let anyRemaining = true;
-    while (anyRemaining) {
-      anyRemaining = false;
-      for (const queue of queues) {
-        if (queue.length > 0) {
-          result.push(queue.shift());
-          anyRemaining = true;
-        }
-      }
-    }
-  }
-  return result;
+    const retailersA = (a.offers || []).length;
+    const retailersB = (b.offers || []).length;
+    if (retailersB !== retailersA) return retailersB - retailersA;
+    return new Date(a.date) - new Date(b.date);
+  });
 }
 
 // Get All Events with Filters
