@@ -885,8 +885,31 @@ router.get('/discover', async (req, res) => {
     // this JS-side sort runs afterward). click_count/date remain as
     // tiebreakers among events at essentially the same distance, and as the
     // sole sort when no location is known at all.
+    //
+    // Processing order for the cross-section dedup below is deliberately
+    // NOT DISCOVER_CATEGORY_RULES' own key order. A rule matched by a
+    // specific KEYWORD (nfl/nba/ncaaFootball/comedy — the title, artist, or
+    // venue actually names that thing) is a much more confident match than
+    // a rule matched only by the generic `category` column (concerts/
+    // theater — e.g. Ticketmaster's broad "Arts & Theatre" segment covers
+    // comedy, dance, opera, and more, not just theater). A real comedy show
+    // filed under "Arts & Theatre" matches BOTH the Theater rule (by
+    // category) and the Comedy rule (by keyword) — without this ordering,
+    // whichever rule's turn came first in DISCOVER_CATEGORY_RULES claimed
+    // it via the dedup below regardless of which one actually fits, which
+    // is how "Comedy Juice" (a real comedy show 35km away) ended up
+    // classified under Theater and pushed out of Comedy, leaving Comedy to
+    // show a 1500km+ event as its "closest". Keyword rules go first so the
+    // more specific match always wins the event.
+    const categoryProcessingOrder = Object.keys(DISCOVER_CATEGORY_RULES).sort((a, b) => {
+      const aHasKeywords = DISCOVER_CATEGORY_RULES[a].keywords.length > 0;
+      const bHasKeywords = DISCOVER_CATEGORY_RULES[b].keywords.length > 0;
+      if (aHasKeywords === bHasKeywords) return 0;
+      return aHasKeywords ? -1 : 1;
+    });
     const categories = {};
-    for (const [key, rule] of Object.entries(DISCOVER_CATEGORY_RULES)) {
+    for (const key of categoryProcessingOrder) {
+      const rule = DISCOVER_CATEGORY_RULES[key];
       const rawRows = await fetchDiscoverCandidates(pool, { lat, lng, categoryRule: rule, limitRaw: 400 });
       const mergedCategory = mergeEventsAcrossSources(rawRows);
       await attachClickCounts(pool, mergedCategory);
