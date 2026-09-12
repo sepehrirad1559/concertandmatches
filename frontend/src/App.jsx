@@ -1365,26 +1365,32 @@ export default function App() {
                         </a>
                         {showTierBreakdown && (
                           <div style={{ marginTop: '6px', padding: '8px 6px 4px', border: '1px solid #ddd', borderRadius: '12px' }}>
-                            {priceTiers.map((tier, i) => (
-                              <div
-                                key={`${tier.label}-${i}`}
-                                style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  fontSize: '14px',
-                                  color: '#1a73e8',
-                                  fontWeight: 'bold',
-                                  padding: '3px 2px',
-                                }}>
-                                <span>{tier.label}</span>
-                                <span>
-                                  {[...new Set([tier.min, tier.max].filter((p) => p != null))]
-                                    .sort((a, b) => a - b)
-                                    .map((p) => `$${p.toFixed(0)}`)
-                                    .join(', ')}
-                                </span>
-                              </div>
-                            ))}
+                            {priceTiers.map((tier, i) => {
+                              const tierValues = [...new Set([tier.min, tier.max].filter((p) => p != null))].sort((a, b) => a - b);
+                              // The generic fallback tier (no real named tier
+                              // from the source, e.g. Ticketmaster's
+                              // "Standard"/"VIP") is labeled "Price" — but
+                              // with two distinct numbers that reads as one
+                              // price rather than what it actually is, a
+                              // range between two real endpoints. A real
+                              // named tier keeps its own name either way.
+                              const label = tier.label === 'Price' && tierValues.length > 1 ? 'Price range' : tier.label;
+                              return (
+                                <div
+                                  key={`${tier.label}-${i}`}
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    fontSize: '14px',
+                                    color: '#1a73e8',
+                                    fontWeight: 'bold',
+                                    padding: '3px 2px',
+                                  }}>
+                                  <span>{label}</span>
+                                  <span>{tierValues.map((p) => `$${p.toFixed(0)}`).join(', ')}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                         {!showTierBreakdown && !isOfficialLink && (
