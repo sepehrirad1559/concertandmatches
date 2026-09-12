@@ -2,6 +2,7 @@ import express from 'express';
 import { pool } from '../index.js';
 import { isSameEvent } from '../utils/matching.js';
 import { normalizeState } from '../utils/states.js';
+import { ACTIVE_SOURCES, appendSourceFilter } from '../config/sourceVisibility.js';
 
 const router = express.Router();
 
@@ -303,6 +304,10 @@ router.get('/', async (req, res) => {
       }
     }
 
+    // TEMPORARY (see config/sourceVisibility.js): restricts the main
+    // browse/search listing to only the active source(s).
+    ({ whereClause, paramCount } = appendSourceFilter(whereClause, params, paramCount));
+
     // Distance from the customer's location, via the Haversine formula. Only
     // events with stored venue coordinates get a real value; others come
     // back NULL and sort to the end rather than being excluded.
@@ -385,15 +390,22 @@ async function getMergedEventById(eventRowId) {
   if (baseResult.rows.length === 0) return null;
   const base = baseResult.rows[0];
 
+  // TEMPORARY (see config/sourceVisibility.js): a direct/bookmarked link to
+  // a hidden-source event behaves as if it doesn't exist, same as any other
+  // event this restriction hides from listings.
+  if (ACTIVE_SOURCES && !ACTIVE_SOURCES.includes(base.source)) return null;
+
   // Candidates for cross-source merging: same calendar day + same
   // city/state (the cheap, exact part of isSameEvent) — narrows a
   // 3000+ row table down to a handful before running the more expensive
   // token-similarity check in JS, same division of labor as the list
   // endpoint above.
+  let candidatesWhere = 'WHERE date::date = $1::date AND city = $2 AND state = $3 AND source != $4';
+  const candidatesParams = [base.date, base.city, base.state, base.source];
+  ({ whereClause: candidatesWhere } = appendSourceFilter(candidatesWhere, candidatesParams, candidatesParams.length + 1));
   const candidatesResult = await pool.query(
-    `SELECT * FROM events
-     WHERE date::date = $1::date AND city = $2 AND state = $3 AND source != $4`,
-    [base.date, base.city, base.state, base.source]
+    `SELECT * FROM events ${candidatesWhere}`,
+    candidatesParams
   );
 
   const merged = mergeEventsAcrossSources([base, ...candidatesResult.rows]);
@@ -465,6 +477,11 @@ async function fetchDiscoverCandidates(dbPool, { lat, lng, categoryRule = null, 
   const params = [];
   let paramCount = 1;
   let whereClause = 'WHERE date >= NOW()';
+
+  // TEMPORARY (see config/sourceVisibility.js): applies to every homepage
+  // discover section (Popular/Recommended/Trending/category rows), since
+  // they all funnel through this one shared candidate fetch.
+  ({ whereClause, paramCount } = appendSourceFilter(whereClause, params, paramCount));
 
   if (categoryRule) {
     const built = buildCategoryWhere(categoryRule, paramCount, params);
@@ -779,6 +796,10 @@ router.get('/autocomplete', async (req, res) => {
 
     const like = `%${q}%`;
     const startsWith = `${q}%`;
+    // TEMPORARY (see config/sourceVisibility.js): autocomplete suggestions
+    // shouldn't point visitors at events the listings themselves are hiding.
+    const sourceClause = ACTIVE_SOURCES ? ' AND source = ANY($3::text[])' : '';
+    const sourceParams = ACTIVE_SOURCES ? [ACTIVE_SOURCES] : [];
 
     // NOTE: each of these is SELECT DISTINCT with an ORDER BY expression
     // (the ILIKE-based "starts with" boolean) — Postgres requires every
@@ -791,27 +812,27 @@ router.get('/autocomplete', async (req, res) => {
     const [artists, titles, venues, cities] = await Promise.all([
       pool.query(
         `SELECT DISTINCT artist_name AS value, (artist_name ILIKE $2) AS starts_with FROM events
-         WHERE artist_name ILIKE $1 AND artist_name IS NOT NULL AND artist_name != ''
+         WHERE artist_name ILIKE $1 AND artist_name IS NOT NULL AND artist_name != ''${sourceClause}
          ORDER BY starts_with DESC, value ASC LIMIT 5`,
-        [like, startsWith]
+        [like, startsWith, ...sourceParams]
       ),
       pool.query(
         `SELECT DISTINCT title AS value, (title ILIKE $2) AS starts_with FROM events
-         WHERE title ILIKE $1 AND title IS NOT NULL AND title != ''
+         WHERE title ILIKE $1 AND title IS NOT NULL AND title != ''${sourceClause}
          ORDER BY starts_with DESC, value ASC LIMIT 5`,
-        [like, startsWith]
+        [like, startsWith, ...sourceParams]
       ),
       pool.query(
         `SELECT DISTINCT venue_name AS value, (venue_name ILIKE $2) AS starts_with FROM events
-         WHERE venue_name ILIKE $1 AND venue_name IS NOT NULL AND venue_name != ''
+         WHERE venue_name ILIKE $1 AND venue_name IS NOT NULL AND venue_name != ''${sourceClause}
          ORDER BY starts_with DESC, value ASC LIMIT 5`,
-        [like, startsWith]
+        [like, startsWith, ...sourceParams]
       ),
       pool.query(
         `SELECT DISTINCT city AS value, state, (city ILIKE $2) AS starts_with FROM events
-         WHERE city ILIKE $1 AND city IS NOT NULL AND city != ''
+         WHERE city ILIKE $1 AND city IS NOT NULL AND city != ''${sourceClause}
          ORDER BY starts_with DESC, value ASC LIMIT 5`,
-        [like, startsWith]
+        [like, startsWith, ...sourceParams]
       ),
     ]);
 
@@ -849,11 +870,14 @@ router.get('/search/advanced', async (req, res) => {
   try {
     const { q, country = 'USA' } = req.query;
 
+    // TEMPORARY (see config/sourceVisibility.js)
+    const sourceClause = ACTIVE_SOURCES ? ' AND source = ANY($3::text[])' : '';
+    const sourceParams = ACTIVE_SOURCES ? [ACTIVE_SOURCES] : [];
     const result = await pool.query(
-      `SELECT DISTINCT city, state FROM events 
-       WHERE country = $1 AND (title ILIKE $2 OR city ILIKE $2 OR state ILIKE $2)
+      `SELECT DISTINCT city, state FROM events
+       WHERE country = $1 AND (title ILIKE $2 OR city ILIKE $2 OR state ILIKE $2)${sourceClause}
        LIMIT 20`,
-      [country, `%${q}%`]
+      [country, `%${q}%`, ...sourceParams]
     );
 
     res.json({ results: result.rows });

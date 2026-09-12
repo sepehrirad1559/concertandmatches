@@ -3,6 +3,7 @@ import { pool } from '../index.js';
 import { mergeEventsAcrossSources } from './events.js';
 import { topArtistCityCombos, guideSlugify } from './guides.js';
 import { discoverArtists, discoverCities, discoverVenues, LEAGUE_DEFS, discoverTeams } from '../services/seoEngine.js';
+import { ACTIVE_SOURCES } from '../config/sourceVisibility.js';
 
 const router = express.Router();
 
@@ -39,9 +40,16 @@ const SITE_ORIGIN = 'https://www.concertandmatches.com';
 
 router.get('/sitemap.xml', async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM events WHERE date >= NOW() ORDER BY date ASC LIMIT 8000`
-    );
+    // TEMPORARY (see config/sourceVisibility.js): don't keep advertising
+    // hidden-source events to search engines while they're hidden on-site.
+    const result = ACTIVE_SOURCES
+      ? await pool.query(
+          `SELECT * FROM events WHERE date >= NOW() AND source = ANY($1::text[]) ORDER BY date ASC LIMIT 8000`,
+          [ACTIVE_SOURCES]
+        )
+      : await pool.query(
+          `SELECT * FROM events WHERE date >= NOW() ORDER BY date ASC LIMIT 8000`
+        );
     const merged = mergeEventsAcrossSources(result.rows).slice(0, SITEMAP_URL_CAP);
 
     const urlEntries = merged.map((event) => {
