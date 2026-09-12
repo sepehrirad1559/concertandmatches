@@ -287,10 +287,12 @@ function buildFindTicketsLinks(event) {
   const sourceMeta = {
     ticketmaster: {
       name: 'Ticketmaster',
+      domain: 'ticketmaster.com',
       buildUrl: (url) => trackedTicketmasterLink(url || `https://www.ticketmaster.com/search?q=${q}`),
     },
     seatgeek: {
       name: 'SeatGeek',
+      domain: 'seatgeek.com',
       buildUrl: (url) => url || `https://seatgeek.com/search?search=${q}`,
     },
     // TicketNetwork, via the (already-approved) Impact.com affiliate
@@ -300,6 +302,7 @@ function buildFindTicketsLinks(event) {
     // extra wrapping, same as SeatGeek's link above.
     ticketnetwork: {
       name: 'TicketNetwork',
+      domain: 'ticketnetwork.com',
       buildUrl: (url) => url || `https://www.ticketnetwork.com/tickets/search?q=${q}`,
     },
     // Official festival/venue/artist/band sites (see services/officialSites.js
@@ -311,8 +314,11 @@ function buildFindTicketsLinks(event) {
     // per-ticket price), and never routes through /go (that redirect's
     // domain whitelist is intentionally limited to known ticket sellers).
     // It's purely "here's the event's own official page" for the visitor.
+    // No fixed `domain` — the official site is a different URL per event,
+    // so there's no single logo to show for it.
     official: {
       name: 'Official Site',
+      domain: null,
       buildUrl: (url) => url || null,
     },
   };
@@ -326,6 +332,16 @@ function buildFindTicketsLinks(event) {
     .map((o) => ({
       source: o.source,
       name: sourceMeta[o.source].name,
+      // A small favicon-style badge for the retailer's own site, next to
+      // its name on the "Buy Your Ticket on ___" button — using Google's
+      // public favicon service rather than hosting a copy of each
+      // retailer's logo ourselves (no trademark/asset-licensing question,
+      // and it stays in sync if a retailer ever changes its icon). No logo
+      // for the official-site link since that's a different domain per
+      // event, not one fixed retailer.
+      logoUrl: sourceMeta[o.source].domain
+        ? `https://www.google.com/s2/favicons?domain=${sourceMeta[o.source].domain}&sz=64`
+        : null,
       url: sourceMeta[o.source].buildUrl(o.source_url),
       minPrice: o.source === 'official' ? null : o.min_price,
       maxPrice: o.source === 'official' ? null : o.max_price,
@@ -1388,7 +1404,10 @@ export default function App() {
                             if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
                           }}
                           style={{
-                            display: 'block',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
                             padding: '13px 16px',
                             borderRadius: '12px',
                             border: isOfficialLink ? '1px solid #555' : '1px solid #8b0000',
@@ -1398,7 +1417,21 @@ export default function App() {
                             fontWeight: 'bold',
                             textAlign: 'center',
                           }}>
-                          {isOfficialLink ? `Visit ${link.name} ↗` : `Buy Your Ticket on ${link.name} ↗`}
+                          {link.logoUrl && (
+                            <img
+                              src={link.logoUrl}
+                              alt=""
+                              width={18}
+                              height={18}
+                              style={{ borderRadius: '4px', flexShrink: 0, backgroundColor: '#fff' }}
+                              // A favicon that fails to load (blocked, retailer
+                              // changed domains, etc.) should just disappear
+                              // rather than show a broken-image icon on the
+                              // button.
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          )}
+                          <span>{isOfficialLink ? `Visit ${link.name} ↗` : `Buy Your Ticket on ${link.name} ↗`}</span>
                         </a>
                         {showTierBreakdown && (
                           <div style={{ marginTop: '6px', padding: '8px 6px 4px', border: '1px solid #ddd', borderRadius: '12px' }}>
