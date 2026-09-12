@@ -1592,7 +1592,8 @@ export default function App() {
 
       <p style={{
         textAlign: 'center',
-        fontSize: 'clamp(13px, 2vw, 16px)',
+        fontSize: 'clamp(17px, 2.6vw, 22px)',
+        fontWeight: 600,
         color: '#000',
         margin: '0 0 20px',
       }}>
