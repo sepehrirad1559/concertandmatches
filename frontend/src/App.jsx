@@ -1578,13 +1578,13 @@ export default function App() {
       {/* Hero band: wraps the nav, headline, search bar and category tiles in
           their own backdrop so this whole top-of-page zone reads as one
           deliberate section, distinct from the plain page background the
-          results grid sits on below. Color is a user-supplied near-black
-          (#0a0101) rather than the site's brand purple/gradient — the white
+          results grid sits on below. Color is a user-supplied dark wine red
+          (#230101) rather than the site's brand purple/gradient — the white
           nav/search-bar/tile cards keep their own backgrounds and sit on top
           of it unchanged; the heading/subheading below get an explicit light
           text color since they sit directly on this dark background. */}
       <div style={{
-        background: '#0a0101',
+        background: '#230101',
         borderRadius: '28px',
         padding: '20px 20px 28px',
         marginBottom: '24px',
