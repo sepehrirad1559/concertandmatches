@@ -1292,4 +1292,50 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
   res.json({ success: true, results });
 });
 
+// Read-only diagnostic: how many Ticketmaster events are the SAME real-world
+// event as one already listed by TicketNetwork — i.e. how many canonical
+// (merged/deduped) events carry offers from both sources. This reads the
+// derived canonical_events/ticket_offers tables built by
+// POST /admin/canonicalize/rebuild, so it reflects whatever data was present
+// as of the LAST rebuild, not necessarily the very latest raw `events` rows
+// — run a rebuild first if a just-completed sync should be reflected here.
+router.get('/diagnostics/source-overlap', requireAdminAccess, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      WITH per_event AS (
+        SELECT
+          o.canonical_event_id,
+          BOOL_OR(p.name = 'ticketmaster') AS has_ticketmaster,
+          BOOL_OR(p.name = 'ticketnetwork') AS has_ticketnetwork,
+          BOOL_OR(p.name = 'seatgeek') AS has_seatgeek
+        FROM ticket_offers o
+        JOIN providers p ON p.id = o.provider_id
+        GROUP BY o.canonical_event_id
+      )
+      SELECT
+        COUNT(*) FILTER (WHERE has_ticketmaster) AS ticketmaster_canonical_events,
+        COUNT(*) FILTER (WHERE has_ticketnetwork) AS ticketnetwork_canonical_events,
+        COUNT(*) FILTER (WHERE has_ticketmaster AND has_ticketnetwork) AS overlap_ticketmaster_and_ticketnetwork,
+        COUNT(*) FILTER (WHERE has_ticketmaster AND NOT has_ticketnetwork) AS ticketmaster_only,
+        COUNT(*) FILTER (WHERE has_ticketnetwork AND NOT has_ticketmaster) AS ticketnetwork_only
+      FROM per_event;
+    `);
+
+    const canonicalizeLastRun = await pool.query(`
+      SELECT finished_at FROM provider_sync_logs
+      WHERE provider_name = 'canonicalize' AND sync_type = 'rebuild' AND status = 'success'
+      ORDER BY finished_at DESC LIMIT 1
+    `).catch(() => ({ rows: [] })); // tolerate provider_sync_logs not existing/queryable rather than failing the whole diagnostic
+
+    res.json({
+      success: true,
+      ...rows[0],
+      note: 'Counts are canonical (deduped) events, not raw rows — a Ticketmaster event and a TicketNetwork event only count as "overlap" when they were matched as the same real-world event by the canonicalize rebuild (utils/matching.js\'s isSameEvent). Run POST /admin/canonicalize/rebuild first if recent sync activity should be reflected here.',
+      canonicalizeLastRunFinishedAt: canonicalizeLastRun.rows[0]?.finished_at ?? null,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
