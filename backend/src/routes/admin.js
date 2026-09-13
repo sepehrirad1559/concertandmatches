@@ -717,22 +717,40 @@ router.post('/cleanup/official-source-data', async (req, res) => {
 // POST /admin/canonicalize/rebuild afterward so canonical_events/
 // ticket_offers stop referencing the deleted rows, then
 // POST /admin/sync/ticketmaster to repopulate fresh from the Discovery API.
+//
+// Runs in the background rather than awaiting the DELETE synchronously —
+// the first live run of this route (2026-09-13, events table at ~340k rows
+// across all sources) came back as a client-side "upstream error" from
+// Railway's proxy, the same failure mode /sync/* and /backfill/* were
+// already fixed for elsewhere in this file: a single-statement DELETE
+// against a table this size can outlast the proxy's timeout even though
+// Postgres keeps executing it server-side. Check GET /admin/health or
+// Railway logs for the real row count deleted instead of the HTTP response.
 router.post('/cleanup/ticketmaster-data', async (req, res) => {
   const providedKey = req.headers['x-sync-key'];
   const expectedKey = process.env.SYNC_SECRET_KEY;
   if (!expectedKey || !providedKey || providedKey !== expectedKey) {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
-  try {
-    const deleted = await pool.query(`DELETE FROM events WHERE source = 'ticketmaster'`);
-    res.json({
-      success: true,
-      eventsDeleted: deleted.rowCount,
-      message: 'All ticketmaster events deleted. Run POST /admin/canonicalize/rebuild next, then POST /admin/sync/ticketmaster to re-add them from scratch.',
+
+  const startedAt = new Date();
+  res.json({
+    success: true,
+    message: 'Deleting all ticketmaster events in the background. Check GET /admin/health or Railway logs for completion, then run POST /admin/canonicalize/rebuild followed by POST /admin/sync/ticketmaster.',
+  });
+
+  pool.query(`DELETE FROM events WHERE source = 'ticketmaster'`)
+    .then((deleted) => logProviderSync({
+      providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
+      recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success', errorMessage: null,
+    }))
+    .catch((error) => {
+      console.error('Background ticketmaster cleanup delete failed:', error);
+      return logProviderSync({
+        providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
     });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
 });
 
 // Backfill missing prices for events that were stored with no price (see
