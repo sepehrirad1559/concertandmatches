@@ -437,53 +437,51 @@ function AffiliateDisclosure() {
 // their own category/genre filter chips (StubHub's "All types / Sports /
 // Concerts / Theater & Comedy" pills, SeatGeek's "Location / Date" pills,
 // etc.): a flat white tile with a thin colored border, not a bold colored
-// gradient fill. The accent color is still per-category (so the row stays
-// visually scannable) but only shows up as the border/icon/active-fill
-// color now, matching that flatter, whiter competitor look.
+// gradient fill. Every tile shares the same single active-state color
+// (ACTIVE_TILE_COLOR below) instead of a per-category accent.
 const EVENT_CATEGORIES = [
   {
     id: 'nfl',
     label: 'NFL',
     emoji: '🏈',
     keywords: ['NFL'],
-    accent: '#013369',
   },
   {
     id: 'concerts',
     label: 'Concerts',
     emoji: '🎤',
     category: ['Music', 'Concert'],
-    accent: '#8e2de2',
   },
   {
     id: 'nba',
     label: 'NBA',
     emoji: '🏀',
     keywords: ['NBA', 'Basketball'],
-    accent: '#1d428a',
   },
   {
     id: 'ncaaf',
     label: 'NCAA Football',
     emoji: '🎓',
     keywords: ['NCAA Football', 'College Football', 'NCAA'],
-    accent: '#002d62',
   },
   {
     id: 'theater',
     label: 'Theater',
     emoji: '🎭',
     category: ['Arts & Theatre'],
-    accent: '#6a0dad',
   },
   {
     id: 'comedy',
     label: 'Comedy',
     emoji: '😂',
     keywords: ['Comedy', 'Stand-Up', 'Stand Up'],
-    accent: '#c9660b',
   },
 ];
+
+// The color a category tile (in CategoryTiles below) turns to when selected
+// — a single shared active color across every tile, per the reference swatch
+// provided for this.
+const ACTIVE_TILE_COLOR = '#c9660b';
 
 function CategoryTiles({ activeCategoryId, onSelect }) {
   return (
@@ -502,8 +500,8 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
           document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
         }}
         style={{
-          background: activeCategoryId === null ? '#1a0733' : '#fff',
-          border: activeCategoryId === null ? '2px solid #1a0733' : '1px solid var(--cm-border)',
+          background: activeCategoryId === null ? ACTIVE_TILE_COLOR : '#fff',
+          border: activeCategoryId === null ? `2px solid ${ACTIVE_TILE_COLOR}` : '1px solid var(--cm-border)',
           borderRadius: '16px',
           padding: '18px 8px',
           color: activeCategoryId === null ? '#fff' : '#222',
@@ -526,8 +524,8 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
               document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
             }}
             style={{
-              background: isActive ? cat.accent : '#fff',
-              border: isActive ? `2px solid ${cat.accent}` : '1px solid var(--cm-border)',
+              background: isActive ? ACTIVE_TILE_COLOR : '#fff',
+              border: isActive ? `2px solid ${ACTIVE_TILE_COLOR}` : '1px solid var(--cm-border)',
               borderRadius: '16px',
               padding: '18px 8px',
               color: isActive ? '#fff' : '#222',
