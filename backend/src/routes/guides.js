@@ -151,7 +151,7 @@ router.get('/guide', async (req, res) => {
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Ticket Price Guides by Artist & City | ConcertAndMatches.com</title>
+<title>Ticket Price Guides by Artist & City | ConcertAndMatches</title>
 <meta name="description" content="Compare ticket prices across every upcoming show with more than one confirmed seller, organized by artist and city." />
 <link rel="canonical" href="https://www.concertandmatches.com/guide" />
 </head>
@@ -159,7 +159,7 @@ router.get('/guide', async (req, res) => {
 <h1>Ticket price guides</h1>
 <p>${items.length} artist/city guides, generated from currently listed shows with more than one confirmed ticket seller.</p>
 <ul>${items.join('')}</ul>
-<p><a href="/">Back to ConcertAndMatches.com</a></p>
+<p><a href="/">Back to ConcertAndMatches</a></p>
 </body>
 </html>`;
     res.set('Content-Type', 'text/html');
@@ -182,7 +182,7 @@ router.get('/guide/:slug', async (req, res) => {
     const match = combos.find((c) => `${slugify(c.artist_name)}-tickets-${slugify(c.city)}` === requested);
 
     if (!match) {
-      res.status(404).set('Content-Type', 'text/html').send('<!doctype html><html><head><title>Guide not found — ConcertAndMatches.com</title></head><body><p>We don\'t have a live guide for that artist/city yet. <a href="/guide">See all guides</a>.</p></body></html>');
+      res.status(404).set('Content-Type', 'text/html').send('<!doctype html><html><head><title>Guide not found — ConcertAndMatches</title></head><body><p>We don\'t have a live guide for that artist/city yet. <a href="/guide">See all guides</a>.</p></body></html>');
       return;
     }
 
@@ -191,12 +191,12 @@ router.get('/guide/:slug', async (req, res) => {
       // The combo query and this query can race with a sync job between
       // requests (events selling out / a source dropping below 2 sellers).
       // Fail to a clean 404 rather than rendering an empty, thin page.
-      res.status(404).set('Content-Type', 'text/html').send('<!doctype html><html><head><title>Guide not found — ConcertAndMatches.com</title></head><body><p>This guide is no longer live. <a href="/guide">See all guides</a>.</p></body></html>');
+      res.status(404).set('Content-Type', 'text/html').send('<!doctype html><html><head><title>Guide not found — ConcertAndMatches</title></head><body><p>This guide is no longer live. <a href="/guide">See all guides</a>.</p></body></html>');
       return;
     }
 
     const cheapest = events.reduce((a, b) => (Number(a.best_price ?? Infinity) <= Number(b.best_price ?? Infinity) ? a : b));
-    const title = `Cheapest ${match.artist_name} Tickets in ${match.city}${match.state ? `, ${match.state}` : ''} — Compare Prices | ConcertAndMatches.com`;
+    const title = `Cheapest ${match.artist_name} Tickets in ${match.city}${match.state ? `, ${match.state}` : ''} — Compare Prices | ConcertAndMatches`;
     const description = `Compare live ${match.artist_name} ticket prices in ${match.city} across every confirmed seller. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${Number(cheapest.best_price).toFixed(0)}.`;
     const url = `https://www.concertandmatches.com/guide/${xmlEscape(requested)}`;
 
@@ -231,7 +231,7 @@ router.get('/guide/:slug', async (req, res) => {
 <meta name="description" content="${xmlEscape(description)}" />
 <link rel="canonical" href="${xmlEscape(url)}" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="ConcertAndMatches.com" />
+<meta property="og:site_name" content="ConcertAndMatches" />
 <meta property="og:title" content="${xmlEscape(title)}" />
 <meta property="og:description" content="${xmlEscape(description)}" />
 <meta property="og:url" content="${xmlEscape(url)}" />
@@ -250,7 +250,7 @@ router.get('/guide/:slug', async (req, res) => {
 <tbody>${rows}</tbody>
 </table>
 <p>Prices update as sellers change theirs — always confirm the final price on the seller's site before buying. ConcertAndMatches doesn't sell tickets directly; we compare listings from authorized sellers and link you through to buy.</p>
-<p><a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches.com</a></p>
+<p><a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches</a></p>
 </body>
 </html>`;
 

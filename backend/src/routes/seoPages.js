@@ -50,7 +50,7 @@ function slugifyForEvent(event) {
 }
 
 function notFoundPage(label) {
-  return `<!doctype html><html><head><title>Page not found — ConcertAndMatches.com</title><meta name="robots" content="noindex"></head><body><p>${xmlEscape(label)} We don't have a live page for that right now.</p><p><a href="/">Back to ConcertAndMatches.com</a></p></body></html>`;
+  return `<!doctype html><html><head><title>Page not found — ConcertAndMatches</title><meta name="robots" content="noindex"></head><body><p>${xmlEscape(label)} We don't have a live page for that right now.</p><p><a href="/">Back to ConcertAndMatches</a></p></body></html>`;
 }
 
 // Renders the shared event-list table used by every detail page below —
@@ -100,7 +100,7 @@ function pageShell({ title, description, url, h1, intro, bodyHtml, jsonLd, bread
 <meta name="description" content="${xmlEscape(description)}" />
 <link rel="canonical" href="${xmlEscape(url)}" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="ConcertAndMatches.com" />
+<meta property="og:site_name" content="ConcertAndMatches" />
 <meta property="og:title" content="${xmlEscape(title)}" />
 <meta property="og:description" content="${xmlEscape(description)}" />
 <meta property="og:url" content="${xmlEscape(url)}" />
@@ -116,7 +116,7 @@ ${breadcrumbHtml || ''}
 <h1>${xmlEscape(h1)}</h1>
 <p>${xmlEscape(intro)}</p>
 ${bodyHtml}
-<p><a href="/">Back to ConcertAndMatches.com</a></p>
+<p><a href="/">Back to ConcertAndMatches</a></p>
 </body>
 </html>`;
 }
@@ -136,7 +136,7 @@ router.get('/artists', async (req, res) => {
     const artists = await discoverArtists({ limit: 1000 });
     const items = artists.map((a) => `<li><a href="/artists/${xmlEscape(a.slug)}">${xmlEscape(a.artistName)}</a> — ${a.eventCount} upcoming show${a.eventCount === 1 ? '' : 's'}${a.cityCount > 1 ? ` in ${a.cityCount} cities` : ''}</li>`).join('');
     const html = pageShell({
-      title: 'Artists With Tickets Available | ConcertAndMatches.com',
+      title: 'Artists With Tickets Available | ConcertAndMatches',
       description: `Browse ${artists.length} artists with real, currently listed upcoming shows and ticket prices from multiple sellers.`,
       url: `${SITE_ORIGIN}/artists`,
       h1: 'Artists with tickets available',
@@ -165,7 +165,7 @@ router.get('/artists/:slug', async (req, res) => {
       if (!cityMap.has(key)) cityMap.set(key, { city: e.city, state: e.state });
     }
     const cityList = [...cityMap.values()];
-    const title = `${page.artistName} Tickets — Upcoming Shows & Prices | ConcertAndMatches.com`;
+    const title = `${page.artistName} Tickets — Upcoming Shows & Prices | ConcertAndMatches`;
     const cityNames = cityList.map((c) => c.city);
     const description = cheapest != null
       ? `${page.events.length} upcoming ${page.artistName} show${page.events.length === 1 ? '' : 's'}${cityNames.length ? ` in ${cityNames.slice(0, 3).join(', ')}${cityNames.length > 3 ? ' and more' : ''}` : ''}. Compare prices across sellers, starting from $${Number(cheapest).toFixed(0)}.`
@@ -202,7 +202,7 @@ router.get('/cities', async (req, res) => {
     const cities = await discoverCities({ limit: 1000 });
     const items = cities.map((c) => `<li><a href="/cities/${xmlEscape(c.slug)}/events">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a> — ${c.eventCount} upcoming event${c.eventCount === 1 ? '' : 's'}</li>`).join('');
     const html = pageShell({
-      title: 'Events by City | ConcertAndMatches.com',
+      title: 'Events by City | ConcertAndMatches',
       description: `Browse upcoming concerts and sports events in ${cities.length} cities with real, currently listed ticket availability.`,
       url: `${SITE_ORIGIN}/cities`,
       h1: 'Events by city',
@@ -226,7 +226,7 @@ async function renderCityVariant(req, res, variant) {
     const cheapest = cheapestPrice(page.events);
     const label = CITY_VARIANT_LABEL[variant];
     const place = `${page.city}${page.state ? `, ${page.state}` : ''}`;
-    const title = `${label} in ${place} — Tickets & Prices | ConcertAndMatches.com`;
+    const title = `${label} in ${place} — Tickets & Prices | ConcertAndMatches`;
     const description = cheapest != null
       ? `${page.events.length} upcoming ${variant === 'events' ? 'events' : variant} in ${place}. Compare prices across sellers, starting from $${Number(cheapest).toFixed(0)}.`
       : `${page.events.length} upcoming ${variant === 'events' ? 'events' : variant} in ${place}. See dates, venues, and ticket availability.`;
@@ -267,7 +267,7 @@ router.get('/venues', async (req, res) => {
     const venues = await discoverVenues({ limit: 1000 });
     const items = venues.map((v) => `<li><a href="/venues/${xmlEscape(v.slug)}">${xmlEscape(v.venueName)}</a> — ${xmlEscape(v.city || '')}${v.state ? `, ${xmlEscape(v.state)}` : ''} (${v.eventCount} upcoming)</li>`).join('');
     const html = pageShell({
-      title: 'Venues With Upcoming Events | ConcertAndMatches.com',
+      title: 'Venues With Upcoming Events | ConcertAndMatches',
       description: `Browse ${venues.length} venues with real, currently listed upcoming events and ticket availability.`,
       url: `${SITE_ORIGIN}/venues`,
       h1: 'Venues with upcoming events',
@@ -290,7 +290,7 @@ router.get('/venues/:slug', async (req, res) => {
     }
     const cheapest = cheapestPrice(page.events);
     const place = `${page.city}${page.state ? `, ${page.state}` : ''}`;
-    const title = `${page.venueName} Tickets & Events (${place}) | ConcertAndMatches.com`;
+    const title = `${page.venueName} Tickets & Events (${place}) | ConcertAndMatches`;
     const description = cheapest != null
       ? `${page.events.length} upcoming event${page.events.length === 1 ? '' : 's'} at ${page.venueName} in ${place}. Compare prices, starting from $${Number(cheapest).toFixed(0)}.`
       : `${page.events.length} upcoming event${page.events.length === 1 ? '' : 's'} at ${page.venueName} in ${place}. See dates and ticket availability.`;
@@ -320,7 +320,7 @@ router.get('/venues/:slug', async (req, res) => {
 router.get('/leagues', async (req, res) => {
   const items = Object.entries(LEAGUE_DEFS).map(([slug, def]) => `<li><a href="/leagues/${xmlEscape(slug)}">${xmlEscape(def.label)}</a></li>`).join('');
   const html = pageShell({
-    title: 'Leagues & Categories | ConcertAndMatches.com',
+    title: 'Leagues & Categories | ConcertAndMatches',
     description: 'Browse tickets by league or category: NFL, NBA, NCAA Football, concerts, theater, and comedy.',
     url: `${SITE_ORIGIN}/leagues`,
     h1: 'Browse by league or category',
@@ -338,7 +338,7 @@ router.get('/leagues/:slug', async (req, res) => {
       return;
     }
     const cheapest = cheapestPrice(page.events);
-    const title = `${page.label} Tickets — Upcoming Games & Events | ConcertAndMatches.com`;
+    const title = `${page.label} Tickets — Upcoming Games & Events | ConcertAndMatches`;
     const description = cheapest != null
       ? `${page.eventCount} upcoming ${page.label} event${page.eventCount === 1 ? '' : 's'}. Compare prices across sellers, starting from $${Number(cheapest).toFixed(0)}.`
       : `${page.eventCount} upcoming ${page.label} event${page.eventCount === 1 ? '' : 's'}. See dates, venues, and ticket availability.`;
@@ -379,7 +379,7 @@ router.get('/teams', async (req, res) => {
     const teams = await discoverTeams({ limit: 1000 });
     const items = teams.map((t) => `<li><a href="/teams/${xmlEscape(t.slug)}">${xmlEscape(t.name)}</a> — ${t.eventCount} upcoming game${t.eventCount === 1 ? '' : 's'}</li>`).join('');
     const html = pageShell({
-      title: 'Teams With Upcoming Games | ConcertAndMatches.com',
+      title: 'Teams With Upcoming Games | ConcertAndMatches',
       description: `Browse ${teams.length} teams with real, currently listed upcoming games and ticket availability.`,
       url: `${SITE_ORIGIN}/teams`,
       h1: 'Teams with upcoming games',
@@ -401,7 +401,7 @@ router.get('/teams/:slug', async (req, res) => {
       return;
     }
     const cheapest = cheapestPrice(page.events);
-    const title = `${page.name} Tickets — Upcoming Games & Prices | ConcertAndMatches.com`;
+    const title = `${page.name} Tickets — Upcoming Games & Prices | ConcertAndMatches`;
     const description = cheapest != null
       ? `${page.events.length} upcoming ${page.name} game${page.events.length === 1 ? '' : 's'}. Compare prices across sellers, starting from $${Number(cheapest).toFixed(0)}.`
       : `${page.events.length} upcoming ${page.name} game${page.events.length === 1 ? '' : 's'}. See dates, venues, and ticket availability.`;

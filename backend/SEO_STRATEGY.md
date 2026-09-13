@@ -1,4 +1,4 @@
-# Programmatic SEO Strategy — ConcertAndMatches.com
+# Programmatic SEO Strategy — ConcertAndMatches
 
 ## What this is, honestly
 

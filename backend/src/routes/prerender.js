@@ -54,11 +54,11 @@ router.get('/event/:pathParam', async (req, res) => {
 
     const event = await getMergedEventById(id);
     if (!event) {
-      res.status(404).set('Content-Type', 'text/html').send('<!doctype html><html><head><title>Event not found — ConcertAndMatches.com</title></head><body><p>This event could not be found. It may have been removed.</p></body></html>');
+      res.status(404).set('Content-Type', 'text/html').send('<!doctype html><html><head><title>Event not found — ConcertAndMatches</title></head><body><p>This event could not be found. It may have been removed.</p></body></html>');
       return;
     }
 
-    const title = `${event.title} Tickets — ${formatDate(event.date)} | ConcertAndMatches.com`;
+    const title = `${event.title} Tickets — ${formatDate(event.date)} | ConcertAndMatches`;
     const description = `Get tickets for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}. Listed from multiple authorized sellers.`;
     const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
     const url = `https://www.concertandmatches.com/event/${event.id}-${slug}`;
@@ -107,7 +107,7 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta name="description" content="${xmlEscape(description)}" />
 <link rel="canonical" href="${xmlEscape(url)}" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="ConcertAndMatches.com" />
+<meta property="og:site_name" content="ConcertAndMatches" />
 <meta property="og:title" content="${xmlEscape(title)}" />
 <meta property="og:description" content="${xmlEscape(description)}" />
 <meta property="og:url" content="${xmlEscape(url)}" />
@@ -127,7 +127,7 @@ ${event.artist_name ? `<p>${xmlEscape(event.artist_name)}</p>` : ''}
 <p>Location: ${xmlEscape(event.venue_name || '')}${event.city ? `, ${xmlEscape(event.city)}` : ''}${event.state ? `, ${xmlEscape(event.state)}` : ''}</p>
 <h2>Ticket Sellers</h2>
 ${offersHtml}
-<p><a href="${xmlEscape(url)}">View live prices and buy tickets on ConcertAndMatches.com</a></p>
+<p><a href="${xmlEscape(url)}">View live prices and buy tickets on ConcertAndMatches</a></p>
 </body>
 </html>`;
 

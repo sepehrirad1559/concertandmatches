@@ -621,7 +621,7 @@ function BrandLink({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      aria-label="ConcertAndMatches.com — go to home page"
+      aria-label="ConcertAndMatches — go to home page"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -635,7 +635,7 @@ function BrandLink({ onClick }) {
         color: 'inherit',
       }}>
       <Logo size={36} />
-      <h2 style={{ margin: 0 }}>ConcertAndMatches.com</h2>
+      <h2 style={{ margin: 0 }}>ConcertAndMatches</h2>
     </button>
   );
 }
@@ -879,14 +879,14 @@ export default function App() {
   // previews fetched after the page has loaded, rather than a classic
   // no-JS crawler — real SSR would be a further, separate upgrade.
   useEffect(() => {
-    const defaultTitle = 'ConcertAndMatches.com — Newly Listed Tickets for Concerts, Sports & Theater';
+    const defaultTitle = 'ConcertAndMatches — Newly Listed Tickets for Concerts, Sports & Theater';
     const defaultDescription = 'Be the first to buy tickets to concerts, sports, theater and comedy across the USA and Canada — new events listed from multiple authorized sellers as fast as they go on sale.';
     const canonicalEl = document.querySelector('link[rel="canonical"]');
     const descriptionEl = document.querySelector('meta[name="description"]');
     let jsonLdEl = document.getElementById('event-jsonld');
 
     if (selectedEvent) {
-      const title = `${selectedEvent.title} Tickets — ${formatDate(selectedEvent.date)} | ConcertAndMatches.com`;
+      const title = `${selectedEvent.title} Tickets — ${formatDate(selectedEvent.date)} | ConcertAndMatches`;
       const description = `Get tickets for ${selectedEvent.title}${selectedEvent.venue_name ? ` at ${selectedEvent.venue_name}` : ''}${selectedEvent.city ? ` in ${selectedEvent.city}` : ''} on ${formatDate(selectedEvent.date)}. Listed from multiple authorized sellers.`;
       const url = `https://www.concertandmatches.com${buildEventPath(selectedEvent)}`;
 

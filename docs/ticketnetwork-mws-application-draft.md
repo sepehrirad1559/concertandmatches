@@ -31,7 +31,7 @@ real TicketNetwork listings onto event pages (rather than today's blind
 
 ## About the business
 
-ConcertAndMatches.com is an event-discovery and ticket price-comparison site.
+ConcertAndMatches is an event-discovery and ticket price-comparison site.
 It aggregates live event and ticket listings from official, authenticated
 partner APIs (currently the Ticketmaster Discovery API and the SeatGeek
 Platform API) and presents them to visitors, with outbound affiliate links to
@@ -41,7 +41,7 @@ sells tickets directly or holds inventory itself.
 Suggested language for a "tell us about your business / how you plan to use
 our data" field:
 
-> ConcertAndMatches.com is a live event discovery and ticket price-comparison
+> ConcertAndMatches is a live event discovery and ticket price-comparison
 > platform. We currently integrate the Ticketmaster Discovery API and
 > SeatGeek Platform API to show visitors real-time event listings and
 > side-by-side pricing, with affiliate links to complete purchase on the

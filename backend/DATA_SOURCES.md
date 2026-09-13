@@ -1,6 +1,6 @@
 # Data sources
 
-ConcertAndMatches.com collects event and ticket data from exactly two places, both official, authenticated, documented REST APIs:
+ConcertAndMatches collects event and ticket data from exactly two places, both official, authenticated, documented REST APIs:
 
 - **Ticketmaster Discovery API** (`app.ticketmaster.com/discovery/v2`) — `backend/src/services/ticketmaster.js`
 - **SeatGeek Platform API** (`api.seatgeek.com/2`) — `backend/src/services/seatgeek.js`
