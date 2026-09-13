@@ -1356,7 +1356,7 @@ router.get('/diagnostics/closest-ticketmaster-overlap', requireAdminAccess, asyn
     const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 5000;
 
     const tmResult = await pool.query(
-      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price
+      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price, source
        FROM events
        WHERE source = 'ticketmaster' AND date >= NOW()
        ORDER BY date ASC
@@ -1384,7 +1384,7 @@ router.get('/diagnostics/closest-ticketmaster-overlap', requireAdminAccess, asyn
     const maxDate = new Date(Math.max(...tmRows.map((r) => new Date(r.date).getTime())) + 24 * 60 * 60 * 1000);
 
     const tnResult = await pool.query(
-      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price
+      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price, source
        FROM events
        WHERE source = 'ticketnetwork' AND date BETWEEN $1 AND $2`,
       [minDate, maxDate]
