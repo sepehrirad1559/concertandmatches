@@ -161,53 +161,250 @@ async function reverseGeocodeCity(lat, lng) {
   return { city, state: data.principalSubdivisionCode ? data.principalSubdivisionCode.split('-').pop() : null, lat, lng, source: 'geolocation' };
 }
 
-// ---- "DATES" quick-picker in the homepage search bar (replaces the old
-// free-form From/To Date filter inputs with the same "All Dates / Today /
-// This Weekend / This Week / This Month" presets the big ticket
-// marketplaces use). Resolved to a concrete startDate/endDate pair (the
-// same YYYY-MM-DD strings the /events API already accepted from the old
-// date inputs) right when the search is submitted, not on every keystroke.
-const DATE_PRESETS = [
-  { value: '', label: 'All Dates' },
-  { value: 'today', label: 'Today' },
-  { value: 'weekend', label: 'This Weekend' },
-  { value: 'week', label: 'This Week' },
-  { value: 'month', label: 'This Month' },
-];
-
+// ---- "DATES" range picker in the homepage search bar: a two-month
+// calendar popover (Start date / End date fields, Reset / Cancel / Apply)
+// replacing the earlier named-preset dropdown, per the reference layout
+// provided for this. All dates are plain YYYY-MM-DD strings — the same
+// format the /events API already accepted from the old date inputs.
 function toISODate(d) {
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function resolveDatePreset(preset) {
+function isoToDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatShortDate(iso) {
+  if (!iso) return '';
+  return isoToDate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatSlashDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${m}/${d}/${y}`;
+}
+
+function addMonths(monthStart, n) {
+  return new Date(monthStart.getFullYear(), monthStart.getMonth() + n, 1);
+}
+
+// Cells for one calendar month: null for the leading blanks before day 1,
+// else that day's ISO date string.
+function getMonthCells(monthStart) {
+  const year = monthStart.getFullYear();
+  const month = monthStart.getMonth();
+  const startWeekday = new Date(year, month, 1).getDay(); // 0 Sun .. 6 Sat
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day++) cells.push(toISODate(new Date(year, month, day)));
+  return cells;
+}
+
+const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// One calendar month grid inside the DatesPicker popover below. `onPick`
+// fires with the clicked day's ISO date; days before today are shown
+// grayed-out and unclickable (there's no reason to filter for events on a
+// date that's already passed).
+function CalendarMonth({ monthStart, todayISO, rangeStart, rangeEnd, onPick, navArrow }) {
+  const cells = getMonthCells(monthStart);
+  return (
+    <div style={{ flex: '1', minWidth: '240px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <span style={{ fontWeight: 700, fontSize: '16px' }}>
+          {monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+        </span>
+        {navArrow}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '6px' }}>
+        {WEEKDAY_LABELS.map((label) => (
+          <div key={label} style={{ textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#444' }}>
+            {label}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+        {cells.map((iso, i) => {
+          if (!iso) return <div key={`blank-${i}`} />;
+          const isPast = iso < todayISO;
+          const isStart = iso === rangeStart;
+          const isEnd = iso === rangeEnd;
+          const inRange = rangeStart && rangeEnd && iso > rangeStart && iso < rangeEnd;
+          return (
+            <button
+              key={iso}
+              type="button"
+              disabled={isPast}
+              onClick={() => onPick(iso)}
+              style={{
+                padding: '7px 0',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: isPast ? 'default' : 'pointer',
+                fontSize: '14px',
+                fontWeight: isStart || isEnd ? 700 : 400,
+                color: isPast ? '#ccc' : (isStart || isEnd) ? '#fff' : '#1a0733',
+                backgroundColor: (isStart || isEnd) ? '#8b0000' : inRange ? '#f7e6e6' : 'transparent',
+              }}>
+              {Number(iso.slice(-2))}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// The DATES popover itself: seeded from the already-applied startDate/
+// endDate when opened, held in its own local draft (pickerStart/pickerEnd)
+// until Apply commits it back up via onApply — Cancel (or a click outside,
+// wired where this is rendered) discards the in-progress selection instead.
+function DatesPicker({ startDate, endDate, onApply, onCancel }) {
+  const [pickerStart, setPickerStart] = useState(startDate || '');
+  const [pickerEnd, setPickerEnd] = useState(endDate || '');
+  const [viewMonth, setViewMonth] = useState(() => {
+    const base = startDate ? isoToDate(startDate) : new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (preset === 'today') {
-    return { startDate: toISODate(today), endDate: toISODate(today) };
-  }
-  if (preset === 'weekend') {
-    const day = today.getDay(); // 0 = Sunday .. 6 = Saturday
-    if (day === 0) return { startDate: toISODate(today), endDate: toISODate(today) };
-    const daysUntilSaturday = day === 6 ? 0 : 6 - day;
-    const saturday = new Date(today);
-    saturday.setDate(today.getDate() + daysUntilSaturday);
-    const sunday = new Date(saturday);
-    sunday.setDate(saturday.getDate() + 1);
-    return { startDate: toISODate(today.getDay() === 6 ? today : saturday), endDate: toISODate(sunday) };
-  }
-  if (preset === 'week') {
-    const day = today.getDay();
-    const daysUntilSunday = day === 0 ? 0 : 7 - day;
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() + daysUntilSunday);
-    return { startDate: toISODate(today), endDate: toISODate(sunday) };
-  }
-  if (preset === 'month') {
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    return { startDate: toISODate(today), endDate: toISODate(lastDay) };
-  }
-  return { startDate: '', endDate: '' };
+  const todayISO = toISODate(today);
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const canGoBack = viewMonth > currentMonthStart;
+
+  const handlePick = (iso) => {
+    if (!pickerStart || pickerEnd) {
+      setPickerStart(iso);
+      setPickerEnd('');
+    } else if (iso < pickerStart) {
+      setPickerStart(iso);
+      setPickerEnd('');
+    } else {
+      setPickerEnd(iso);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 'calc(100% + 8px)',
+        left: 0,
+        zIndex: 30,
+        width: 'min(640px, 92vw)',
+        backgroundColor: '#fff',
+        border: '1px solid var(--cm-border)',
+        borderRadius: '16px',
+        boxShadow: 'var(--cm-shadow-lg)',
+        padding: '20px',
+      }}>
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        <div style={{ flex: 1, minWidth: '140px' }}>
+          <div style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>Start date</div>
+          <input
+            type="text"
+            readOnly
+            value={formatSlashDate(pickerStart)}
+            placeholder="MM/DD/YYYY"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '10px 12px',
+              fontSize: '14px',
+              borderRadius: '8px',
+              border: !pickerStart || pickerEnd ? '2px solid var(--cm-border)' : '2px solid #8b0000',
+              outline: 'none',
+              color: '#1a0733',
+            }}
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: '140px' }}>
+          <div style={{ fontSize: '13px', color: '#444', marginBottom: '6px' }}>End date</div>
+          <input
+            type="text"
+            readOnly
+            value={formatSlashDate(pickerEnd)}
+            placeholder="MM/DD/YYYY"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '10px 12px',
+              fontSize: '14px',
+              borderRadius: '8px',
+              border: pickerStart && !pickerEnd ? '2px solid #8b0000' : '2px solid var(--cm-border)',
+              outline: 'none',
+              color: '#1a0733',
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap' }}>
+        <CalendarMonth
+          monthStart={viewMonth}
+          todayISO={todayISO}
+          rangeStart={pickerStart}
+          rangeEnd={pickerEnd}
+          onPick={handlePick}
+          navArrow={canGoBack ? (
+            <button
+              type="button"
+              onClick={() => setViewMonth((m) => addMonths(m, -1))}
+              aria-label="Previous month"
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px', color: '#8b0000', fontWeight: 'bold' }}>
+              ←
+            </button>
+          ) : null}
+        />
+        <CalendarMonth
+          monthStart={addMonths(viewMonth, 1)}
+          todayISO={todayISO}
+          rangeStart={pickerStart}
+          rangeEnd={pickerEnd}
+          onPick={handlePick}
+          navArrow={(
+            <button
+              type="button"
+              onClick={() => setViewMonth((m) => addMonths(m, 1))}
+              aria-label="Next month"
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px', color: '#8b0000', fontWeight: 'bold' }}>
+              →
+            </button>
+          )}
+        />
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <button
+          type="button"
+          onClick={() => { setPickerStart(''); setPickerEnd(''); }}
+          style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8b0000', fontWeight: 700, fontSize: '14px', padding: 0 }}>
+          Reset
+        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="cm-btn"
+            style={{ padding: '10px 22px', cursor: 'pointer', borderRadius: '999px', border: '1px solid var(--cm-border)', backgroundColor: '#fff', fontWeight: 'bold' }}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onApply(pickerStart, pickerEnd)}
+            className="cm-btn"
+            style={{ padding: '10px 22px', cursor: 'pointer', borderRadius: '999px', border: 'none', backgroundColor: '#8b0000', color: '#fff', fontWeight: 'bold' }}>
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function formatDate(dateStr) {
@@ -757,14 +954,17 @@ export default function App() {
   const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   // Location and Dates live in the main search bar (see the LOCATION/DATES
-  // segments below): `draftLocation`/`draftDatePreset` hold what the
-  // customer is currently typing/picking, `active*` holds what's actually
+  // segments below): `draftLocation`/`draftStartDate`/`draftEndDate` hold
+  // what the customer has picked so far, `active*` holds what's actually
   // been applied (and sent to the API) — same pattern as searchInput/
   // activeSearch, so editing them doesn't refetch until the search is
-  // submitted. draftDatePreset holds the selected DATE_PRESETS value,
-  // resolved to a concrete start/end date via resolveDatePreset() on submit.
+  // submitted. draftStartDate/draftEndDate are committed by the DatesPicker
+  // popover's own Apply button (see showDatesPicker below), not live as the
+  // customer clicks around inside it.
   const [draftLocation, setDraftLocation] = useState('');
-  const [draftDatePreset, setDraftDatePreset] = useState('');
+  const [draftStartDate, setDraftStartDate] = useState('');
+  const [draftEndDate, setDraftEndDate] = useState('');
+  const [showDatesPicker, setShowDatesPicker] = useState(false);
   const [activeStartDate, setActiveStartDate] = useState('');
   const [activeEndDate, setActiveEndDate] = useState('');
   const [activeLocation, setActiveLocation] = useState('');
@@ -1070,13 +1270,26 @@ export default function App() {
     searchScrollPendingRef.current = true;
   };
 
+  // Closes the DATES popover on an outside click, same as clicking its own
+  // Cancel button — discards whatever was picked inside without applying it.
+  const datesSegmentRef = useRef(null);
+  useEffect(() => {
+    if (!showDatesPicker) return undefined;
+    const handleClickOutside = (e) => {
+      if (datesSegmentRef.current && !datesSegmentRef.current.contains(e.target)) {
+        setShowDatesPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDatesPicker]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setActiveSearch(searchInput.trim());
     setActiveLocation(draftLocation.trim());
-    const { startDate, endDate } = resolveDatePreset(draftDatePreset);
-    setActiveStartDate(startDate);
-    setActiveEndDate(endDate);
+    setActiveStartDate(draftStartDate);
+    setActiveEndDate(draftEndDate);
     setShowAutocomplete(false);
     // Same behavior as clicking a category tile (see CategoryTiles above):
     // the search results land in the Featured Events grid further down the
@@ -1091,7 +1304,8 @@ export default function App() {
     setActiveSearch('');
     setDraftLocation('');
     setActiveLocation('');
-    setDraftDatePreset('');
+    setDraftStartDate('');
+    setDraftEndDate('');
     setActiveStartDate('');
     setActiveEndDate('');
     setAutocompleteSuggestions([]);
@@ -1571,39 +1785,46 @@ export default function App() {
           </div>
 
           {/* DATES segment */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            flex: '1',
-            minWidth: '150px',
-            padding: '10px 18px',
-            borderRight: '1px solid var(--cm-border)',
-          }}>
+          <div
+            ref={datesSegmentRef}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              flex: '1',
+              minWidth: '150px',
+              padding: '10px 18px',
+              borderRight: '1px solid var(--cm-border)',
+              cursor: 'pointer',
+            }}
+            onClick={() => setShowDatesPicker((v) => !v)}>
             <span style={{ fontSize: '20px' }} aria-hidden="true">📅</span>
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-              <label htmlFor="cm-search-dates" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
+              <label style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
                 DATES
               </label>
-              <select
-                id="cm-search-dates"
-                value={draftDatePreset}
-                onChange={(e) => setDraftDatePreset(e.target.value)}
-                style={{
-                  border: 'none',
-                  outline: 'none',
-                  padding: 0,
-                  fontSize: '15px',
-                  width: '100%',
-                  backgroundColor: 'transparent',
-                  color: '#1a0733',
-                  cursor: 'pointer',
-                }}>
-                {DATE_PRESETS.map((preset) => (
-                  <option key={preset.value} value={preset.value}>{preset.label}</option>
-                ))}
-              </select>
+              <span style={{ fontSize: '15px', color: '#1a0733' }}>
+                {draftStartDate
+                  ? `${formatShortDate(draftStartDate)}${draftEndDate ? ` – ${formatShortDate(draftEndDate)}` : ''}`
+                  : 'All Dates'}
+              </span>
             </div>
+            <span style={{ fontSize: '12px', color: '#666' }} aria-hidden="true">{showDatesPicker ? '▲' : '▼'}</span>
+            {showDatesPicker && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <DatesPicker
+                  startDate={draftStartDate}
+                  endDate={draftEndDate}
+                  onCancel={() => setShowDatesPicker(false)}
+                  onApply={(start, end) => {
+                    setDraftStartDate(start);
+                    setDraftEndDate(end);
+                    setShowDatesPicker(false);
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* SEARCH segment */}
