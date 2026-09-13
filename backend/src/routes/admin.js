@@ -709,6 +709,32 @@ router.post('/cleanup/official-source-data', async (req, res) => {
   }
 });
 
+// One-time reset, requested by the user to start Ticketmaster's data over
+// from scratch rather than keep chasing whatever produced the current
+// priced/unpriced split: deletes every raw events row with source =
+// 'ticketmaster'. Leaves SeatGeek/TicketNetwork/official rows untouched.
+// Safe to call even if already empty (zero-row DELETE). Run
+// POST /admin/canonicalize/rebuild afterward so canonical_events/
+// ticket_offers stop referencing the deleted rows, then
+// POST /admin/sync/ticketmaster to repopulate fresh from the Discovery API.
+router.post('/cleanup/ticketmaster-data', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey || !providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+  try {
+    const deleted = await pool.query(`DELETE FROM events WHERE source = 'ticketmaster'`);
+    res.json({
+      success: true,
+      eventsDeleted: deleted.rowCount,
+      message: 'All ticketmaster events deleted. Run POST /admin/canonicalize/rebuild next, then POST /admin/sync/ticketmaster to re-add them from scratch.',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Backfill missing prices for events that were stored with no price (see
 // backfillMissingPrices in each service for why this happens — mostly
 // bulk-listing endpoints under-reporting pricing compared to an event's
