@@ -192,6 +192,46 @@ router.post('/sync/ticketmaster', async (req, res) => {
     });
 });
 
+// Bounded alternative to /sync/ticketmaster above — fetches and stores only
+// the `limit` (default 5000) Ticketmaster events with the soonest dates,
+// across every top-level segment and country, instead of the entire
+// catalog. Useful for a quick, fast-finishing sync rather than the
+// comprehensive nationwide-everything pull, which can take many minutes.
+// Same background-response pattern as /sync/ticketmaster: responds
+// immediately, runs the actual sync after responding, and logs the result
+// via logProviderSync so GET /admin/health reflects it once done.
+router.post('/sync/ticketmaster-closest', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const requestedLimit = Number(req.body?.limit ?? req.query?.limit);
+  const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 5000;
+  const startedAt = new Date();
+
+  res.json({ success: true, message: `Ticketmaster closest-${limit}-events sync started in the background. Check GET /admin/health or Railway logs for completion.` });
+
+  getProvider('ticketmaster').syncClosest(limit)
+    .then((result) => logProviderSync({
+      providerName: 'ticketmaster', syncType: 'closest-by-date', startedAt, finishedAt: new Date(),
+      recordsReceived: result.totalStored ?? null, status: result.success ? 'success' : 'error',
+      errorMessage: result.error ?? (result.apiErrorCount > 0 ? `${result.apiErrorCount} API error(s): ${JSON.stringify(result.sampleApiErrors)}` : null),
+    }))
+    .catch((error) => {
+      console.error('Background Ticketmaster closest-events sync failed:', error);
+      return logProviderSync({
+        providerName: 'ticketmaster', syncType: 'closest-by-date', startedAt, finishedAt: new Date(),
+        recordsReceived: null, status: 'error', errorMessage: error.message,
+      });
+    });
+});
+
 // One-time seed: adds a 'ticketnetwork' row to `providers` so
 // canonicalize.js's ticket_offers join (providerIdByName.get(row.source))
 // doesn't silently skip TicketNetwork offers the way it does for any source

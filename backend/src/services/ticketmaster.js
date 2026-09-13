@@ -798,6 +798,87 @@ export const backfillMissingPrices = async (limit = 100) => {
   }
 };
 
+// Fetches the events (across every top-level segment and country) with the
+// SOONEST dates, up to `limit` total — a faster, bounded alternative to
+// syncAllEvents/fetchAllTicketmasterEventsNationwide above when the ask is
+// "add the first N events, closest by date" rather than the entire catalog.
+//
+// Ticketmaster's Discovery API caps deep paging at ~1,000 results per single
+// query (see fetchTicketmasterEventsPaged's comment), so there's no one call
+// that returns "the closest 5,000 events site-wide" directly. Instead this
+// fans out one paged query per segment+country pair (5 segments x 2
+// countries = 10 queries, each already sort=date,asc and starting from now,
+// so each one's own results are the soonest events in that segment/country),
+// merges everything, dedupes by id (a listing can appear in more than one
+// query only if Ticketmaster double-classifies it, which is rare but
+// harmless to guard against), re-sorts the merged set by date ascending
+// (necessary since only each segment/country slice was sorted on its own),
+// and slices to `limit`. Each per-pair query is capped at 1,000, so the
+// theoretical ceiling here is 10,000 candidates before the final slice —
+// comfortably above 5,000 even if one segment/country pair comes back thin.
+export const fetchClosestTicketmasterEvents = async (limit = 5000) => {
+  const events = [];
+  const now = toTicketmasterDateTime(new Date());
+
+  for (const countryCode of NATIONWIDE_SPORTS_COUNTRIES) {
+    for (const segment of NATIONWIDE_ALL_SEGMENTS) {
+      console.log(`📅 Fetching closest-by-date ${segment} events (${countryCode})...`);
+      const segmentEvents = await fetchTicketmasterEventsPaged({
+        classificationName: segment,
+        countryCode,
+        startDateTime: now,
+      }, 1000, 200);
+      events.push(...segmentEvents);
+    }
+  }
+
+  const seen = new Set();
+  const deduped = events.filter((event) => {
+    if (seen.has(event.id)) return false;
+    seen.add(event.id);
+    return true;
+  });
+
+  deduped.sort((a, b) => new Date(a.dates?.start?.dateTime || 0) - new Date(b.dates?.start?.dateTime || 0));
+
+  console.log(`✅ Closest-by-date fetch: ${deduped.length} unique events found across all segments/countries, keeping the soonest ${limit}`);
+  return deduped.slice(0, limit);
+};
+
+// Sync counterpart to fetchClosestTicketmasterEvents — fetches, then stores
+// (via the same upserting storeEvent used by syncAllEvents) just the closest
+// `limit` events by date instead of the entire catalog.
+export const syncClosestEvents = async (limit = 5000) => {
+  recentApiErrors = [];
+  try {
+    console.log(`🔄 Starting Ticketmaster closest-${limit}-events sync...`);
+    const events = await fetchClosestTicketmasterEvents(limit);
+    console.log(`Processing ${events.length} events...`);
+
+    let stored = 0;
+    for (const event of events) {
+      const id = await storeEvent(event);
+      if (id) stored++;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    console.log('✅ Closest-events sync complete!');
+    const result = {
+      success: true,
+      totalFetched: events.length,
+      totalStored: stored,
+      apiErrorCount: recentApiErrors.length,
+    };
+    if (recentApiErrors.length > 0) {
+      result.sampleApiErrors = recentApiErrors.slice(0, 5);
+    }
+    return result;
+  } catch (error) {
+    console.error('Closest-events sync failed:', error);
+    return { success: false, error: error.message, apiErrorCount: recentApiErrors.length, sampleApiErrors: recentApiErrors.slice(0, 5) };
+  }
+};
+
 // Create scheduled sync (runs every 24 hours)
 export const scheduleEventSync = (intervalMs = 24 * 60 * 60 * 1000) => {
   console.log('⏰ Scheduling automatic event sync every 24 hours');
@@ -820,6 +901,8 @@ export default {
   fetchAllTicketmasterEventsNationwide,
   storeEvent,
   syncAllEvents,
+  fetchClosestTicketmasterEvents,
+  syncClosestEvents,
   getTicketmasterEventDetails,
   backfillMissingPrices,
   scheduleEventSync
