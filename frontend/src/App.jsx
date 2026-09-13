@@ -1723,7 +1723,7 @@ export default function App() {
         <h3 style={{ fontSize: '26px' }}>
           {activeCategoryId
             ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
-            : 'Featured Events'}
+            : 'All Events'}
         </h3>
 
         {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
