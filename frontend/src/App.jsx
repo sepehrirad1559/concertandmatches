@@ -758,28 +758,20 @@ export default function App() {
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
 
-  // Filters panel: `draft*` holds what the customer is currently typing/
-  // picking, `active*` holds what's actually been applied (and sent to the
-  // API) — same pattern as searchInput/activeSearch, so editing a filter
-  // doesn't refetch until the customer hits "Apply Filters".
-  const [showFilters, setShowFilters] = useState(false);
-  const [draftMinPrice, setDraftMinPrice] = useState('');
-  const [draftMaxPrice, setDraftMaxPrice] = useState('');
-  const [draftSort, setDraftSort] = useState('');
-  // Location and Dates moved into the main search bar (see the LOCATION/
-  // DATES segments below) — draftLocation is edited there directly, and
-  // draftDatePreset holds the selected DATE_PRESETS value, resolved to a
-  // concrete start/end date via resolveDatePreset() on search submit.
+  // Location and Dates live in the main search bar (see the LOCATION/DATES
+  // segments below): `draftLocation`/`draftDatePreset` hold what the
+  // customer is currently typing/picking, `active*` holds what's actually
+  // been applied (and sent to the API) — same pattern as searchInput/
+  // activeSearch, so editing them doesn't refetch until the search is
+  // submitted. draftDatePreset holds the selected DATE_PRESETS value,
+  // resolved to a concrete start/end date via resolveDatePreset() on submit.
   const [draftLocation, setDraftLocation] = useState('');
   const [draftDatePreset, setDraftDatePreset] = useState('');
-  const [activeMinPrice, setActiveMinPrice] = useState('');
-  const [activeMaxPrice, setActiveMaxPrice] = useState('');
   const [activeStartDate, setActiveStartDate] = useState('');
   const [activeEndDate, setActiveEndDate] = useState('');
-  const [activeSort, setActiveSort] = useState('');
   const [activeLocation, setActiveLocation] = useState('');
 
-  const activeFilterCount = [activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]
+  const activeFilterCount = [activeStartDate, activeEndDate, activeLocation]
     .filter((v) => v !== '' && v != null).length;
 
   // 'pending' | 'granted' | 'denied' | 'unavailable'. Events default to
@@ -1010,11 +1002,8 @@ export default function App() {
       params.set('lat', String(userLat));
       params.set('lng', String(userLng));
     }
-    if (filters?.minPrice) params.set('minPrice', filters.minPrice);
-    if (filters?.maxPrice) params.set('maxPrice', filters.maxPrice);
     if (filters?.startDate) params.set('startDate', filters.startDate);
     if (filters?.endDate) params.set('endDate', filters.endDate);
-    if (filters?.sort) params.set('sort', filters.sort);
     if (filters?.location) params.set('location', filters.location);
     const response = await fetch(`${API_URL}/events?${params.toString()}`);
     if (!response.ok) throw new Error('Request failed');
@@ -1022,11 +1011,8 @@ export default function App() {
   };
 
   const activeFilters = {
-    minPrice: activeMinPrice,
-    maxPrice: activeMaxPrice,
     startDate: activeStartDate,
     endDate: activeEndDate,
-    sort: activeSort,
     location: activeLocation,
   };
 
@@ -1057,7 +1043,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]);
+  }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeStartDate, activeEndDate, activeLocation]);
 
   // Scrolling to Featured Events right when a search is submitted went
   // through two failed attempts before this one. A fixed 50ms deferral
@@ -1139,26 +1125,6 @@ export default function App() {
     }, 250);
     return () => clearTimeout(timer);
   }, [searchInput]);
-
-  const handleApplyFilters = (e) => {
-    e.preventDefault();
-    if (draftMinPrice !== '' && draftMaxPrice !== '' && Number(draftMinPrice) > Number(draftMaxPrice)) {
-      setEventsError('Minimum price cannot be greater than maximum price.');
-      return;
-    }
-    setActiveMinPrice(draftMinPrice);
-    setActiveMaxPrice(draftMaxPrice);
-    setActiveSort(draftSort);
-  };
-
-  const handleClearFilters = () => {
-    setDraftMinPrice('');
-    setDraftMaxPrice('');
-    setDraftSort('');
-    setActiveMinPrice('');
-    setActiveMaxPrice('');
-    setActiveSort('');
-  };
 
   // Shared by every event card on the homepage — the main "Featured Events"
   // grid and every discovery section (Popular/Recommended/Trending/by-
@@ -1746,96 +1712,7 @@ export default function App() {
             Clear
           </button>
         )}
-        <button
-          type="button"
-          className="cm-btn"
-          onClick={() => setShowFilters((v) => !v)}
-          style={{
-            padding: '14px 22px',
-            cursor: 'pointer',
-            borderRadius: '999px',
-            border: activeFilterCount > 0 ? 'none' : '1px solid var(--cm-border)',
-            backgroundColor: activeFilterCount > 0 ? '#1a73e8' : '#fff',
-            color: activeFilterCount > 0 ? 'white' : undefined,
-            fontWeight: activeFilterCount > 0 ? 'bold' : undefined,
-          }}>
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''} {showFilters ? '▲' : '▼'}
-        </button>
       </form>
-
-      {showFilters && (
-        <form
-          onSubmit={handleApplyFilters}
-          style={{
-            display: 'flex',
-            gap: '18px',
-            flexWrap: 'wrap',
-            alignItems: 'flex-end',
-            padding: '18px 20px',
-            marginBottom: '16px',
-            backgroundColor: '#fff',
-            borderRadius: '16px',
-            border: '1px solid var(--cm-border)',
-            boxShadow: 'var(--cm-shadow-sm)',
-            color: '#222',
-          }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Min Price ($)</label>
-            <input
-              type="number"
-              min="0"
-              placeholder="0"
-              value={draftMinPrice}
-              onChange={(e) => setDraftMinPrice(e.target.value)}
-              style={{ padding: '9px 12px', width: '100px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Price ($)</label>
-            <input
-              type="number"
-              min="0"
-              placeholder="Any"
-              value={draftMaxPrice}
-              onChange={(e) => setDraftMaxPrice(e.target.value)}
-              style={{ padding: '9px 12px', width: '100px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Sort By</label>
-            <select
-              value={draftSort}
-              onChange={(e) => setDraftSort(e.target.value)}
-              style={{ padding: '9px 12px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}>
-              <option value="">
-                {locationStatus === 'granted' ? 'Nearest first (default)' : 'Date (default)'}
-              </option>
-              <option value="date">Date: Soonest first</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="name">Name: A to Z</option>
-              {locationStatus === 'granted' && <option value="distance">Distance: Nearest first</option>}
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="submit"
-              className="cm-btn"
-              style={{ padding: '10px 20px', cursor: 'pointer', borderRadius: '999px', border: 'none', backgroundColor: '#8b0000', color: '#fff', fontWeight: 'bold' }}>
-              Apply Filters
-            </button>
-            {activeFilterCount > 0 && (
-              <button
-                type="button"
-                className="cm-btn"
-                onClick={handleClearFilters}
-                style={{ padding: '10px 20px', cursor: 'pointer', borderRadius: '999px', border: '1px solid var(--cm-border)', backgroundColor: '#fff' }}>
-                Clear Filters
-              </button>
-            )}
-          </div>
-        </form>
-      )}
 
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
 
