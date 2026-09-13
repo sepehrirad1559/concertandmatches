@@ -7,6 +7,7 @@ import { logProviderSync } from '../utils/syncLog.js';
 // below call getProvider('ticketmaster').sync() etc. instead of importing
 // each service's functions directly. See ../providers/registry.js.
 import { getProvider } from '../providers/registry.js';
+import { isSameEvent } from '../utils/matching.js';
 import axios from 'axios';
 
 const router = express.Router();
@@ -1332,6 +1333,100 @@ router.get('/diagnostics/source-overlap', requireAdminAccess, async (req, res) =
       ...rows[0],
       note: 'Counts are canonical (deduped) events, not raw rows — a Ticketmaster event and a TicketNetwork event only count as "overlap" when they were matched as the same real-world event by the canonicalize rebuild (utils/matching.js\'s isSameEvent). Run POST /admin/canonicalize/rebuild first if recent sync activity should be reflected here.',
       canonicalizeLastRunFinishedAt: canonicalizeLastRun.rows[0]?.finished_at ?? null,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Targeted counterpart to /diagnostics/source-overlap above: instead of
+// reading the full-catalog canonicalize rebuild (which has been observed to
+// take a very long time / possibly stall at the events table's current
+// size — see /canonicalize/rebuild's comment), this checks JUST the
+// closest `limit` (default 5000, matching POST /sync/ticketmaster-closest's
+// default) upcoming Ticketmaster events against TicketNetwork directly,
+// live, using the same isSameEvent matching (utils/matching.js) — no
+// rebuild required, and it runs fast because it only loads TicketNetwork
+// rows that fall inside the date range those Ticketmaster events actually
+// span (a plain indexed BETWEEN on `date`), not the whole ~210k-row
+// TicketNetwork catalog.
+router.get('/diagnostics/closest-ticketmaster-overlap', requireAdminAccess, async (req, res) => {
+  try {
+    const requestedLimit = Number(req.query.limit);
+    const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 5000;
+
+    const tmResult = await pool.query(
+      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price
+       FROM events
+       WHERE source = 'ticketmaster' AND date >= NOW()
+       ORDER BY date ASC
+       LIMIT $1`,
+      [limit]
+    );
+    const tmRows = tmResult.rows;
+
+    if (tmRows.length === 0) {
+      return res.json({
+        success: true,
+        ticketmasterChecked: 0,
+        overlapCount: 0,
+        overlapPct: null,
+        matches: [],
+        note: 'No upcoming Ticketmaster events found — run POST /admin/sync/ticketmaster-closest first.',
+      });
+    }
+
+    // Bound the TicketNetwork query to the date window the fetched
+    // Ticketmaster events actually span (±1 day either end, matching the
+    // ±1-day tolerance isSameDay allows — see utils/matching.js) instead of
+    // pulling the entire TicketNetwork catalog into memory.
+    const minDate = new Date(Math.min(...tmRows.map((r) => new Date(r.date).getTime())) - 24 * 60 * 60 * 1000);
+    const maxDate = new Date(Math.max(...tmRows.map((r) => new Date(r.date).getTime())) + 24 * 60 * 60 * 1000);
+
+    const tnResult = await pool.query(
+      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price
+       FROM events
+       WHERE source = 'ticketnetwork' AND date BETWEEN $1 AND $2`,
+      [minDate, maxDate]
+    );
+    const tnRows = tnResult.rows;
+
+    // Bucket TicketNetwork candidates by city (the cheap, high-selectivity
+    // part of isSameEvent's match criteria) so each Ticketmaster row is only
+    // compared against same-city candidates, not the whole tnRows array —
+    // same O(n)-not-O(n^2) reasoning as mergeEventsAcrossSources/
+    // rebuildCanonicalEvents.
+    const tnByCity = new Map();
+    for (const tn of tnRows) {
+      const key = (tn.city || '').toLowerCase().trim();
+      if (!tnByCity.has(key)) tnByCity.set(key, []);
+      tnByCity.get(key).push(tn);
+    }
+
+    const matches = [];
+    for (const tm of tmRows) {
+      const candidates = tnByCity.get((tm.city || '').toLowerCase().trim()) || [];
+      const match = candidates.find((tn) => isSameEvent(tm, tn));
+      if (match) {
+        matches.push({
+          title: tm.title,
+          city: tm.city,
+          state: tm.state,
+          ticketmaster: { id: tm.id, external_id: tm.external_id, date: tm.date, venue_name: tm.venue_name, min_price: tm.min_price, source_url: tm.source_url },
+          ticketnetwork: { id: match.id, external_id: match.external_id, date: match.date, venue_name: match.venue_name, min_price: match.min_price, source_url: match.source_url },
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      ticketmasterChecked: tmRows.length,
+      ticketnetworkCandidatesLoaded: tnRows.length,
+      dateRangeChecked: { from: minDate, to: maxDate },
+      overlapCount: matches.length,
+      overlapPct: Number(((matches.length / tmRows.length) * 100).toFixed(1)),
+      note: 'overlapCount is how many of the checked Ticketmaster events matched a TicketNetwork event for the SAME real-world show (utils/matching.js\'s isSameEvent — exact city/state + strong title or venue match, ±1-day tolerant of TicketNetwork\'s date-only listings). matches lists every confirmed pair.',
+      matches,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
