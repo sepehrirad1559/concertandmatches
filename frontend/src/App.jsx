@@ -1575,6 +1575,20 @@ export default function App() {
   // HOME PAGE
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      {/* Hero band: wraps the nav, headline, search bar and category tiles in
+          their own soft gradient backdrop (a muted callback to the logo's
+          purple -> pink -> orange gradient) so this whole top-of-page zone
+          reads as one deliberate section, the way Stripe/Notion/Airbnb-style
+          "best designed" marketing sites give their hero its own tint or
+          band distinct from the plain page background the results grid
+          sits on below. The white nav/search-bar/tile cards keep their own
+          backgrounds and sit on top of it unchanged. */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f4ecfc 0%, #fdf1e8 100%)',
+        borderRadius: '28px',
+        padding: '20px 20px 28px',
+        marginBottom: '24px',
+      }}>
       <nav style={{
         marginBottom: '24px',
         display: 'flex',
@@ -1934,6 +1948,7 @@ export default function App() {
       </form>
 
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
+      </div>
 
       <div id="featured-events" style={{ marginTop: '20px' }}>
         <h3 style={{ fontSize: '26px' }}>
