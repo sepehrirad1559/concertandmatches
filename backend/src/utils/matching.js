@@ -78,19 +78,51 @@ export function tokenSimilarity(a, b) {
   return (2 * overlap) / (setA.size + setB.size);
 }
 
+// TicketNetwork's catalog (services/ticketnetwork.js) gives a LaunchDate
+// with no real start time — every TicketNetwork row lands as exactly
+// midnight UTC (see the isMidnightUTC comment further down for the full
+// story). Ticketmaster/SeatGeek, by contrast, store a genuine UTC timestamp
+// converted from the event's real local start time. Every US/Canada
+// timezone sits BEHIND UTC, so converting an evening/night local start time
+// to UTC routinely pushes the UTC calendar day one day LATER than the
+// event's true (local) calendar date — e.g. 8:00 PM CDT on the 16th is
+// 01:00 UTC on the 17th. TicketNetwork's date-only value has no such
+// conversion applied, so it already sits on the TRUE local calendar date —
+// meaning a TicketNetwork row dated "the 16th" and a Ticketmaster row whose
+// UTC timestamp lands on "the 17th" can be the exact same real-world event.
+// (Confirmed in production: "Joe Jordan" at Shank Hall, Milwaukee — TN row
+// 2026-09-16T00:00:00.000Z, Ticketmaster row 2026-09-17T01:00:00.000Z, same
+// show, previously shown as two separate, un-merged listings.)
+function isMidnightUTC(date) {
+  const d = new Date(date);
+  return !Number.isNaN(d.getTime()) &&
+    d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
+    d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+}
+
 // Same calendar day, compared via UTC date components rather than exact
 // timestamps — tolerant of the small start-time/timezone-formatting
 // differences between sources without needing to guess a threshold.
+//
+// Ordinarily this requires an EXACT UTC-day match. But when either side is
+// a midnight-UTC value (see isMidnightUTC above), a 1-day gap is allowed
+// too — that's the exact shape of the TicketNetwork-vs-Ticketmaster gap
+// described above, not a coincidence, so it's safe to treat as "same day"
+// specifically in that case. Checked in both directions (±1, not just +1)
+// since a small number of TicketNetwork rows carry a non-zero timezone
+// offset per services/ticketnetwork.js's LaunchDate comment, and this stays
+// safe either way: isSameEvent still requires an exact city/state match plus
+// a strong title or venue match before treating two rows as the same event.
 export function isSameDay(dateA, dateB) {
   if (!dateA || !dateB) return false;
   const a = new Date(dateA);
   const b = new Date(dateB);
   if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false;
-  return (
-    a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth() === b.getUTCMonth() &&
-    a.getUTCDate() === b.getUTCDate()
-  );
+  const dayA = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate());
+  const dayB = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate());
+  const dayDiff = Math.round((dayA - dayB) / (24 * 60 * 60 * 1000));
+  if (dayDiff === 0) return true;
+  return Math.abs(dayDiff) === 1 && (isMidnightUTC(a) || isMidnightUTC(b));
 }
 
 // isSameDay alone (calendar day only, ignoring time) was the sole date
@@ -120,22 +152,14 @@ export function isCloseInTime(dateA, dateB, toleranceMs = SAME_TIME_TOLERANCE_MS
   return Math.abs(a.getTime() - b.getTime()) <= toleranceMs;
 }
 
-// TicketNetwork's catalog (services/ticketnetwork.js) gives a LaunchDate
-// with no real start time — it lands as exactly midnight UTC (see e.g. the
-// "Western Illinois Leathernecks at Wisconsin Badgers Football" case: a
-// Ticketmaster/SeatGeek row at 2026-09-12T18:15:00.000Z vs. the matching
-// TicketNetwork row at 2026-09-12T00:00:00.000Z — an 18+ hour gap that blew
-// straight through the 6-hour doubleheader-guard tolerance above and, even
-// after the (day, city, state) bucket-key state-format fix, still silently
-// blocked the merge). A row with an exact midnight-UTC timestamp doesn't
-// carry a real time signal to compare, so treat it as "time unknown" rather
-// than "time = 00:00" for this check.
-function isMidnightUTC(date) {
-  const d = new Date(date);
-  return !Number.isNaN(d.getTime()) &&
-    d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
-    d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
-}
+// (isMidnightUTC itself now lives above, next to isSameDay, since both
+// need it — see e.g. the "Western Illinois Leathernecks at Wisconsin
+// Badgers Football" case that originally motivated it: a Ticketmaster/
+// SeatGeek row at 2026-09-12T18:15:00.000Z vs. the matching TicketNetwork
+// row at 2026-09-12T00:00:00.000Z, an 18+ hour gap that blew straight
+// through the 6-hour doubleheader-guard tolerance above. A row with an
+// exact midnight-UTC timestamp doesn't carry a real time signal to compare,
+// so it's treated as "time unknown" rather than "time = 00:00" below.)
 
 // Best-effort "is this the same real-world event" check across two rows
 // from DIFFERENT sources. Two listings are only merged when they're on the

@@ -32,22 +32,53 @@ function mergeEventsAcrossSources(rows) {
   const merged = [];
 
   // Bucket candidates by (calendar day, city, state) before checking
-  // isSameEvent — that function already REQUIRES an exact match on all
-  // three before it will consider two rows a duplicate at all (see
-  // utils/matching.js), so grouping by the same key first means duplicate
-  // detection only ever scans same-bucket candidates instead of every
-  // event merged so far. Without this, `merged.find(...)` re-scanned the
-  // entire growing `merged` array for every single row — O(n^2) — which
-  // was invisible at a few thousand rows but became a serious problem once
-  // the events table grew past 100k rows (MAX_RAW_ROWS raised below): a
-  // 5000-row page merge was already ~12.5M isSameEvent calls, and raising
-  // the row cap without this fix would have made every listing request
-  // dramatically slower or outright time out.
+  // isSameEvent — that function requires city+state to match exactly (see
+  // utils/matching.js) and, with rare ±1-day exceptions handled below, the
+  // day too — so grouping by the same key first means duplicate detection
+  // only ever scans same-bucket candidates instead of every event merged so
+  // far. Without this, `merged.find(...)` re-scanned the entire growing
+  // `merged` array for every single row — O(n^2) — which was invisible at a
+  // few thousand rows but became a serious problem once the events table
+  // grew past 100k rows (MAX_RAW_ROWS raised below): a 5000-row page merge
+  // was already ~12.5M isSameEvent calls, and raising the row cap without
+  // this fix would have made every listing request dramatically slower or
+  // outright time out.
   const buckets = new Map();
-  const bucketKey = (row) => {
-    const d = new Date(row.date);
-    const day = Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
-    return `${day}|${(row.city || '').toLowerCase().trim()}|${normalizeState(row.state)}`;
+  const dayString = (date) => {
+    const d = new Date(date);
+    return Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
+  };
+  const cityStatePart = (row) => `${(row.city || '').toLowerCase().trim()}|${normalizeState(row.state)}`;
+  const bucketKey = (row) => `${dayString(row.date)}|${cityStatePart(row)}`;
+
+  // A group is registered under its own day bucket AND the adjacent (±1)
+  // day buckets, not just its own — see isSameDay in utils/matching.js for
+  // why: a TicketNetwork row (date-only, always midnight UTC) and a
+  // Ticketmaster/SeatGeek row for the SAME real event can legitimately land
+  // on UTC calendar days one apart (an evening US show's local time crosses
+  // into the next UTC day when TicketMaster/SeatGeek convert it, while
+  // TicketNetwork's date-only value never does). isSameEvent already
+  // tolerates that ±1 gap; without also registering groups under the
+  // adjacent-day buckets here, those candidates would never even be looked
+  // up against each other in the first place, since lookup only checks the
+  // NEW row's own day bucket. Three inserts per group, one lookup per row —
+  // still O(n) overall, just a larger constant.
+  const registerInAdjacentBuckets = (group, date) => {
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) {
+      const key = `invalid-date|${cityStatePart(group)}`;
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(group);
+      return;
+    }
+    const baseUTC = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    const cityState = cityStatePart(group);
+    for (const offset of [-1, 0, 1]) {
+      const day = new Date(baseUTC + offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const key = `${day}|${cityState}`;
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(group);
+    }
   };
 
   for (const row of rows) {
@@ -65,7 +96,7 @@ function mergeEventsAcrossSources(rows) {
     };
 
     const key = bucketKey(row);
-    let bucket = buckets.get(key);
+    const bucket = buckets.get(key);
     const match = bucket && bucket.find((m) => isSameEvent(m, row));
     if (match) {
       // A second row from a source that's ALREADY represented on this
@@ -103,11 +134,7 @@ function mergeEventsAcrossSources(rows) {
     } else {
       const newEvent = { ...row, offers: [offer] };
       merged.push(newEvent);
-      if (!bucket) {
-        bucket = [];
-        buckets.set(key, bucket);
-      }
-      bucket.push(newEvent);
+      registerInAdjacentBuckets(newEvent, row.date);
     }
   }
 

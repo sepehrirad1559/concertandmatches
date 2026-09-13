@@ -47,33 +47,60 @@ export async function rebuildCanonicalEvents() {
     // no `await` inside it, it doesn't just make ONE request slow, it
     // blocks Node's single event loop for the entire run, freezing every
     // other request the server is handling (including totally unrelated
-    // public endpoints) until it finishes. isSameEvent() already REQUIRES
-    // an exact (day, city, state) match before considering two rows a
-    // duplicate at all (see utils/matching.js), so bucketing by that same
-    // key first — exactly as mergeEventsAcrossSources does — means each
-    // row only ever gets compared against same-bucket candidates instead of
-    // every group formed so far.
-    const bucketKey = (row) => {
-      const d = new Date(row.date);
-      const day = Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
-      return `${day}|${(row.city || '').toLowerCase().trim()}|${normalizeState(row.state)}`;
+    // public endpoints) until it finishes. isSameEvent() requires an exact
+    // city+state match and, with rare ±1-day exceptions (see
+    // registerInAdjacentBuckets below), an exact day match too (see
+    // utils/matching.js), so bucketing by that same key first — exactly as
+    // mergeEventsAcrossSources does — means each row only ever gets
+    // compared against same-bucket candidates instead of every group formed
+    // so far.
+    const dayString = (date) => {
+      const d = new Date(date);
+      return Number.isNaN(d.getTime()) ? 'invalid-date' : d.toISOString().slice(0, 10);
     };
+    const cityStatePart = (row) => `${(row.city || '').toLowerCase().trim()}|${normalizeState(row.state)}`;
+    const bucketKey = (row) => `${dayString(row.date)}|${cityStatePart(row)}`;
+
+    // Register a group under its own day bucket AND the adjacent (±1) day
+    // buckets — same fix, same reason, as mergeEventsAcrossSources in
+    // routes/events.js: isSameDay (utils/matching.js) tolerates a 1-day gap
+    // whenever either side is a midnight-UTC value (TicketNetwork's
+    // date-only LaunchDate always is), since a US/Canada evening show's
+    // Ticketmaster/SeatGeek UTC timestamp can land on the calendar day AFTER
+    // TicketNetwork's un-converted date-only value for the exact same real
+    // event. Without also registering here, those candidates would never be
+    // looked up against each other at all — this rebuild would keep merging
+    // the "obviously same day" cases and silently missing this one.
+    const registerInAdjacentBuckets = (group, date) => {
+      const d = new Date(date);
+      const cityState = cityStatePart(group.primary);
+      if (Number.isNaN(d.getTime())) {
+        const key = `invalid-date|${cityState}`;
+        if (!bucketsByKey.has(key)) bucketsByKey.set(key, []);
+        bucketsByKey.get(key).push(group);
+        return;
+      }
+      const baseUTC = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+      for (const offset of [-1, 0, 1]) {
+        const day = new Date(baseUTC + offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const key = `${day}|${cityState}`;
+        if (!bucketsByKey.has(key)) bucketsByKey.set(key, []);
+        bucketsByKey.get(key).push(group);
+      }
+    };
+
     const groups = [];
     const bucketsByKey = new Map();
     for (const row of rows) {
       const key = bucketKey(row);
-      let bucket = bucketsByKey.get(key);
+      const bucket = bucketsByKey.get(key);
       const match = bucket && bucket.find((g) => isSameEvent(g.primary, row));
       if (match) {
         match.rows.push(row);
       } else {
         const group = { primary: row, rows: [row] };
         groups.push(group);
-        if (!bucket) {
-          bucket = [];
-          bucketsByKey.set(key, bucket);
-        }
-        bucket.push(group);
+        registerInAdjacentBuckets(group, row.date);
       }
     }
 
