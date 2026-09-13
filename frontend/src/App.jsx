@@ -161,6 +161,55 @@ async function reverseGeocodeCity(lat, lng) {
   return { city, state: data.principalSubdivisionCode ? data.principalSubdivisionCode.split('-').pop() : null, lat, lng, source: 'geolocation' };
 }
 
+// ---- "DATES" quick-picker in the homepage search bar (replaces the old
+// free-form From/To Date filter inputs with the same "All Dates / Today /
+// This Weekend / This Week / This Month" presets the big ticket
+// marketplaces use). Resolved to a concrete startDate/endDate pair (the
+// same YYYY-MM-DD strings the /events API already accepted from the old
+// date inputs) right when the search is submitted, not on every keystroke.
+const DATE_PRESETS = [
+  { value: '', label: 'All Dates' },
+  { value: 'today', label: 'Today' },
+  { value: 'weekend', label: 'This Weekend' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
+];
+
+function toISODate(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function resolveDatePreset(preset) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (preset === 'today') {
+    return { startDate: toISODate(today), endDate: toISODate(today) };
+  }
+  if (preset === 'weekend') {
+    const day = today.getDay(); // 0 = Sunday .. 6 = Saturday
+    if (day === 0) return { startDate: toISODate(today), endDate: toISODate(today) };
+    const daysUntilSaturday = day === 6 ? 0 : 6 - day;
+    const saturday = new Date(today);
+    saturday.setDate(today.getDate() + daysUntilSaturday);
+    const sunday = new Date(saturday);
+    sunday.setDate(saturday.getDate() + 1);
+    return { startDate: toISODate(today.getDay() === 6 ? today : saturday), endDate: toISODate(sunday) };
+  }
+  if (preset === 'week') {
+    const day = today.getDay();
+    const daysUntilSunday = day === 0 ? 0 : 7 - day;
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() + daysUntilSunday);
+    return { startDate: toISODate(today), endDate: toISODate(sunday) };
+  }
+  if (preset === 'month') {
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return { startDate: toISODate(today), endDate: toISODate(lastDay) };
+  }
+  return { startDate: '', endDate: '' };
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
@@ -716,10 +765,13 @@ export default function App() {
   const [showFilters, setShowFilters] = useState(false);
   const [draftMinPrice, setDraftMinPrice] = useState('');
   const [draftMaxPrice, setDraftMaxPrice] = useState('');
-  const [draftStartDate, setDraftStartDate] = useState('');
-  const [draftEndDate, setDraftEndDate] = useState('');
   const [draftSort, setDraftSort] = useState('');
+  // Location and Dates moved into the main search bar (see the LOCATION/
+  // DATES segments below) — draftLocation is edited there directly, and
+  // draftDatePreset holds the selected DATE_PRESETS value, resolved to a
+  // concrete start/end date via resolveDatePreset() on search submit.
   const [draftLocation, setDraftLocation] = useState('');
+  const [draftDatePreset, setDraftDatePreset] = useState('');
   const [activeMinPrice, setActiveMinPrice] = useState('');
   const [activeMaxPrice, setActiveMaxPrice] = useState('');
   const [activeStartDate, setActiveStartDate] = useState('');
@@ -1037,6 +1089,10 @@ export default function App() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setActiveSearch(searchInput.trim());
+    setActiveLocation(draftLocation.trim());
+    const { startDate, endDate } = resolveDatePreset(draftDatePreset);
+    setActiveStartDate(startDate);
+    setActiveEndDate(endDate);
     setShowAutocomplete(false);
     // Same behavior as clicking a category tile (see CategoryTiles above):
     // the search results land in the Featured Events grid further down the
@@ -1049,6 +1105,11 @@ export default function App() {
   const handleClearSearch = () => {
     setSearchInput('');
     setActiveSearch('');
+    setDraftLocation('');
+    setActiveLocation('');
+    setDraftDatePreset('');
+    setActiveStartDate('');
+    setActiveEndDate('');
     setAutocompleteSuggestions([]);
     setShowAutocomplete(false);
   };
@@ -1085,31 +1146,18 @@ export default function App() {
       setEventsError('Minimum price cannot be greater than maximum price.');
       return;
     }
-    if (draftStartDate && draftEndDate && draftStartDate > draftEndDate) {
-      setEventsError('Start date cannot be after end date.');
-      return;
-    }
     setActiveMinPrice(draftMinPrice);
     setActiveMaxPrice(draftMaxPrice);
-    setActiveStartDate(draftStartDate);
-    setActiveEndDate(draftEndDate);
     setActiveSort(draftSort);
-    setActiveLocation(draftLocation.trim());
   };
 
   const handleClearFilters = () => {
     setDraftMinPrice('');
     setDraftMaxPrice('');
-    setDraftStartDate('');
-    setDraftEndDate('');
     setDraftSort('');
-    setDraftLocation('');
     setActiveMinPrice('');
     setActiveMaxPrice('');
-    setActiveStartDate('');
-    setActiveEndDate('');
     setActiveSort('');
-    setActiveLocation('');
   };
 
   // Shared by every event card on the homepage — the main "Featured Events"
@@ -1509,65 +1557,165 @@ export default function App() {
         Compare Leading Ticket Marketplaces and Find the Best Available Ticket.
       </p>
 
-      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginTop: 0, marginBottom: '16px', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
-          <input
-            type="text"
-            placeholder="Search by artist, event, venue or keyword..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
-            onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
-            style={{
-              width: '100%',
-              padding: '14px 20px',
-              boxSizing: 'border-box',
-              borderRadius: '999px',
-              border: '1px solid var(--cm-border)',
-              boxShadow: 'var(--cm-shadow-sm)',
-              fontSize: '15px',
-              outline: 'none',
-            }}
-            autoComplete="off"
-          />
-          {showAutocomplete && autocompleteSuggestions.length > 0 && (
-            <ul
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                left: 0,
-                right: 0,
-                zIndex: 20,
-                margin: 0,
-                padding: '6px 0',
-                listStyle: 'none',
-                background: 'white',
-                border: '1px solid var(--cm-border)',
-                borderRadius: '14px',
-                boxShadow: 'var(--cm-shadow-lg)',
-                maxHeight: '280px',
-                overflowY: 'auto',
-              }}
-            >
-              {autocompleteSuggestions.map((s, i) => (
-                <li
-                  key={`${s.type}-${s.label}-${i}`}
-                  onMouseDown={() => handleSuggestionClick(s.label)}
-                  style={{
-                    padding: '9px 16px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    gap: '8px',
-                  }}
-                >
-                  <span>{s.label}</span>
-                  <span style={{ color: '#888', fontSize: '0.8em' }}>{s.type}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', marginTop: 0, marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div
+          className="cm-card"
+          style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            flex: '1',
+            minWidth: '280px',
+            flexWrap: 'wrap',
+            backgroundColor: '#fff',
+            border: '1px solid var(--cm-border)',
+            borderRadius: '16px',
+            boxShadow: 'var(--cm-shadow-sm)',
+            overflow: 'hidden',
+          }}>
+          {/* LOCATION segment */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flex: '1',
+            minWidth: '160px',
+            padding: '10px 18px',
+            borderRight: '1px solid var(--cm-border)',
+          }}>
+            <span style={{ fontSize: '20px' }} aria-hidden="true">📍</span>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+              <label htmlFor="cm-search-location" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
+                LOCATION
+              </label>
+              <input
+                id="cm-search-location"
+                type="text"
+                placeholder="City or Zip Code"
+                value={draftLocation}
+                onChange={(e) => setDraftLocation(e.target.value)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  padding: 0,
+                  fontSize: '15px',
+                  width: '100%',
+                  color: '#1a0733',
+                }}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          {/* DATES segment */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flex: '1',
+            minWidth: '150px',
+            padding: '10px 18px',
+            borderRight: '1px solid var(--cm-border)',
+          }}>
+            <span style={{ fontSize: '20px' }} aria-hidden="true">📅</span>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+              <label htmlFor="cm-search-dates" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
+                DATES
+              </label>
+              <select
+                id="cm-search-dates"
+                value={draftDatePreset}
+                onChange={(e) => setDraftDatePreset(e.target.value)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  padding: 0,
+                  fontSize: '15px',
+                  width: '100%',
+                  backgroundColor: 'transparent',
+                  color: '#1a0733',
+                  cursor: 'pointer',
+                }}>
+                {DATE_PRESETS.map((preset) => (
+                  <option key={preset.value} value={preset.value}>{preset.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* SEARCH segment */}
+          <div style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flex: '2',
+            minWidth: '220px',
+            padding: '10px 18px',
+          }}>
+            <span style={{ fontSize: '20px' }} aria-hidden="true">🔍</span>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+              <label htmlFor="cm-search-query" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
+                SEARCH
+              </label>
+              <input
+                id="cm-search-query"
+                type="text"
+                placeholder="Artist, Event or Venue"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
+                onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  padding: 0,
+                  fontSize: '15px',
+                  width: '100%',
+                  color: '#1a0733',
+                }}
+                autoComplete="off"
+              />
+            </div>
+            {showAutocomplete && autocompleteSuggestions.length > 0 && (
+              <ul
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  right: 0,
+                  zIndex: 20,
+                  margin: 0,
+                  padding: '6px 0',
+                  listStyle: 'none',
+                  background: 'white',
+                  border: '1px solid var(--cm-border)',
+                  borderRadius: '14px',
+                  boxShadow: 'var(--cm-shadow-lg)',
+                  maxHeight: '280px',
+                  overflowY: 'auto',
+                }}
+              >
+                {autocompleteSuggestions.map((s, i) => (
+                  <li
+                    key={`${s.type}-${s.label}-${i}`}
+                    onMouseDown={() => handleSuggestionClick(s.label)}
+                    style={{
+                      padding: '9px 16px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                    }}
+                  >
+                    <span>{s.label}</span>
+                    <span style={{ color: '#888', fontSize: '0.8em' }}>{s.type}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
+
         <button
           type="submit"
           className="cm-btn"
@@ -1583,7 +1731,7 @@ export default function App() {
           }}>
           Search
         </button>
-        {activeSearch && (
+        {(activeSearch || activeLocation || activeStartDate || activeEndDate) && (
           <button
             type="button"
             className="cm-btn"
@@ -1632,16 +1780,6 @@ export default function App() {
             color: '#222',
           }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Location</label>
-            <input
-              type="text"
-              placeholder="City or state"
-              value={draftLocation}
-              onChange={(e) => setDraftLocation(e.target.value)}
-              style={{ padding: '9px 12px', width: '160px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Min Price ($)</label>
             <input
               type="number"
@@ -1661,24 +1799,6 @@ export default function App() {
               value={draftMaxPrice}
               onChange={(e) => setDraftMaxPrice(e.target.value)}
               style={{ padding: '9px 12px', width: '100px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>From Date</label>
-            <input
-              type="date"
-              value={draftStartDate}
-              onChange={(e) => setDraftStartDate(e.target.value)}
-              style={{ padding: '9px 12px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>To Date</label>
-            <input
-              type="date"
-              value={draftEndDate}
-              onChange={(e) => setDraftEndDate(e.target.value)}
-              style={{ padding: '9px 12px', boxSizing: 'border-box', borderRadius: '10px', border: '1px solid var(--cm-border)' }}
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -1735,9 +1855,6 @@ export default function App() {
           </p>
         )}
 
-        {(discoverLocation || locationStatus === 'granted') && (
-          <p style={{ color: '#666', fontSize: '13px' }}>📍 Showing events near you first</p>
-        )}
         {!discoverLocation && (locationStatus === 'denied' || locationStatus === 'unavailable') && (
           <p style={{ color: '#666', fontSize: '13px' }}>
             Showing events by date. Enable location in your browser to see events near you first.
