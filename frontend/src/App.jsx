@@ -1576,15 +1576,15 @@ export default function App() {
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       {/* Hero band: wraps the nav, headline, search bar and category tiles in
-          their own soft gradient backdrop (a muted callback to the logo's
-          purple -> pink -> orange gradient) so this whole top-of-page zone
-          reads as one deliberate section, the way Stripe/Notion/Airbnb-style
-          "best designed" marketing sites give their hero its own tint or
-          band distinct from the plain page background the results grid
-          sits on below. The white nav/search-bar/tile cards keep their own
-          backgrounds and sit on top of it unchanged. */}
+          their own backdrop so this whole top-of-page zone reads as one
+          deliberate section, distinct from the plain page background the
+          results grid sits on below. Color is a user-supplied near-black
+          (#0a0101) rather than the site's brand purple/gradient — the white
+          nav/search-bar/tile cards keep their own backgrounds and sit on top
+          of it unchanged; the heading/subheading below get an explicit light
+          text color since they sit directly on this dark background. */}
       <div style={{
-        background: 'linear-gradient(135deg, #c9aee8 0%, #f5c48f 100%)',
+        background: '#0a0101',
         borderRadius: '28px',
         padding: '20px 20px 28px',
         marginBottom: '24px',
@@ -1735,6 +1735,12 @@ export default function App() {
         letterSpacing: '-0.01em',
         lineHeight: 1.15,
         margin: '28px 0 14px',
+        // The page's default text color (body's dark purple, App.css) reads
+        // fine on the light page background below, but this heading sits
+        // directly on the hero band's near-black background (#0a0101, no
+        // white card behind it) — dark-on-near-black would be unreadable,
+        // so it needs its own light color here.
+        color: '#fff',
       }}>
         Be The First To Buy Your Ticket
       </h1>
@@ -1743,7 +1749,9 @@ export default function App() {
         textAlign: 'center',
         fontSize: 'clamp(17px, 2.6vw, 22px)',
         fontWeight: 600,
-        color: '#000',
+        // Was '#000' — fine against the old light gradient, unreadable
+        // against the new near-black hero band background (see h1 above).
+        color: '#f0f0f0',
         margin: '0 0 20px',
       }}>
         Compare Leading Ticket Marketplaces and Find the Best Available Ticket.
