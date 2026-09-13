@@ -1584,7 +1584,7 @@ export default function App() {
           sits on below. The white nav/search-bar/tile cards keep their own
           backgrounds and sit on top of it unchanged. */}
       <div style={{
-        background: 'linear-gradient(135deg, #f4ecfc 0%, #fdf1e8 100%)',
+        background: 'linear-gradient(135deg, #c9aee8 0%, #f5c48f 100%)',
         borderRadius: '28px',
         padding: '20px 20px 28px',
         marginBottom: '24px',
