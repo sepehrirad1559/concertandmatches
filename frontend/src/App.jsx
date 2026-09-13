@@ -1,5 +1,5 @@
 // build-refresh marker 2
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminPage from './AdminPage.jsx';
 import './App.css';
@@ -71,15 +71,12 @@ function logTicketClick(offer, event) {
   }
 }
 
-// ---- Lightweight, anonymous per-browser personalization signal, used by
-// the "Recommended for You" discovery section (there's no login/account
-// system on this site, so this — plus location and overall popularity — is
-// the only "user information/preference" available for a returning
-// visitor). Every time a visitor clicks through to a seller for an event,
-// we bump a tally of that event's category in localStorage; the two
-// categories with the highest tally are sent to GET /events/discover as a
-// small ranking boost. Never blocks anything and is skipped entirely if
-// localStorage is unavailable (private browsing, storage disabled, etc).
+// ---- Lightweight, anonymous per-browser personalization signal. No longer
+// consumed by anything on the homepage (the discovery sections that used to
+// read getPreferredCategories() were removed), left in place only because
+// bumpCategoryInterest is still called on every seller click below — kept
+// harmless (localStorage-only, never blocks a click) in case a future
+// feature wants this signal again. ----
 const CATEGORY_INTEREST_KEY = 'cm_category_interest';
 
 function bumpCategoryInterest(category) {
@@ -108,18 +105,14 @@ function getPreferredCategories(max = 2) {
   }
 }
 
-// ---- Visitor location, resolved for the discovery sections below (Popular/
-// Recommended/Trending/by-category). Two sources, tried in this order:
+// ---- Visitor location, resolved for "near me" sorting of the Featured
+// Events grid. Two sources, tried in this order:
 //  1. A ZIP code the visitor typed in (see the homepage's ZIP input) —
 //     looked up via zippopotam.us (free, no API key, CORS-enabled), which
-//     returns the ZIP's place name and coordinates directly — exactly the
-//     "identify the nearest city associated with that ZIP code" the spec
-//     asks for, with no separate reverse-geocoding step needed.
+//     returns the ZIP's place name and coordinates directly.
 //  2. Browser geolocation (already used elsewhere on this page for
 //     nearest-first sorting) — reverse-geocoded to a city name via
-//     bigdatacloud's free, keyless, CORS-enabled reverse-geocode API, since
-//     geolocation alone gives coordinates but not a city name to put in the
-//     "Trending Events Near {city}" heading.
+//     bigdatacloud's free, keyless, CORS-enabled reverse-geocode API.
 // Cached in localStorage so a returning visitor doesn't need to re-enter
 // their ZIP or re-prompt for geolocation every visit.
 const LOCATION_CACHE_KEY = 'cm_location';
@@ -596,127 +589,6 @@ function EventCard({ event, onSelect }) {
   );
 }
 
-// One event-discovery row (Popular Events / Recommended for You / Trending
-// Events Near {city} / NFL / Concerts / NBA / NCAA Football / Theater /
-// Comedy) — a heading plus up to 5 EventCards in the same responsive grid
-// the main listing uses. The heading always renders, in the same fixed
-// order, once the discover fetch has resolved — a section with no nearby
-// events shows a short "nothing right now" message instead of a card grid
-// rather than disappearing entirely, so a visitor (or the site owner
-// scanning the page) can always see all six category rows are there, not
-// wonder whether one silently vanished. Renders nothing at all only while
-// the discover fetch is still loading, to avoid a flash of empty sections
-// before real data arrives. Every discover section (Popular/Recommended/
-// Trending/by-category) pages its own events client-side, PAGE_SIZE at a
-// time, capped at MAX_PAGES — replaces the old "View all {title} →" link
-// with a "‹ 1 of 7 ›" control so a visitor can browse each row in place
-// instead of jumping down to the Featured Events grid. Featured Events
-// itself is unaffected — it keeps its own "Load More" pagination further
-// down the page.
-const DISCOVER_PAGE_SIZE = 5;
-const DISCOVER_MAX_PAGES = 7;
-
-function EventSection({ title, events, loading, onSelect }) {
-  const [page, setPage] = useState(0);
-  // Reset to page 1 whenever this section gets a fresh events array (e.g.
-  // the discover fetch re-ran for a new location) so a stale page index
-  // from the previous data set can't leave the row showing nothing.
-  useEffect(() => {
-    setPage(0);
-  }, [events]);
-
-  if (loading) return null;
-
-  const isEmpty = !events || events.length === 0;
-
-  const totalPages = events && events.length > 0
-    ? Math.min(DISCOVER_MAX_PAGES, Math.ceil(events.length / DISCOVER_PAGE_SIZE))
-    : 1;
-  const clampedPage = Math.min(page, totalPages - 1);
-  const pageEvents = events
-    ? events.slice(clampedPage * DISCOVER_PAGE_SIZE, clampedPage * DISCOVER_PAGE_SIZE + DISCOVER_PAGE_SIZE)
-    : [];
-  const atFirstPage = clampedPage === 0;
-  const atLastPage = clampedPage === totalPages - 1;
-
-  return (
-    <div style={{ marginBottom: '32px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-        <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.01em' }}>{title}</h3>
-        {!isEmpty && totalPages > 1 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 8px',
-            borderRadius: '999px',
-            border: '1px solid var(--cm-border)',
-            backgroundColor: '#fff',
-            boxShadow: 'var(--cm-shadow-sm)',
-          }}>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={atFirstPage}
-              aria-label={`Previous page of ${title}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: 'transparent',
-                cursor: atFirstPage ? 'default' : 'pointer',
-                color: atFirstPage ? '#ccc' : '#1a0733',
-                fontSize: '15px',
-                fontWeight: 'bold',
-                lineHeight: 1,
-              }}>
-              ‹
-            </button>
-            <span style={{ fontSize: '13px', color: '#666', fontWeight: 'bold', minWidth: '54px', textAlign: 'center' }}>
-              {clampedPage + 1} of {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={atLastPage}
-              aria-label={`Next page of ${title}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: 'transparent',
-                cursor: atLastPage ? 'default' : 'pointer',
-                color: atLastPage ? '#ccc' : '#1a0733',
-                fontSize: '15px',
-                fontWeight: 'bold',
-                lineHeight: 1,
-              }}>
-              ›
-            </button>
-          </div>
-        )}
-      </div>
-      {isEmpty ? (
-        <p style={{ color: '#666', margin: 0 }}>Nothing here near you right now — check back soon.</p>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          {pageEvents.map((event) => (
-            <EventCard key={`${event.id}-${event.source || ''}`} event={event} onSelect={onSelect} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Platform logo: a gradient ticket badge (reusing the same purple → pink →
 // orange gradient family as the category tiles above, so it reads as part
 // of the same brand) with a white ticket glyph — a perforated stub with a
@@ -881,17 +753,16 @@ export default function App() {
     );
   }, []);
 
-  // ---- Event-discovery homepage sections: Popular Events, Recommended for
-  // You, Trending Events Near {city}, and Concerts/Sports/Theater/Comedy. ----
+  // ---- "Near me" location detection, used by the Featured Events grid's
+  // location-based sorting below. ----
   const [zipInput, setZipInput] = useState('');
   const [zipStatus, setZipStatus] = useState('idle'); // 'idle' | 'loading' | 'error'
-  // The resolved { city, state, lat, lng, source, zip? } used for every
-  // discovery section below — from a ZIP the visitor typed in, or (once)
-  // reverse-geocoded from browser geolocation. Restored from localStorage
-  // on first load so a returning visitor doesn't have to re-enter it.
+  // The resolved { city, state, lat, lng, source, zip? } used to sort the
+  // Featured Events grid by distance — from a ZIP the visitor typed in, or
+  // (once) reverse-geocoded from browser geolocation. Restored from
+  // localStorage on first load so a returning visitor doesn't have to
+  // re-enter it.
   const [discoverLocation, setDiscoverLocation] = useState(() => loadCachedLocation());
-  const [discoverData, setDiscoverData] = useState(null);
-  const [discoverLoading, setDiscoverLoading] = useState(true);
 
   const handleZipSubmit = async (e) => {
     e.preventDefault();
@@ -959,39 +830,6 @@ export default function App() {
         // No city name available — the discovery sections below just run
         // without one (nationwide "Popular"/"Recommended", and "Trending
         // Events Near {city}" is skipped rather than showing a blank city).
-      });
-    return () => { cancelled = true; };
-  }, [discoverLocation, locationStatus, userLat, userLng]);
-
-  // Loads all seven discovery sections in one call once we know whatever
-  // location we're going to know (a resolved ZIP/geolocation city, or that
-  // none is coming — we don't wait forever on geolocation permission).
-  useEffect(() => {
-    if (!discoverLocation && locationStatus === 'pending') return;
-    let cancelled = false;
-    setDiscoverLoading(true);
-    const params = new URLSearchParams();
-    if (discoverLocation) {
-      params.set('lat', String(discoverLocation.lat));
-      params.set('lng', String(discoverLocation.lng));
-      params.set('city', discoverLocation.city);
-    } else if (locationStatus === 'granted' && userLat != null && userLng != null) {
-      params.set('lat', String(userLat));
-      params.set('lng', String(userLng));
-    }
-    const prefCategories = getPreferredCategories();
-    if (prefCategories.length > 0) params.set('prefCategories', prefCategories.join(','));
-
-    fetch(`${API_URL}/events/discover?${params.toString()}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (!cancelled) setDiscoverData(data);
-      })
-      .catch(() => {
-        if (!cancelled) setDiscoverData(null);
-      })
-      .finally(() => {
-        if (!cancelled) setDiscoverLoading(false);
       });
     return () => { cancelled = true; };
   }, [discoverLocation, locationStatus, userLat, userLng]);
@@ -1102,42 +940,17 @@ export default function App() {
     }
   }, [selectedEvent]);
 
-  // Every event should be listed in only one homepage section. The
-  // discover carousels (Popular/Recommended/Trending/by-category) already
-  // dedup against each other server-side; this collects everything they
-  // ended up showing so the Featured Events grid below — "All" and every
-  // category tile — never repeats one of those events, no matter which
-  // tile is selected.
-  const discoverShownIds = useMemo(() => {
-    if (!discoverData) return [];
-    const ids = [];
-    const collect = (list) => {
-      if (Array.isArray(list)) for (const e of list) ids.push(e.id);
-    };
-    collect(discoverData.popular);
-    collect(discoverData.recommended);
-    collect(discoverData.trending);
-    if (discoverData.categories) {
-      for (const list of Object.values(discoverData.categories)) collect(list);
-    }
-    return ids;
-  }, [discoverData]);
-
   const fetchEvents = async (offset, search, categoryId, filters) => {
     const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
     if (search) params.set('search', search);
     const activeCategory = EVENT_CATEGORIES.find((c) => c.id === categoryId);
     if (activeCategory?.category) params.set('category', activeCategory.category.join(','));
     if (activeCategory?.keywords) params.set('keywords', activeCategory.keywords.join(','));
-    // Same location precedence as the discovery sections above (discoverLocation
-    // — a typed ZIP, or browser geolocation once reverse-geocoded to a city —
-    // wins over raw live geolocation coords). Before this fix, this grid only
-    // ever checked locationStatus/userLat/userLng directly, so a visitor who
-    // denied the live location prompt but typed a ZIP code still got a plain
-    // date-ordered "Featured Events" grid with the "Enable location in your
-    // browser" notice, even though the site already had a real location for
-    // them via the ZIP (as proven by the category rows above it, which DO use
-    // discoverLocation, sorting correctly the whole time).
+    // discoverLocation (a typed ZIP, or browser geolocation once
+    // reverse-geocoded to a city) wins over raw live geolocation coords —
+    // so a visitor who denied the live location prompt but typed a ZIP
+    // code still gets events sorted by that location instead of a plain
+    // date-ordered grid.
     if (discoverLocation) {
       params.set('lat', String(discoverLocation.lat));
       params.set('lng', String(discoverLocation.lng));
@@ -1151,7 +964,6 @@ export default function App() {
     if (filters?.endDate) params.set('endDate', filters.endDate);
     if (filters?.sort) params.set('sort', filters.sort);
     if (filters?.location) params.set('location', filters.location);
-    if (discoverShownIds.length > 0) params.set('excludeIds', discoverShownIds.join(','));
     const response = await fetch(`${API_URL}/events?${params.toString()}`);
     if (!response.ok) throw new Error('Request failed');
     return response.json();
@@ -1193,7 +1005,7 @@ export default function App() {
     };
     loadEvents();
     return () => { cancelled = true; };
-  }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation, discoverShownIds]);
+  }, [activeSearch, activeCategoryId, locationStatus, discoverLocation, userLat, userLng, activeMinPrice, activeMaxPrice, activeStartDate, activeEndDate, activeSort, activeLocation]);
 
   // Scrolling to Featured Events right when a search is submitted went
   // through two failed attempts before this one. A fixed 50ms deferral
@@ -1905,68 +1717,14 @@ export default function App() {
         </form>
       )}
 
-      <EventSection
-        title="Popular Events"
-        events={discoverData?.popular}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      <EventSection
-        title="Recommended for You"
-        events={discoverData?.recommended}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      {(discoverLoading || discoverData?.city) && (
-        <EventSection
-          title={`Trending Events Near ${discoverData?.city || '…'}`}
-          events={discoverData?.trending}
-          loading={discoverLoading}
-          onSelect={handleSelectEvent}
-        />
-      )}
-
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
 
-      <EventSection
-        title="NFL"
-        events={discoverData?.categories?.nfl}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      <EventSection
-        title="Concerts"
-        events={discoverData?.categories?.concerts}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      <EventSection
-        title="NBA"
-        events={discoverData?.categories?.nba}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      <EventSection
-        title="NCAA Football"
-        events={discoverData?.categories?.ncaaFootball}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      <EventSection
-        title="Theater"
-        events={discoverData?.categories?.theater}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-      <EventSection
-        title="Comedy"
-        events={discoverData?.categories?.comedy}
-        loading={discoverLoading}
-        onSelect={handleSelectEvent}
-      />
-
       <div id="featured-events" style={{ marginTop: '20px' }}>
-        <h3 style={{ fontSize: '26px' }}>Featured Events</h3>
+        <h3 style={{ fontSize: '26px' }}>
+          {activeCategoryId
+            ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
+            : 'Featured Events'}
+        </h3>
 
         {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
           <p style={{ color: '#666' }}>
