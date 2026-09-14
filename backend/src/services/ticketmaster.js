@@ -816,17 +816,22 @@ export const backfillMissingPrices = async (limit = 100) => {
 // and slices to `limit`. Each per-pair query is capped at 1,000, so the
 // theoretical ceiling here is 10,000 candidates before the final slice —
 // comfortably above 5,000 even if one segment/country pair comes back thin.
-export const fetchClosestTicketmasterEvents = async (limit = 5000) => {
+// `after` (a Date, optional) lets a caller move the starting point forward
+// past events already fetched — without it, every call re-requests the
+// exact same "soonest N" slice starting from right now, which is a no-op
+// once the DB already holds >= N upcoming events (see syncClosestEvents'
+// cursor logic below for why that matters).
+export const fetchClosestTicketmasterEvents = async (limit = 5000, after = null) => {
   const events = [];
-  const now = toTicketmasterDateTime(new Date());
+  const startDateTime = toTicketmasterDateTime(after && after > new Date() ? after : new Date());
 
   for (const countryCode of NATIONWIDE_SPORTS_COUNTRIES) {
     for (const segment of NATIONWIDE_ALL_SEGMENTS) {
-      console.log(`📅 Fetching closest-by-date ${segment} events (${countryCode})...`);
+      console.log(`📅 Fetching closest-by-date ${segment} events (${countryCode}, from ${startDateTime})...`);
       const segmentEvents = await fetchTicketmasterEventsPaged({
         classificationName: segment,
         countryCode,
-        startDateTime: now,
+        startDateTime,
       }, 1000, 200);
       events.push(...segmentEvents);
     }
@@ -848,11 +853,27 @@ export const fetchClosestTicketmasterEvents = async (limit = 5000) => {
 // Sync counterpart to fetchClosestTicketmasterEvents — fetches, then stores
 // (via the same upserting storeEvent used by syncAllEvents) just the closest
 // `limit` events by date instead of the entire catalog.
+//
+// Cursors off the LATEST date already stored for this source (rather than
+// always starting from "now") so repeated calls actually extend the catalog
+// further out in time instead of re-fetching (and just re-upserting) the
+// same nearest events every time — that was a real gap: once the DB already
+// held more upcoming Ticketmaster events than `limit`, calling this again
+// did nothing new at all, which isn't obvious from the response alone (it
+// still reports totalFetched/totalStored as if it did something). Doing
+// this in smaller batches like this is also the deliberate way to avoid
+// burning the whole daily API quota in one call — see the quota-exhaustion
+// comments throughout this file.
 export const syncClosestEvents = async (limit = 5000) => {
   recentApiErrors = [];
   try {
-    console.log(`🔄 Starting Ticketmaster closest-${limit}-events sync...`);
-    const events = await fetchClosestTicketmasterEvents(limit);
+    const cursorResult = await pool.query(
+      `SELECT MAX(date) AS max_date FROM events WHERE source = 'ticketmaster'`
+    );
+    const after = cursorResult.rows[0]?.max_date ? new Date(cursorResult.rows[0].max_date) : null;
+
+    console.log(`🔄 Starting Ticketmaster closest-${limit}-events sync${after ? ` (after ${after.toISOString()})` : ''}...`);
+    const events = await fetchClosestTicketmasterEvents(limit, after);
     console.log(`Processing ${events.length} events...`);
 
     let stored = 0;
