@@ -1514,7 +1514,21 @@ export default function App() {
                             color: 'inherit',
                             backgroundColor: link.isBest ? '#fffaeb' : 'transparent',
                           }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          {/* flexWrap + every child (including the name)
+                              pinned to flexShrink: 0 — without this, the
+                              name span (the only child with overflow:hidden
+                              on it) was the one thing the flexbox algorithm
+                              would shrink to make room for the dot/logo/
+                              arrow/badge, and at narrow widths that meant
+                              shrinking it all the way to 0 — the seller name
+                              disappearing completely (confirmed live: the
+                              "Ticketmaster" label vanished on the one row
+                              that also carried the Best price badge, while
+                              still being present in the DOM/page text).
+                              Wrapping instead of shrinking means the badge
+                              drops to its own line on a tight width rather
+                              than erasing the name. */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', rowGap: '4px', flexWrap: 'wrap', minWidth: 0 }}>
                             <span
                               aria-hidden="true"
                               style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor, flexShrink: 0 }}
@@ -1532,10 +1546,10 @@ export default function App() {
                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                               />
                             )}
-                            <span style={{ fontWeight: 'bold', fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '15px', flexShrink: 0 }}>
                               {isOfficialLink ? `Visit ${link.name}` : link.name}
                             </span>
-                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px' }}>↗</span>
+                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
                             {link.isBest && (
                               <span style={{
                                 display: 'inline-flex',
