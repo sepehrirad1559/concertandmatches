@@ -2038,13 +2038,14 @@ export default function App() {
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
       </div>
 
-      {/* Background is the exact blue swatch the user provided (#024ddf,
-          same value already used for NAV_ACCENT_COLOR) — a saturated color,
-          not a light tint, so the heading/result-count/location-hint text
-          that sits directly on it (event cards below have their own white
-          background and are unaffected) gets an explicit light color for
-          contrast, same pattern used for the dark-red hero heading. */}
-      <div id="featured-events" style={{ marginTop: '20px', backgroundColor: '#024ddf', borderRadius: '28px', padding: '20px' }}>
+      {/* Background is the exact dark-red swatch the user provided
+          (#8b0000, same value already used for the hero band and the
+          event-page nav band) — a saturated color, not a light tint, so
+          the heading/result-count/location-hint text that sits directly on
+          it (event cards below have their own white background and are
+          unaffected) keeps the explicit light color already set for
+          contrast. */}
+      <div id="featured-events" style={{ marginTop: '20px', backgroundColor: '#8b0000', borderRadius: '28px', padding: '20px' }}>
         <h3 style={{ fontSize: '26px', color: '#fff' }}>
           {activeCategoryId
             ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
