@@ -635,7 +635,15 @@ export const syncSeatGeekEvents = async (perState = 300) => {
 // still need to be run through utils/matching.js's isSameEvent before
 // being trusted, since a text search alone can return same-artist-
 // different-date or similarly-named-but-different events.
-async function searchSeatGeekEventCandidates(query, dateFrom, dateTo) {
+//
+// Retries once on 429 after a backoff, same pattern as
+// fetchSeatGeekEventById above — added after a real limit=3000 run showed
+// 2863/3000 calls failing with API errors: the first batch went through
+// fine, then SeatGeek's rate limit kicked in and every subsequent call
+// failed for the rest of the run with no recovery, since (unlike
+// fetchSeatGeekEventById) this had no retry at all. A single 429 shouldn't
+// permanently blacklist the rest of a long run.
+async function searchSeatGeekEventCandidates(query, dateFrom, dateTo, _isRetry = false) {
   try {
     const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
       params: {
@@ -648,6 +656,10 @@ async function searchSeatGeekEventCandidates(query, dateFrom, dateTo) {
     });
     return response.data?.events || [];
   } catch (error) {
+    if (error.response?.status === 429 && !_isRetry) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return searchSeatGeekEventCandidates(query, dateFrom, dateTo, true);
+    }
     trackApiError('searchSeatGeekEventCandidates', error);
     return { error: error.response?.status ? `HTTP ${error.response.status}` : error.message };
   }
@@ -710,6 +722,17 @@ export const syncSeatGeekMatchesForExistingEvents = async (limit = 100) => {
   let noMatchFound = 0;
   const matches = [];
 
+  // Adaptive backoff on top of the fixed per-call delay below and the
+  // single-retry in searchSeatGeekEventCandidates itself: a real
+  // limit=3000 run showed the first ~140 calls succeed, then rate limiting
+  // sets in and every subsequent call fails for the rest of the run (2863
+  // of 3000) — a single retry per call wasn't enough once the API was
+  // genuinely still throttling on the retry too. Three consecutive
+  // failures now pause considerably longer before continuing, giving the
+  // rate limit window time to actually clear instead of hammering straight
+  // through it.
+  let consecutiveErrors = 0;
+
   for (const ourEvent of rows) {
     const query = ourEvent.artist_name || ourEvent.title;
     const eventDate = new Date(ourEvent.date);
@@ -723,7 +746,13 @@ export const syncSeatGeekMatchesForExistingEvents = async (limit = 100) => {
 
     if (candidates && candidates.error) {
       apiErrors++;
+      consecutiveErrors++;
+      if (consecutiveErrors >= 3) {
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        consecutiveErrors = 0;
+      }
     } else {
+      consecutiveErrors = 0;
       const match = (candidates || []).find((c) => isSameEvent(ourEvent, shapeSeatGeekCandidate(c)));
       if (match) {
         matched++;
@@ -740,8 +769,9 @@ export const syncSeatGeekMatchesForExistingEvents = async (limit = 100) => {
       }
     }
 
-    // Politeness delay between search calls.
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Politeness delay between search calls — raised from 300ms after the
+    // rate-limiting seen in the limit=3000 run above.
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   return {
