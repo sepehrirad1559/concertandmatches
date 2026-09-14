@@ -900,7 +900,6 @@ function BrandLink({ onClick }) {
         font: 'inherit',
         color: 'inherit',
       }}>
-      <Logo size={36} />
       <h2 style={{ margin: 0 }}>ConcertAndMatches</h2>
     </button>
   );
