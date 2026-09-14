@@ -8,6 +8,7 @@ import { logProviderSync } from '../utils/syncLog.js';
 // each service's functions directly. See ../providers/registry.js.
 import { getProvider } from '../providers/registry.js';
 import { isSameEvent } from '../utils/matching.js';
+import { syncSeatGeekMatchesForExistingEvents } from '../services/seatgeek.js';
 import axios from 'axios';
 
 const router = express.Router();
@@ -875,6 +876,49 @@ router.post('/backfill/seatgeek-prices', async (req, res) => {
     });
 });
 
+// Targeted counterpart to POST /sync/seatgeek's broad regional discovery —
+// walks the site's own soonest-upcoming events (the ones customers see
+// first) and does a per-event SeatGeek search + isSameEvent match (see
+// services/seatgeek.js's syncSeatGeekMatchesForExistingEvents for the full
+// story) instead of bulk-fetching SeatGeek's whole catalog and hoping for
+// overlap. ?limit= (default 100) is how many of our own soonest events to
+// check, not how many SeatGeek results to fetch.
+router.post('/sync/seatgeek-match-events', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const limit = Number(req.query.limit) || 100;
+  const startedAt = new Date();
+
+  // Same reasoning as POST /sync/seatgeek: with a politeness delay per
+  // request this can take a couple minutes for limit=100, which risks
+  // Railway's proxy timeout if the caller waits synchronously. Respond
+  // immediately; check GET /admin/health or Railway logs for completion.
+  res.json({ success: true, message: `SeatGeek match sync started in the background (limit=${limit}). Check GET /admin/health or Railway logs for completion.` });
+
+  syncSeatGeekMatchesForExistingEvents(limit)
+    .then((result) => logProviderSync({
+      providerName: 'seatgeek', syncType: 'match_existing', startedAt, finishedAt: new Date(),
+      recordsReceived: result.checked ?? null, recordsUpdated: result.stored ?? null,
+      status: result.success ? 'success' : 'error',
+      errorMessage: result.error ?? (result.apiErrors > 0 ? `${result.apiErrors} API error(s) during search` : null),
+    }))
+    .catch((error) => {
+      console.error('Background SeatGeek match sync failed:', error);
+      return logProviderSync({
+        providerName: 'seatgeek', syncType: 'match_existing', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
+    });
+});
+
 // One-time schema migration: provider_sync_logs (spec §5, §35 — provider
 // health/observability). Every sync/backfill route above (and the
 // scheduled daily backfill in index.js) writes one row per run here once
@@ -1426,6 +1470,82 @@ router.get('/diagnostics/closest-ticketmaster-overlap', requireAdminAccess, asyn
       overlapCount: matches.length,
       overlapPct: Number(((matches.length / tmRows.length) * 100).toFixed(1)),
       note: 'overlapCount is how many of the checked Ticketmaster events matched a TicketNetwork event for the SAME real-world show (utils/matching.js\'s isSameEvent — exact city/state + strong title or venue match, ±1-day tolerant of TicketNetwork\'s date-only listings). matches lists every confirmed pair.',
+      matches,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Read-back for POST /sync/seatgeek-match-events — that sync runs in the
+// background (live per-event SeatGeek API calls, too slow to wait on
+// synchronously — see its comment), so this is how to check its results
+// afterward: pure DB reads, same "first N of our own soonest-upcoming
+// events" selection and the same isSameEvent match (utils/matching.js) the
+// sync used to decide what to store, just checking what's already in the
+// events table now instead of calling SeatGeek live. Same pattern as
+// /diagnostics/closest-ticketmaster-overlap above.
+router.get('/diagnostics/first-events-seatgeek-match', requireAdminAccess, async (req, res) => {
+  try {
+    const requestedLimit = Number(req.query.limit);
+    const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 100;
+
+    const ourResult = await pool.query(
+      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price, source
+       FROM events
+       WHERE source != 'seatgeek' AND date >= NOW()
+       ORDER BY date ASC
+       LIMIT $1`,
+      [limit]
+    );
+    const ourRows = ourResult.rows;
+
+    if (ourRows.length === 0) {
+      return res.json({ success: true, checked: 0, matchCount: 0, matches: [], note: 'No upcoming events found.' });
+    }
+
+    const minDate = new Date(Math.min(...ourRows.map((r) => new Date(r.date).getTime())) - 2 * 24 * 60 * 60 * 1000);
+    const maxDate = new Date(Math.max(...ourRows.map((r) => new Date(r.date).getTime())) + 2 * 24 * 60 * 60 * 1000);
+
+    const sgResult = await pool.query(
+      `SELECT id, external_id, title, date, city, state, venue_name, source_url, min_price
+       FROM events
+       WHERE source = 'seatgeek' AND date BETWEEN $1 AND $2`,
+      [minDate, maxDate]
+    );
+    const sgRows = sgResult.rows;
+
+    const sgByCity = new Map();
+    for (const sg of sgRows) {
+      const key = (sg.city || '').toLowerCase().trim();
+      if (!sgByCity.has(key)) sgByCity.set(key, []);
+      sgByCity.get(key).push(sg);
+    }
+
+    const matches = [];
+    for (const ours of ourRows) {
+      const candidates = sgByCity.get((ours.city || '').toLowerCase().trim()) || [];
+      const match = candidates.find((sg) => isSameEvent(ours, sg));
+      if (match) {
+        matches.push({
+          title: ours.title,
+          city: ours.city,
+          state: ours.state,
+          date: ours.date,
+          originalSource: ours.source,
+          originalPrice: ours.min_price,
+          seatgeekPrice: match.min_price,
+          seatgeekUrl: match.source_url,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      checked: ourRows.length,
+      matchCount: matches.length,
+      matchPct: Number(((matches.length / ourRows.length) * 100).toFixed(1)),
+      note: 'Checks the same "first N soonest-upcoming events" set POST /sync/seatgeek-match-events uses, against SeatGeek rows already stored in the events table. Run that sync first if this looks stale.',
       matches,
     });
   } catch (error) {

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { pool } from '../index.js';
 import { US_STATES } from './ticketmaster.js';
+import { isSameEvent } from '../utils/matching.js';
 
 const SEATGEEK_CLIENT_ID = process.env.SEATGEEK_CLIENT_ID;
 const SEATGEEK_BASE_URL = 'https://api.seatgeek.com/2';
@@ -625,6 +626,135 @@ export const syncSeatGeekEvents = async (perState = 300) => {
   }
 };
 
+// Free-text search against SeatGeek's /events endpoint, bounded to a date
+// window around the event we're trying to match — used by
+// syncSeatGeekMatchesForExistingEvents below to look up ONE specific
+// already-listed event (e.g. from Ticketmaster/TicketNetwork) rather than
+// bulk-discovering everything SeatGeek has. `q` is SeatGeek's documented
+// fuzzy full-text search param (https://platform.seatgeek.com/); results
+// still need to be run through utils/matching.js's isSameEvent before
+// being trusted, since a text search alone can return same-artist-
+// different-date or similarly-named-but-different events.
+async function searchSeatGeekEventCandidates(query, dateFrom, dateTo) {
+  try {
+    const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+      params: {
+        client_id: SEATGEEK_CLIENT_ID,
+        q: query,
+        'datetime_local.gte': dateFrom,
+        'datetime_local.lte': dateTo,
+        per_page: 10,
+      },
+    });
+    return response.data?.events || [];
+  } catch (error) {
+    trackApiError('searchSeatGeekEventCandidates', error);
+    return { error: error.response?.status ? `HTTP ${error.response.status}` : error.message };
+  }
+}
+
+// Shapes a raw SeatGeek /events result into the plain fields
+// utils/matching.js's isSameEvent compares against (source/date/city/
+// state/venue_name/title/artist_name) — the same shape our own `events`
+// table rows already have, so isSameEvent can compare one directly against
+// the other without either side needing special-casing.
+function shapeSeatGeekCandidate(sgEvent) {
+  return {
+    source: 'seatgeek',
+    date: sgEvent.datetime_local,
+    city: sgEvent.venue?.city,
+    state: sgEvent.venue?.state,
+    venue_name: sgEvent.venue?.name,
+    title: sgEvent.title,
+    artist_name: sgEvent.performers?.[0]?.name,
+  };
+}
+
+// Targeted counterpart to syncSeatGeekEvents' broad regional discovery
+// (spec follow-up: "find our first 100 events in seatgeek with their price
+// and add them"). Instead of bulk-fetching everything SeatGeek has and
+// hoping enough of it overlaps with what's already on the site, this walks
+// our OWN soonest-upcoming events (the ones customers actually see first)
+// and, for each, does a targeted SeatGeek search + isSameEvent check
+// (utils/matching.js — same exact-city/state + strong title/venue logic
+// every other cross-source match on this site uses) to find that SPECIFIC
+// event on SeatGeek. A confirmed match is stored via the existing
+// storeEvent (external_id "sg-<id>", so it can never collide with another
+// source's row) — it doesn't touch the original event row at all; the
+// merge into one comparison card happens at read time via isSameEvent,
+// same as every other Ticketmaster/TicketNetwork/SeatGeek overlap already
+// on the site.
+export const syncSeatGeekMatchesForExistingEvents = async (limit = 100) => {
+  recentApiErrors = [];
+  if (!SEATGEEK_CLIENT_ID) {
+    return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
+  }
+
+  // Excludes rows already sourced FROM SeatGeek — searching SeatGeek for an
+  // event that already IS a SeatGeek row is a no-op by definition. Ordered
+  // the same way the site's own event list is (date ASC — see
+  // routes/events.js) so "first 100" means the 100 events a customer would
+  // actually see first, not an arbitrary DB order.
+  const { rows } = await pool.query(
+    `SELECT id, external_id, title, artist_name, date, city, state, venue_name, source
+     FROM events
+     WHERE source != 'seatgeek' AND date >= NOW()
+     ORDER BY date ASC
+     LIMIT $1`,
+    [limit]
+  );
+
+  let matched = 0;
+  let stored = 0;
+  let apiErrors = 0;
+  let noMatchFound = 0;
+  const matches = [];
+
+  for (const ourEvent of rows) {
+    const query = ourEvent.artist_name || ourEvent.title;
+    const eventDate = new Date(ourEvent.date);
+    // +/-2 days: loose enough to tolerate the same cross-source date-
+    // formatting slop isSameDay/isCloseInTime already account for, tight
+    // enough to keep each search response small and relevant.
+    const dateFrom = new Date(eventDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const dateTo = new Date(eventDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
+
+    const candidates = await searchSeatGeekEventCandidates(query, dateFrom, dateTo);
+
+    if (candidates && candidates.error) {
+      apiErrors++;
+    } else {
+      const match = (candidates || []).find((c) => isSameEvent(ourEvent, shapeSeatGeekCandidate(c)));
+      if (match) {
+        matched++;
+        const storedId = await storeEvent(match);
+        if (storedId) {
+          stored++;
+          matches.push({
+            ourEvent: { id: ourEvent.id, title: ourEvent.title, city: ourEvent.city, state: ourEvent.state, date: ourEvent.date, source: ourEvent.source },
+            seatgeek: { id: match.id, title: match.title, price: match.stats?.lowest_price ?? null, url: match.url },
+          });
+        }
+      } else {
+        noMatchFound++;
+      }
+    }
+
+    // Politeness delay between search calls.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  return {
+    success: true,
+    checked: rows.length,
+    matched,
+    stored,
+    noMatchFound,
+    apiErrors,
+    matches,
+  };
+};
+
 // Run automatically every 24 hours, same cadence as the Ticketmaster sync.
 export const scheduleSeatGeekSync = (intervalMs = 24 * 60 * 60 * 1000) => {
   console.log('⏰ Scheduling automatic SeatGeek sync every 24 hours');
@@ -645,6 +775,7 @@ export default {
   fetchSeatGeekEventById,
   storeEvent,
   syncSeatGeekEvents,
+  syncSeatGeekMatchesForExistingEvents,
   backfillMissingPrices,
   scheduleSeatGeekSync,
 };
