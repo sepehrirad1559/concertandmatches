@@ -680,12 +680,14 @@ const EVENT_CATEGORIES = [
 // provided for this.
 const ACTIVE_TILE_COLOR = '#c9660b';
 
-// Shared dark blue accent for the top-nav "All"/category chips and the
-// hero search bar's Search button — user asked to move these off the
-// red/maroon (#8b0000) that used to be reused all over the page, without
-// touching every other spot that still legitimately uses that red (Find
-// Tickets buttons, date-picker Apply/Reset, etc.).
-const NAV_ACCENT_COLOR = '#0d1b4c';
+// Shared accent for the top-nav "All"/category chips and the hero search
+// bar's Search button — user asked to move these off the red/maroon
+// (#8b0000) that used to be reused all over the page, without touching
+// every other spot that still legitimately uses that red (Find Tickets
+// buttons, date-picker Apply/Reset, etc.). Color is a user-supplied bright
+// blue swatch (#024ddf), sampled via PIL — replaces the earlier dark navy
+// (#0d1b4c) guess.
+const NAV_ACCENT_COLOR = '#024ddf';
 
 function CategoryTiles({ activeCategoryId, onSelect }) {
   return (
