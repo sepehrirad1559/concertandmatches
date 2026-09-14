@@ -1426,12 +1426,28 @@ export default function App() {
     const priceTiers = getTicketPriceTiers(selectedEvent);
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <BrandLink onClick={() => navigate('/')} />
-          <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-            ← Back to Events
-          </button>
-        </nav>
+        {/* Same dark-red band treatment as the homepage hero (#8b0000), so
+            the event page's top zone matches it instead of sitting on the
+            plain page background. The nav keeps its own white card on top
+            of the band (same pattern as the homepage nav) so the brand
+            logo/text stay fully readable regardless of the band color. */}
+        <div style={{ background: '#8b0000', borderRadius: '28px', padding: '20px', marginBottom: '24px' }}>
+          <nav style={{
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'center',
+            padding: '14px 18px',
+            backgroundColor: '#fff',
+            borderRadius: '16px',
+            boxShadow: 'var(--cm-shadow-sm)',
+            border: '1px solid var(--cm-border)',
+          }}>
+            <BrandLink onClick={() => navigate('/')} />
+            <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+              ← Back to Events
+            </button>
+          </nav>
+        </div>
 
         <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid var(--cm-border)', padding: '30px', borderRadius: 'var(--cm-radius)', backgroundColor: '#fff', boxShadow: 'var(--cm-shadow-sm)' }}>
           {selectedEvent.image_url && (
