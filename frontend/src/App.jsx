@@ -2038,15 +2038,21 @@ export default function App() {
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
       </div>
 
-      <div id="featured-events" style={{ marginTop: '20px', backgroundColor: '#e6f2ff', borderRadius: '28px', padding: '20px' }}>
-        <h3 style={{ fontSize: '26px' }}>
+      {/* Background is the exact blue swatch the user provided (#024ddf,
+          same value already used for NAV_ACCENT_COLOR) — a saturated color,
+          not a light tint, so the heading/result-count/location-hint text
+          that sits directly on it (event cards below have their own white
+          background and are unaffected) gets an explicit light color for
+          contrast, same pattern used for the dark-red hero heading. */}
+      <div id="featured-events" style={{ marginTop: '20px', backgroundColor: '#024ddf', borderRadius: '28px', padding: '20px' }}>
+        <h3 style={{ fontSize: '26px', color: '#fff' }}>
           {activeCategoryId
             ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
             : 'All Events'}
         </h3>
 
         {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
-          <p style={{ color: '#666' }}>
+          <p style={{ color: '#e0e9ff' }}>
             {eventsTotal} result{eventsTotal === 1 ? '' : 's'}
             {activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}
             {activeSearch ? ` for "${activeSearch}"` : ''}
@@ -2055,15 +2061,15 @@ export default function App() {
         )}
 
         {!discoverLocation && (locationStatus === 'denied' || locationStatus === 'unavailable') && (
-          <p style={{ color: '#666', fontSize: '13px' }}>
+          <p style={{ color: '#e0e9ff', fontSize: '13px' }}>
             Showing events by date. Enable location in your browser to see events near you first.
           </p>
         )}
 
-        {eventsLoading && <p>Loading events...</p>}
-        {!eventsLoading && eventsError && <p>{eventsError}</p>}
+        {eventsLoading && <p style={{ color: '#fff' }}>Loading events...</p>}
+        {!eventsLoading && eventsError && <p style={{ color: '#fff' }}>{eventsError}</p>}
         {!eventsLoading && !eventsError && events.length === 0 && (
-          <p>
+          <p style={{ color: '#fff' }}>
             {activeSearch || activeCategoryId || activeFilterCount > 0
               ? `No events found${activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}${activeSearch ? ` for "${activeSearch}"` : ''}${activeFilterCount > 0 ? ' with the selected filters' : ''}. Try adjusting your filters.`
               : 'No events available right now. Check back soon!'}
