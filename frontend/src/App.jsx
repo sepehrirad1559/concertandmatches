@@ -2038,7 +2038,7 @@ export default function App() {
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
       </div>
 
-      <div id="featured-events" style={{ marginTop: '20px' }}>
+      <div id="featured-events" style={{ marginTop: '20px', backgroundColor: '#e6f2ff', borderRadius: '28px', padding: '20px' }}>
         <h3 style={{ fontSize: '26px' }}>
           {activeCategoryId
             ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
