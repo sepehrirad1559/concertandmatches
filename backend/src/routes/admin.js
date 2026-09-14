@@ -7,7 +7,7 @@ import { logProviderSync } from '../utils/syncLog.js';
 // below call getProvider('ticketmaster').sync() etc. instead of importing
 // each service's functions directly. See ../providers/registry.js.
 import { getProvider } from '../providers/registry.js';
-import { isSameEvent } from '../utils/matching.js';
+import { isSameEvent, tokenSimilarity, isSameDay } from '../utils/matching.js';
 import { syncSeatGeekMatchesForExistingEvents } from '../services/seatgeek.js';
 import axios from 'axios';
 
@@ -1480,11 +1480,23 @@ router.get('/diagnostics/closest-ticketmaster-overlap', requireAdminAccess, asyn
 // Read-back for POST /sync/seatgeek-match-events — that sync runs in the
 // background (live per-event SeatGeek API calls, too slow to wait on
 // synchronously — see its comment), so this is how to check its results
-// afterward: pure DB reads, same "first N of our own soonest-upcoming
-// events" selection and the same isSameEvent match (utils/matching.js) the
-// sync used to decide what to store, just checking what's already in the
-// events table now instead of calling SeatGeek live. Same pattern as
-// /diagnostics/closest-ticketmaster-overlap above.
+// afterward: pure DB reads against what's already in the events table now
+// instead of calling SeatGeek live.
+//
+// Deliberately does NOT reuse isSameEvent's full logic (unlike
+// /diagnostics/closest-ticketmaster-overlap above) — running it here
+// against the SeatGeek catalog surfaced real false positives in
+// production: isSameEvent's weak-title/strong-venue fallback branch (added
+// for team-sports matchups, see utils/matching.js's comment on it) matched
+// completely unrelated recurring timed-entry attractions ("The Banksy
+// Museum New York!" vs. "The Great Gatsby The Musical", repeated across
+// every showtime) purely because both venues' names happened to share
+// generic city-name tokens ("New York"). That branch was designed for
+// isSameEvent's original use case — deduping within an already date/city-
+// narrowed candidate pool built from full-catalog syncs — and isn't safe
+// to reuse verbatim here. This diagnostic instead requires a STRONG direct
+// title match on its own (same TITLE_STRONG_MATCH threshold isSameEvent
+// uses for its strong-match branch), which is the reliable signal.
 router.get('/diagnostics/first-events-seatgeek-match', requireAdminAccess, async (req, res) => {
   try {
     const requestedLimit = Number(req.query.limit);
@@ -1522,10 +1534,19 @@ router.get('/diagnostics/first-events-seatgeek-match', requireAdminAccess, async
       sgByCity.get(key).push(sg);
     }
 
+    // Same threshold isSameEvent uses for its own strong-match branch
+    // (utils/matching.js's TITLE_STRONG_MATCH, not exported — kept in sync
+    // manually since it's a stable, rarely-changed constant).
+    const TITLE_STRONG_MATCH = 0.6;
+
     const matches = [];
     for (const ours of ourRows) {
       const candidates = sgByCity.get((ours.city || '').toLowerCase().trim()) || [];
-      const match = candidates.find((sg) => isSameEvent(ours, sg));
+      const match = candidates.find((sg) =>
+        isSameDay(ours.date, sg.date) &&
+        (ours.state || '').toLowerCase().trim() === (sg.state || '').toLowerCase().trim() &&
+        tokenSimilarity(ours.title, sg.title) >= TITLE_STRONG_MATCH
+      );
       if (match) {
         matches.push({
           title: ours.title,
