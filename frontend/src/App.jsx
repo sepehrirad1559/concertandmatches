@@ -842,7 +842,7 @@ function EventCard({ event, onSelect }) {
             width: '100%',
             display: 'block',
             border: 'none',
-            backgroundColor: '#8b0000',
+            backgroundColor: '#024ddf',
             color: 'white',
             fontWeight: 'bold',
             borderRadius: '10px',
