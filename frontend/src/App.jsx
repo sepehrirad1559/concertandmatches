@@ -521,6 +521,18 @@ function trackedTicketmasterLink(destinationUrl) {
 // list. Falls back to the older single-source shape (event.source /
 // event.source_url) if `offers` isn't present, so this keeps working
 // against any cached/older API response shape.
+// Per-seller dot color for the Find Tickets list (redesigned to match a
+// reference comparison-list layout: a colored dot + seller name on the
+// left, price on the right). These are just distinct categorical colors
+// for quick visual scanning across sellers, not an attempt at each
+// retailer's exact trademarked brand color.
+const SOURCE_DOT_COLOR = {
+  ticketmaster: '#026cdf',
+  seatgeek: '#0f9d58',
+  ticketnetwork: '#7c3aed',
+  official: '#6b7280',
+};
+
 function buildFindTicketsLinks(event) {
   const q = encodeURIComponent(event.title || event.artist_name || '');
   const sourceMeta = {
@@ -585,6 +597,7 @@ function buildFindTicketsLinks(event) {
       minPrice: o.source === 'official' ? null : o.min_price,
       maxPrice: o.source === 'official' ? null : o.max_price,
       isBest: event.best_source ? o.source === event.best_source : false,
+      dotColor: SOURCE_DOT_COLOR[o.source] || '#999',
       // Official links never route through the /go affiliate redirect — see
       // the comment above — so they always use their own url directly.
       eventRowId: o.source === 'official' ? null : (o.event_row_id ?? null),
@@ -1455,8 +1468,16 @@ export default function App() {
                     ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — click through below to buy:
                   </p>
                 )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {findTicketsLinks.map((link) => {
+                {/* Redesigned as a scannable comparison list (colored dot +
+                    seller name on the left, price + "STARTING AT" on the
+                    right, a highlighted row + "Best price" badge for the
+                    cheapest confirmed offer) rather than a stack of big
+                    colored buttons — modeled on a reference price-comparison
+                    list the user provided. The whole row is the click
+                    target (an <a>), same affiliate-link/click-logging
+                    behavior as before, just restyled. */}
+                <div style={{ border: '1px solid #eee', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#fff' }}>
+                  {findTicketsLinks.map((link, i) => {
                     // The full tier breakdown (e.g. Standard vs. VIP) only
                     // makes sense to show when there's a single seller —
                     // once there's more than one offer, a plain per-seller
@@ -1470,9 +1491,8 @@ export default function App() {
                       : null;
                     const isOfficialLink = link.source === 'official';
                     return (
-                      <div key={link.source}>
+                      <div key={link.source} style={{ borderTop: i === 0 ? 'none' : '1px solid #eee' }}>
                         <a
-                          className="cm-btn"
                           href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
                           target="_blank"
                           rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
@@ -1487,36 +1507,68 @@ export default function App() {
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            padding: '13px 16px',
-                            borderRadius: '12px',
-                            border: isOfficialLink ? '1px solid #555' : '1px solid #8b0000',
-                            backgroundColor: isOfficialLink ? '#444' : '#8b0000',
-                            color: 'white',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                            padding: '16px 18px',
                             textDecoration: 'none',
-                            fontWeight: 'bold',
-                            textAlign: 'center',
+                            color: 'inherit',
+                            backgroundColor: link.isBest ? '#fffaeb' : 'transparent',
                           }}>
-                          {link.logoUrl && (
-                            <img
-                              src={link.logoUrl}
-                              alt=""
-                              width={18}
-                              height={18}
-                              style={{ borderRadius: '4px', flexShrink: 0, backgroundColor: '#fff' }}
-                              // A favicon that fails to load (blocked, retailer
-                              // changed domains, etc.) should just disappear
-                              // rather than show a broken-image icon on the
-                              // button.
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                            <span
+                              aria-hidden="true"
+                              style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor, flexShrink: 0 }}
                             />
-                          )}
-                          <span>{isOfficialLink ? `Visit ${link.name} ↗` : `Buy Your Ticket on ${link.name} ↗`}</span>
+                            {link.logoUrl && (
+                              <img
+                                src={link.logoUrl}
+                                alt=""
+                                width={16}
+                                height={16}
+                                style={{ borderRadius: '3px', flexShrink: 0 }}
+                                // A favicon that fails to load (blocked, retailer
+                                // changed domains, etc.) should just disappear
+                                // rather than show a broken-image icon.
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            )}
+                            <span style={{ fontWeight: 'bold', fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {isOfficialLink ? `Visit ${link.name}` : link.name}
+                            </span>
+                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px' }}>↗</span>
+                            {link.isBest && (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                color: '#7a5b00',
+                                backgroundColor: '#ffd54f',
+                                borderRadius: '999px',
+                                padding: '3px 10px',
+                                flexShrink: 0,
+                              }}>
+                                ✓ Best price
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            {priceLabel ? (
+                              <>
+                                <div style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</div>
+                                {!showTierBreakdown && (
+                                  <div style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</div>
+                                )}
+                              </>
+                            ) : !isOfficialLink && (
+                              <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#999' }}>Price not listed</span>
+                            )}
+                          </div>
                         </a>
                         {showTierBreakdown && (
-                          <div style={{ marginTop: '6px', padding: '8px 6px 4px', border: '1px solid #ddd', borderRadius: '12px' }}>
-                            {priceTiers.map((tier, i) => {
+                          <div style={{ margin: '0 18px 14px', padding: '10px 12px', border: '1px solid #eee', borderRadius: '10px', backgroundColor: '#fafafa' }}>
+                            {priceTiers.map((tier, ti) => {
                               const tierValues = [...new Set([tier.min, tier.max].filter((p) => p != null))].sort((a, b) => a - b);
                               // The generic fallback tier (no real named tier
                               // from the source, e.g. Ticketmaster's
@@ -1528,12 +1580,12 @@ export default function App() {
                               const label = tier.label === 'Price' && tierValues.length > 1 ? 'Price range' : tier.label;
                               return (
                                 <div
-                                  key={`${tier.label}-${i}`}
+                                  key={`${tier.label}-${ti}`}
                                   style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     fontSize: '14px',
-                                    color: '#1a73e8',
+                                    color: '#333',
                                     fontWeight: 'bold',
                                     padding: '3px 2px',
                                   }}>
@@ -1542,19 +1594,6 @@ export default function App() {
                                 </div>
                               );
                             })}
-                          </div>
-                        )}
-                        {!showTierBreakdown && !isOfficialLink && (
-                          <div style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            marginTop: '6px', padding: '6px 10px', border: '1px solid #ddd', borderRadius: '12px',
-                            backgroundColor: '#fff',
-                          }}>
-                            {priceLabel ? (
-                              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1a73e8' }}>Available: {priceLabel}</span>
-                            ) : (
-                              <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#999' }}>Price not listed</span>
-                            )}
                           </div>
                         )}
                       </div>
