@@ -680,6 +680,13 @@ const EVENT_CATEGORIES = [
 // provided for this.
 const ACTIVE_TILE_COLOR = '#c9660b';
 
+// Shared dark blue accent for the top-nav "All"/category chips and the
+// hero search bar's Search button — user asked to move these off the
+// red/maroon (#8b0000) that used to be reused all over the page, without
+// touching every other spot that still legitimately uses that red (Find
+// Tickets buttons, date-picker Apply/Reset, etc.).
+const NAV_ACCENT_COLOR = '#0d1b4c';
+
 function CategoryTiles({ activeCategoryId, onSelect }) {
   return (
     <div
@@ -1578,16 +1585,15 @@ export default function App() {
       {/* Hero band: wraps the nav, headline, search bar and category tiles in
           their own backdrop so this whole top-of-page zone reads as one
           deliberate section, distinct from the plain page background the
-          results grid sits on below. Color is a bold, fully-saturated red
-          (#e60000) — the previous #d32f2f (a muted "material" red, R/G/B
-          balanced toward gray) read as pink to the user, so this moves
-          further toward pure red with no muted/rosy undertone — rather than
-          the site's brand purple/gradient. The white nav/search-bar/tile
-          cards keep their own backgrounds and sit on top of it unchanged;
-          the heading/subheading below get an explicit light text color
-          since they sit directly on this dark-ish background. */}
+          results grid sits on below. Color is dark red (#8b0000, CSS's own
+          "darkred") — user asked to move this from the previous bold/light
+          red (#e60000) to a darker red — rather than the site's brand
+          purple/gradient. The white nav/search-bar/tile cards keep their
+          own backgrounds and sit on top of it unchanged; the heading/
+          subheading below get an explicit light text color since they sit
+          directly on this dark background. */}
       <div style={{
-        background: '#e60000',
+        background: '#8b0000',
         borderRadius: '28px',
         padding: '20px 20px 28px',
         marginBottom: '24px',
@@ -1628,7 +1634,7 @@ export default function App() {
               fontSize: '13px',
               padding: '7px 14px',
               borderRadius: '999px',
-              backgroundColor: activeCategoryId === null ? '#8b0000' : '#f5f2f9',
+              backgroundColor: activeCategoryId === null ? NAV_ACCENT_COLOR : '#f5f2f9',
               color: activeCategoryId === null ? '#fff' : '#1a0733',
             }}>
             All
@@ -1658,7 +1664,7 @@ export default function App() {
                   fontSize: '13px',
                   padding: '7px 14px',
                   borderRadius: '999px',
-                  backgroundColor: isActive ? '#8b0000' : '#f5f2f9',
+                  backgroundColor: isActive ? NAV_ACCENT_COLOR : '#f5f2f9',
                   color: isActive ? '#fff' : '#1a0733',
                 }}>
                 {cat.label}
@@ -1934,7 +1940,7 @@ export default function App() {
             cursor: 'pointer',
             borderRadius: '999px',
             border: 'none',
-            backgroundColor: '#8b0000',
+            backgroundColor: NAV_ACCENT_COLOR,
             color: '#fff',
             fontWeight: 'bold',
             fontSize: '15px',
