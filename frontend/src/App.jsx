@@ -1768,8 +1768,14 @@ export default function App() {
                     // The full tier breakdown (e.g. Standard vs. VIP) only
                     // makes sense to show when there's a single seller —
                     // once there's more than one offer, a plain per-seller
-                    // price is what actually helps someone compare.
-                    const showTierBreakdown = findTicketsLinks.length === 1 && priceTiers.length > 0;
+                    // price is what actually helps someone compare. It's
+                    // also skipped when the only "tier" is the generic
+                    // fallback ("Price", no real named tier from the
+                    // source) with nothing else alongside it — that row
+                    // would just repeat the price already shown on the
+                    // seller row above it.
+                    const showTierBreakdown = findTicketsLinks.length === 1 && priceTiers.length > 0
+                      && !(priceTiers.length === 1 && priceTiers[0].label === 'Price');
                     const linkPrices = [...new Set(
                       [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
                     )].sort((a, b) => a - b);
@@ -1883,7 +1889,11 @@ export default function App() {
                               // generic tier) only makes sense as a spread
                               // to compare against other sellers. With just
                               // one seller there's nothing to compare, so
-                              // the row is dropped rather than shown alone.
+                              // the row is dropped even when a real named
+                              // tier (VIP, etc.) is shown alongside it —
+                              // the plain single-tier case (nothing else to
+                              // show it next to) is handled a level up, by
+                              // showTierBreakdown itself.
                               if (label === 'Price range' && findTicketsLinks.length === 1) return null;
                               return (
                                 <div
