@@ -53,6 +53,7 @@ const ALLOWED_HOST_SUFFIXES = [
   'tickpick.com',
   'evyy.net', // Impact.com tracked-link domain used by the Ticketmaster affiliate program
   'ticketnetwork.com', // covers goto.ticketnetwork.com (Impact.com's tracked-link subdomain for the TicketNetwork affiliate catalog, see services/ticketnetwork.js) and ticketnetwork.com itself, via the .suffix match below
+  'pxf.io', // Impact.com's generic tracked-link domain, used by The Rockefeller Center's affiliate program (see services/curatedAttractions.js) — e.g. therockefellercenter.pxf.io
 ];
 
 function isAllowedDestination(destinationUrl) {

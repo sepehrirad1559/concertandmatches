@@ -32,6 +32,12 @@ import { syncAllEvents as syncTicketmasterEvents } from './services/ticketmaster
 import { syncSeatGeekEvents } from './services/seatgeek.js';
 import { rebuildCanonicalEvents } from './services/canonicalize.js';
 
+// Curated attractions (e.g. Rockefeller Center) — see
+// services/curatedAttractions.js. Not an external API sync: this just
+// re-stamps a fixed, hand-maintained list's `date` column forward so the
+// rows never fall out of the `date >= NOW()` listing filter.
+import { syncCuratedAttractions } from './services/curatedAttractions.js';
+
 dotenv.config();
 
 const app = express();
@@ -292,6 +298,22 @@ await logProviderSync({
 } catch (err) {
 console.error('SeatGeek sync failed:', err);
 await logProviderSync({ providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Refreshing curated attractions (Rockefeller Center)...');
+startedAt = new Date();
+try {
+const curatedResult = await syncCuratedAttractions();
+console.log('Curated attractions refresh result:', curatedResult);
+await logProviderSync({
+  providerName: 'curated', syncType: 'discovery', startedAt, finishedAt: new Date(),
+  recordsReceived: curatedResult.totalEvents ?? null,
+  status: curatedResult.success ? 'success' : 'error',
+  errorMessage: curatedResult.errors ? JSON.stringify(curatedResult.errors) : null,
+});
+} catch (err) {
+console.error('Curated attractions refresh failed:', err);
+await logProviderSync({ providerName: 'curated', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
 
 console.log('🔄 Rebuilding canonical events after event sync...');

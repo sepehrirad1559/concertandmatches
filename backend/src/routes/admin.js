@@ -9,6 +9,7 @@ import { logProviderSync } from '../utils/syncLog.js';
 import { getProvider } from '../providers/registry.js';
 import { isSameEvent, tokenSimilarity, isSameDay } from '../utils/matching.js';
 import { syncSeatGeekMatchesForExistingEvents } from '../services/seatgeek.js';
+import { syncCuratedAttractions } from '../services/curatedAttractions.js';
 import axios from 'axios';
 
 const router = express.Router();
@@ -301,6 +302,43 @@ router.post('/sync/ticketnetwork', async (req, res) => {
         recordsReceived: null, status: 'error', errorMessage: error.message,
       });
     });
+});
+
+// Manually curated Rockefeller Center attractions (see
+// backend/src/services/curatedAttractions.js for why — no Impact.com
+// product catalog exists for this brand, unlike TicketNetwork's). Fast
+// (6 rows, no external API call), so this runs synchronously and responds
+// with the real result instead of the background-job pattern used by the
+// large provider syncs above.
+router.post('/sync/curated-attractions', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const startedAt = new Date();
+  try {
+    const result = await syncCuratedAttractions();
+    await logProviderSync({
+      providerName: 'curated', syncType: 'discovery', startedAt, finishedAt: new Date(),
+      recordsReceived: result.totalEvents ?? null,
+      status: result.success ? 'success' : 'error',
+      errorMessage: result.errors ? JSON.stringify(result.errors) : null,
+    });
+    res.json({ success: true, result });
+  } catch (error) {
+    console.error('Curated attractions sync failed:', error);
+    await logProviderSync({
+      providerName: 'curated', syncType: 'discovery', startedAt, finishedAt: new Date(),
+      status: 'error', errorMessage: error.message,
+    });
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Removed (see backend/DATA_SOURCES.md): official_sources schema/CRUD

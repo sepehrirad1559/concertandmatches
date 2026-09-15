@@ -1,11 +1,17 @@
 # Data sources
 
-ConcertAndMatches collects event and ticket data from exactly two places, both official, authenticated, documented REST APIs:
+ConcertAndMatches collects event and ticket data primarily from official, authenticated, documented REST APIs:
 
 - **Ticketmaster Discovery API** (`app.ticketmaster.com/discovery/v2`) — `backend/src/services/ticketmaster.js`
 - **SeatGeek Platform API** (`api.seatgeek.com/2`) — `backend/src/services/seatgeek.js`
+- **TicketNetwork, via Impact.com's affiliate Partner API** (`api.impact.com`, Product Catalog id 1872) — `backend/src/services/ticketnetwork.js`. Not TicketNetwork's own API directly; their real, live, ~210k-item product catalog is exposed through Impact's documented affiliate catalog endpoint instead.
 
-Both require an API key issued by the provider and are called via their documented JSON endpoints (`axios.get`/`axios.post` against the base URLs above). Neither service fetches an HTML page and parses it — every request goes to a structured JSON API endpoint that exists specifically for programmatic access.
+All three require credentials issued by the provider and are called via documented JSON endpoints. None of them fetches an HTML page and parses it — every request goes to a structured JSON API endpoint that exists specifically for programmatic access.
+
+## Manually curated (not an API sync)
+
+- **The Rockefeller Center** — `backend/src/services/curatedAttractions.js`. Joined via Impact.com (2026-09) alongside Pelago by Singapore Airlines. Investigated for a product-catalog-style feed the same way TicketNetwork's was (Impact.com's "Assets" tab, "Tracking Integration", and the "Has Product Catalog" brand-attribute filter) — none exists for this brand; it's a plain 10%-on-sale affiliate program, not a catalog-backed one. Its small, stable set of attractions (Top of the Rock, The Beam, SKYLIFT, guided tours, The Rink) is instead hand-entered as `events.source = 'curated'` rows, with prices read directly off rockefellercenter.com's own pricing page. These need periodic manual re-checking — nothing re-fetches the prices automatically, only the `date` column (re-stamped daily so the rows don't fall out of the `date >= NOW()` listing filter).
+- **Pelago by Singapore Airlines** — deliberately NOT added as individual event rows. Same investigation came back the same way (no catalog feed), but Pelago's real inventory (thousands of tours/activities across many cities, changing constantly) can't be responsibly hand-maintained the way Rockefeller Center's handful of attractions can. It's surfaced instead as a single outbound promo card (`PartnerPromoBanner` in `frontend/src/App.jsx`) linking to Pelago's own site via its tracked affiliate link — not represented as platform inventory.
 
 ## Removed (2026-08-24)
 

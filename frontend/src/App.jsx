@@ -531,6 +531,7 @@ const SOURCE_DOT_COLOR = {
   seatgeek: '#0f9d58',
   ticketnetwork: '#7c3aed',
   official: '#6b7280',
+  curated: '#e0a100',
 };
 
 function buildFindTicketsLinks(event) {
@@ -571,6 +572,15 @@ function buildFindTicketsLinks(event) {
       name: 'Official Site',
       domain: null,
       buildUrl: (url) => url || null,
+    },
+    // Manually curated attraction listings (Rockefeller Center) — see
+    // backend/src/services/curatedAttractions.js. The stored source_url is
+    // already a full Impact.com tracked affiliate link (therockefellercenter.pxf.io/...),
+    // same as TicketNetwork's, so it needs no extra wrapping.
+    curated: {
+      name: 'Rockefeller Center',
+      domain: 'rockefellercenter.com',
+      buildUrl: (url) => url || 'https://www.rockefellercenter.com',
     },
   };
 
@@ -1080,6 +1090,65 @@ function FeatureStrip() {
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+// Pelago by Singapore Airlines affiliate promo — joined via Impact.com
+// (2026-09) alongside The Rockefeller Center, but unlike Rockefeller
+// Center's small/stable attraction set, Pelago's catalog (thousands of
+// tours/activities across many cities, no data feed exposed to affiliates —
+// see backend/src/services/curatedAttractions.js) isn't something that can
+// be responsibly hand-curated as individual "events" without it going
+// stale or misrepresenting availability/pricing. So Pelago gets a single
+// outbound promo card instead — same honest pattern as the affiliate
+// disclosure elsewhere on the page, just pointed at Pelago's own site
+// (tracked, so the platform still earns commission on click-throughs).
+const PELAGO_AFFILIATE_LINK = 'https://pelago.pxf.io/AgQDoJ';
+
+function PartnerPromoBanner() {
+  return (
+    <div className="cm-navy-card" style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '16px',
+      backgroundColor: NAVY_PANEL,
+      border: `1px solid ${NAVY_BORDER}`,
+      borderRadius: '16px',
+      padding: '22px 26px',
+      margin: '24px 0',
+    }}>
+      <div style={{ maxWidth: '560px' }}>
+        <div style={{ fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: NAV_ACCENT_LIGHT }}>
+          Partner Experiences
+        </div>
+        <h3 style={{ fontSize: '18px', color: '#fff', margin: '4px 0 0' }}>
+          Tours &amp; Activities with Pelago by Singapore Airlines
+        </h3>
+        <p style={{ color: 'var(--cm-text-onnavy-muted)', fontSize: '13.5px', marginTop: '6px' }}>
+          Book sightseeing tours, attractions, and local experiences in cities worldwide through our partner Pelago.
+        </p>
+      </div>
+      <a
+        href={PELAGO_AFFILIATE_LINK}
+        target="_blank"
+        rel="noopener sponsored"
+        className="cm-btn"
+        style={{
+          padding: '12px 22px',
+          borderRadius: '999px',
+          border: 'none',
+          backgroundColor: NAV_ACCENT_COLOR,
+          color: '#fff',
+          fontWeight: 'bold',
+          fontSize: '14px',
+          textDecoration: 'none',
+          whiteSpace: 'nowrap',
+        }}>
+        Explore Pelago →
+      </a>
     </div>
   );
 }
@@ -2315,6 +2384,8 @@ export default function App() {
       </div>
 
       <FeatureStrip />
+
+      <PartnerPromoBanner />
 
       <CtaBanner
         onExplore={() => {
