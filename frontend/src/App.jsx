@@ -701,36 +701,48 @@ const NAVY_BORDER = '#0264ad';
 // SVG (no icon-font dependency) so each renders crisply inside the blue
 // icon circle at any size, matching the reference design's clean line
 // icons instead of emoji.
-function CategoryIcon({ icon, size = 22, color = '#fff' }) {
-  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+// Solid/filled glyphs (not outline strokes) matching the reference design's
+// category icons: a filled music note, a basketball with its seam lines, a
+// pair of comedy/tragedy theater masks, and a filled microphone — all in a
+// single flat accent-blue fill, sitting directly on the card (no circular
+// badge behind them, per the reference).
+function CategoryIcon({ icon, size = 22, color = NAV_ACCENT_LIGHT }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true };
   switch (icon) {
     case 'music':
       return (
-        <svg {...common}>
-          <path d="M9 18V5l12-2v13" />
-          <circle cx="6" cy="18" r="3" />
-          <circle cx="18" cy="16" r="3" />
+        <svg {...common} fill={color}>
+          <path d="M9 3v11.35A4 4 0 1 0 11 18V8h6V3H9zm2 15a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
         </svg>
       );
     case 'sports':
       return (
-        <svg {...common}>
+        <svg {...common} fill="none" stroke={color} strokeWidth={1.6}>
+          <circle cx="12" cy="12" r="9" fill={color} fillOpacity="0.18" />
           <circle cx="12" cy="12" r="9" />
           <path d="M12 3v18M3 12h18M5.6 5.6c2.1 2.6 2.1 10.2 0 12.8M18.4 5.6c-2.1 2.6-2.1 10.2 0 12.8" />
         </svg>
       );
     case 'theater':
       return (
-        <svg {...common}>
-          <path d="M4 5c2 2 2 5 0 7s-2 5 0 7c3-1 5-3 5-7s-2-6-5-7z" />
-          <path d="M20 5c-2 2-2 5 0 7s2 5 0 7c-3-1-5-3-5-7s2-6 5-7z" />
+        <svg {...common} fill={color}>
+          <path d="M3.5 4.2c3 .6 5.3 3.1 5.3 6.1 0 2.6-1.7 4.8-4.1 5.6.3-1 .3-2.1-.1-3.1-.5-1.3-.2-2.6.5-3.7-1-.3-1.9-1-2.5-1.9-.6-1-.8-2-.4-3l.1-.3a3 3 0 0 1 1.2.3z" />
+          <circle cx="4.6" cy="9.2" r="0.7" fill={NAVY_BG} />
+          <path d="M4.9 13.2c.6.5 1.4.7 2.1.5" fill="none" stroke={NAVY_BG} strokeWidth="0.7" strokeLinecap="round" />
+          <path d="M20.5 4.2c-3 .6-5.3 3.1-5.3 6.1 0 2.6 1.7 4.8 4.1 5.6-.3-1-.3-2.1.1-3.1.5-1.3.2-2.6-.5-3.7 1-.3 1.9-1 2.5-1.9.6-1 .8-2 .4-3l-.1-.3a3 3 0 0 0-1.2.3z" />
+          <circle cx="19.4" cy="9.2" r="0.7" fill={NAVY_BG} />
+          <path d="M17.4 12.6c.4.7 1.1 1.2 1.9 1.3" fill="none" stroke={NAVY_BG} strokeWidth="0.7" strokeLinecap="round" />
         </svg>
       );
     case 'comedy':
       return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M8 10h.01M16 10h.01M8 15c1.2 1.2 2.6 1.8 4 1.8s2.8-.6 4-1.8" />
+        <svg {...common} fill={color}>
+          <path d="M12.5 12.1c1.1-1.6 3-2.6 5.1-2.4 1.6.1 3 .9 4 2 .5.6 0 1.6-.8 1.5-1.4-.2-2.8.2-3.8 1.1-1.6 1.4-2.2 3.6-1.6 5.6.2.8-.7 1.5-1.4.9a8.6 8.6 0 0 1-1.5-8.7z" />
+          <circle cx="17.3" cy="11.4" r="0.9" fill={NAVY_BG} />
+          <circle cx="20.1" cy="12.4" r="0.9" fill={NAVY_BG} />
+          <path d="M11.5 12.1c-1.1-1.6-3-2.6-5.1-2.4-1.6.1-3 .9-4 2-.5.6 0 1.6.8 1.5 1.4-.2 2.8.2 3.8 1.1 1.6 1.4 2.2 3.6 1.6 5.6-.2.8.7 1.5 1.4.9a8.6 8.6 0 0 0 1.5-8.7z" />
+          <circle cx="6.7" cy="11.4" r="0.9" fill={NAVY_BG} />
+          <circle cx="3.9" cy="12.4" r="0.9" fill={NAVY_BG} />
         </svg>
       );
     default:
@@ -778,13 +790,11 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
               flexShrink: 0,
               width: '46px',
               height: '46px',
-              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: NAV_ACCENT_COLOR,
             }}>
-              <CategoryIcon icon={cat.icon} />
+              <CategoryIcon icon={cat.icon} size={36} />
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontWeight: 800, fontSize: '17px', color: '#fff' }}>{cat.label}</span>
@@ -1994,7 +2004,14 @@ export default function App() {
         Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;•&nbsp; Comedy
       </p>
 
-      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', marginTop: 0, marginBottom: '16px', flexWrap: 'wrap' }}>
+      {/* Search pill restructured to match the reference exactly: search
+          field, a hairline divider, the location field, then the Search
+          button flush against the right edge of the same white pill — no
+          stacked LOCATION/SEARCH captions and no separate Dates segment
+          (Dates is still available; its trigger just isn't part of this
+          pill's visual in the reference, so it now lives as a compact
+          icon-only button appended after Location). */}
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'stretch', marginTop: 0, marginBottom: '16px' }}>
         <div
           className="cm-card"
           style={{
@@ -2002,90 +2019,11 @@ export default function App() {
             alignItems: 'stretch',
             flex: '1',
             minWidth: '280px',
-            flexWrap: 'wrap',
             backgroundColor: '#fff',
-            border: '1px solid var(--cm-border)',
             borderRadius: '999px',
             boxShadow: 'var(--cm-shadow-md)',
             overflow: 'hidden',
           }}>
-          {/* LOCATION segment */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            flex: '1',
-            minWidth: '160px',
-            padding: '10px 20px',
-            borderRight: '1px solid var(--cm-border)',
-          }}>
-            <span style={{ fontSize: '20px' }} aria-hidden="true">📍</span>
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-              <label htmlFor="cm-search-location" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
-                LOCATION
-              </label>
-              <input
-                id="cm-search-location"
-                type="text"
-                placeholder="Near you"
-                value={draftLocation}
-                onChange={(e) => setDraftLocation(e.target.value)}
-                style={{
-                  border: 'none',
-                  outline: 'none',
-                  padding: 0,
-                  fontSize: '15px',
-                  width: '100%',
-                  color: '#1a0733',
-                }}
-                autoComplete="off"
-              />
-            </div>
-          </div>
-
-          {/* DATES segment */}
-          <div
-            ref={datesSegmentRef}
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              flex: '1',
-              minWidth: '150px',
-              padding: '10px 18px',
-              borderRight: '1px solid var(--cm-border)',
-              cursor: 'pointer',
-            }}
-            onClick={() => setShowDatesPicker((v) => !v)}>
-            <span style={{ fontSize: '20px' }} aria-hidden="true">📅</span>
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
-                DATES
-              </label>
-              <span style={{ fontSize: '15px', color: '#1a0733' }}>
-                {draftStartDate
-                  ? `${formatShortDate(draftStartDate)}${draftEndDate ? ` – ${formatShortDate(draftEndDate)}` : ''}`
-                  : 'All Dates'}
-              </span>
-            </div>
-            <span style={{ fontSize: '12px', color: '#666' }} aria-hidden="true">{showDatesPicker ? '▲' : '▼'}</span>
-            {showDatesPicker && (
-              <div onClick={(e) => e.stopPropagation()}>
-                <DatesPicker
-                  startDate={draftStartDate}
-                  endDate={draftEndDate}
-                  onCancel={() => setShowDatesPicker(false)}
-                  onApply={(start, end) => {
-                    setDraftStartDate(start);
-                    setDraftEndDate(end);
-                    setShowDatesPicker(false);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
           {/* SEARCH segment */}
           <div style={{
             position: 'relative',
@@ -2093,33 +2031,29 @@ export default function App() {
             alignItems: 'center',
             gap: '10px',
             flex: '2',
-            minWidth: '220px',
-            padding: '10px 18px',
+            minWidth: '160px',
+            padding: '0 20px',
           }}>
-            <span style={{ fontSize: '20px' }} aria-hidden="true">🔍</span>
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-              <label htmlFor="cm-search-query" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', color: '#666' }}>
-                SEARCH
-              </label>
-              <input
-                id="cm-search-query"
-                type="text"
-                placeholder="Search events, artists, teams, shows or cities..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
-                onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
-                style={{
-                  border: 'none',
-                  outline: 'none',
-                  padding: 0,
-                  fontSize: '15px',
-                  width: '100%',
-                  color: '#1a0733',
-                }}
-                autoComplete="off"
-              />
-            </div>
+            <span style={{ fontSize: '18px', color: '#5c6b85', flexShrink: 0 }} aria-hidden="true">🔍</span>
+            <input
+              id="cm-search-query"
+              type="text"
+              placeholder="Search events, artists, teams, shows or cities..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
+              onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
+              style={{
+                border: 'none',
+                outline: 'none',
+                padding: '14px 0',
+                fontSize: '15px',
+                width: '100%',
+                minWidth: 0,
+                color: '#1a0733',
+              }}
+              autoComplete="off"
+            />
             {showAutocomplete && autocompleteSuggestions.length > 0 && (
               <ul
                 style={{
@@ -2158,23 +2092,94 @@ export default function App() {
               </ul>
             )}
           </div>
+
+          {/* Hairline divider, matching the reference */}
+          <div style={{ width: '1px', alignSelf: 'center', height: '26px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
+
+          {/* LOCATION segment */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flex: '1',
+            minWidth: '120px',
+            padding: '0 18px',
+          }}>
+            <span style={{ fontSize: '18px', color: '#5c6b85', flexShrink: 0 }} aria-hidden="true">📍</span>
+            <input
+              id="cm-search-location"
+              type="text"
+              placeholder="Near you"
+              value={draftLocation}
+              onChange={(e) => setDraftLocation(e.target.value)}
+              style={{
+                border: 'none',
+                outline: 'none',
+                padding: '14px 0',
+                fontSize: '15px',
+                width: '100%',
+                minWidth: 0,
+                color: '#1a0733',
+              }}
+              autoComplete="off"
+            />
+          </div>
+
+          {/* Compact Dates trigger — keeps the date-range picker reachable
+              without adding a labeled third segment to the pill, so the
+              visible search bar matches the reference's two-field layout. */}
+          <div ref={datesSegmentRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setShowDatesPicker((v) => !v)}
+              title={draftStartDate ? `${formatShortDate(draftStartDate)}${draftEndDate ? ` – ${formatShortDate(draftEndDate)}` : ''}` : 'Dates'}
+              style={{
+                border: 'none',
+                borderLeft: '1px solid #d7dceb',
+                background: 'none',
+                cursor: 'pointer',
+                padding: '0 16px',
+                height: '100%',
+                fontSize: '18px',
+                color: draftStartDate ? NAV_ACCENT_COLOR : '#5c6b85',
+              }}
+              aria-hidden="false"
+              aria-label="Choose dates">
+              📅
+            </button>
+            {showDatesPicker && (
+              <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 20 }}>
+                <DatesPicker
+                  startDate={draftStartDate}
+                  endDate={draftEndDate}
+                  onCancel={() => setShowDatesPicker(false)}
+                  onApply={(start, end) => {
+                    setDraftStartDate(start);
+                    setDraftEndDate(end);
+                    setShowDatesPicker(false);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="cm-btn"
+            style={{
+              padding: '0 32px',
+              cursor: 'pointer',
+              border: 'none',
+              backgroundColor: NAV_ACCENT_COLOR,
+              color: '#fff',
+              fontWeight: 'bold',
+              fontSize: '15px',
+              flexShrink: 0,
+            }}>
+            Search
+          </button>
         </div>
 
-        <button
-          type="submit"
-          className="cm-btn"
-          style={{
-            padding: '14px 26px',
-            cursor: 'pointer',
-            borderRadius: '999px',
-            border: 'none',
-            backgroundColor: NAV_ACCENT_COLOR,
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: '15px',
-          }}>
-          Search
-        </button>
         {(activeSearch || activeLocation || activeStartDate || activeEndDate) && (
           <button
             type="button"
@@ -2186,6 +2191,8 @@ export default function App() {
               borderRadius: '999px',
               border: '1px solid var(--cm-border)',
               backgroundColor: '#fff',
+              marginLeft: '10px',
+              flexShrink: 0,
             }}>
             Clear
           </button>
