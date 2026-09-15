@@ -1068,11 +1068,12 @@ function FeatureStrip() {
   );
 }
 
-// Closing CTA banner — purple-to-blue gradient with a couple of soft glow
-// blobs standing in for the reference design's photographic/particle
-// background (no licensed photo asset to use here, so this stays a pure-
-// CSS effect rather than pulling in a stock image). onExplore resets any
-// active search/category filters and scrolls back up to the results grid.
+// Closing CTA banner — the same purple/pink concert-crowd photo from the
+// reference mockup (cropped from the provided design — see
+// public/cta-crowd.jpg) as the background, with the mockup's purple→blue
+// gradient layered over it so the text on the left stays readable exactly
+// like the reference. onExplore resets any active search/category filters
+// and scrolls back up to the results grid.
 function CtaBanner({ onExplore }) {
   return (
     <div style={{
@@ -1081,15 +1082,16 @@ function CtaBanner({ onExplore }) {
       borderRadius: '20px',
       margin: '24px 0',
       padding: '40px 28px',
-      background: 'linear-gradient(120deg, #241a5c 0%, #3a2496 45%, #1f5fc4 100%)',
+      backgroundImage: 'url(/cta-crowd.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
       display: 'flex',
       flexWrap: 'wrap',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '20px',
     }}>
-      <div aria-hidden="true" style={{ position: 'absolute', top: '-60px', right: '10%', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(109,180,255,0.35)', filter: 'blur(50px)' }} />
-      <div aria-hidden="true" style={{ position: 'absolute', bottom: '-70px', left: '5%', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(142,45,226,0.35)', filter: 'blur(55px)' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(100deg, #241a5c 0%, rgba(36,26,92,0.85) 30%, rgba(31,95,196,0.35) 65%, rgba(31,95,196,0.15) 100%)' }} />
       <div style={{ position: 'relative', maxWidth: '520px' }}>
         <h3 style={{ fontSize: 'clamp(22px, 3.4vw, 30px)', color: '#fff', margin: 0, lineHeight: 1.2 }}>
           Your Next Unforgettable <span style={{ color: NAV_ACCENT_LIGHT }}>Event Awaits</span>
@@ -1956,20 +1958,29 @@ export default function App() {
           </div>
         )}
 
+      {/* Two-column hero, matching the reference design: text+search on the
+          left, the same concert-crowd photo from the reference mockup
+          bleeding off the right edge (cropped from the provided design —
+          see public/hero-crowd.jpg — with a left-edge fade into the navy
+          background so it blends in exactly like the reference). Stacks to
+          one column (photo panel drops below, still visible) on narrow
+          screens via flexWrap. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'center' }}>
+      <div style={{ flex: '1 1 420px', minWidth: 0 }}>
       <h1 style={{
-        textAlign: 'center',
-        fontSize: 'clamp(30px, 5vw, 44px)',
+        textAlign: 'left',
+        fontSize: 'clamp(28px, 4.2vw, 42px)',
         fontWeight: 800,
         letterSpacing: '-0.01em',
         lineHeight: 1.15,
-        margin: '28px 0 10px',
+        margin: '20px 0 10px',
         color: '#fff',
       }}>
         Compare Leading Marketplaces and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available Tickets</span>
       </h1>
 
       <p style={{
-        textAlign: 'center',
+        textAlign: 'left',
         fontSize: 'clamp(14px, 2vw, 17px)',
         fontWeight: 600,
         letterSpacing: '0.02em',
@@ -2176,6 +2187,48 @@ export default function App() {
           </button>
         )}
       </form>
+      </div>
+
+      <div
+        aria-hidden="true"
+        style={{
+          flex: '1 1 320px',
+          minWidth: '260px',
+          alignSelf: 'stretch',
+          minHeight: '280px',
+          borderRadius: '24px',
+          position: 'relative',
+          overflow: 'hidden',
+          backgroundImage: 'url(/hero-crowd.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}>
+        {/* Left-edge fade into the hero's navy background, same effect as
+            the reference design's photo blending into the dark panel
+            beside it, plus a light bottom-left vignette so any UI placed
+            near this panel's edge stays readable. */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(90deg, ${NAVY_BG} 0%, rgba(10,22,40,0) 30%), linear-gradient(0deg, rgba(10,22,40,0.35) 0%, rgba(10,22,40,0) 40%)`,
+        }} />
+        <span style={{
+          position: 'absolute',
+          right: '18px',
+          bottom: '16px',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontStyle: 'italic',
+          fontWeight: 700,
+          fontSize: '20px',
+          lineHeight: 1.15,
+          color: 'rgba(255,255,255,0.92)',
+          textAlign: 'right',
+          textShadow: '0 2px 10px rgba(0,0,0,0.45)',
+        }}>
+          Live Brings Us<br />Together
+        </span>
+      </div>
+      </div>
 
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
 
