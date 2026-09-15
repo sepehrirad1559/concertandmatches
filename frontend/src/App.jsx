@@ -1881,6 +1881,12 @@ export default function App() {
                               // range between two real endpoints. A real
                               // named tier keeps its own name either way.
                               const label = tier.label === 'Price' && tierValues.length > 1 ? 'Price range' : tier.label;
+                              // A "Price range" row (two endpoints on one
+                              // generic tier) only makes sense as a spread
+                              // to compare against other sellers. With just
+                              // one seller there's nothing to compare, so
+                              // the row is dropped rather than shown alone.
+                              if (label === 'Price range' && findTicketsLinks.length === 1) return null;
                               return (
                                 <div
                                   key={`${tier.label}-${ti}`}
