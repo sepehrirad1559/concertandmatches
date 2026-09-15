@@ -339,11 +339,16 @@ router.get('/', async (req, res) => {
 
     // category supports a comma-separated list (e.g. "Music,Concert") so a
     // single UI filter (like a "Concerts" category tile) can match event
-    // rows that different data sources labeled differently.
+    // rows that different data sources labeled differently. Built as a
+    // standalone SQL fragment (not appended to whereClause directly) so it
+    // can be OR'd with `keywords` below instead of AND'd with it — see that
+    // block's comment for why (a merged tile like "Theater & Comedy" needs
+    // "in the Arts & Theatre category OR mentions Comedy", not both at once).
+    let categorySql = '';
     if (category) {
       const categoryList = category.split(',').map((c) => c.trim()).filter(Boolean);
       if (categoryList.length > 0) {
-        whereClause += ` AND category = ANY($${paramCount}::text[])`;
+        categorySql = `category = ANY($${paramCount}::text[])`;
         params.push(categoryList);
         paramCount++;
       }
@@ -390,6 +395,18 @@ router.get('/', async (req, res) => {
     // synced — the league name only ever showed up in the category the
     // provider assigned (see services/ticketmaster.js's subGenre-based
     // category and services/seatgeek.js's taxonomy-based category).
+    //
+    // Built as a standalone fragment, same as categorySql above, and then
+    // OR'd with it rather than AND'd: a category tile can set EITHER field
+    // alone (e.g. Concerts sets only category, NFL sets only keywords —
+    // those behave exactly as before, since OR-ing a single non-empty
+    // fragment with nothing is a no-op) or BOTH at once for a merged tile
+    // like "Theater & Comedy" (category ['Arts & Theatre'] OR keywords
+    // ['Comedy', ...]) — ANDing those together would have wrongly required
+    // an event to be in Arts & Theatre AND also mention "comedy" by name,
+    // which would have dropped plain theater shows and any comedy event
+    // filed under a different category.
+    let keywordsSql = '';
     if (keywords) {
       const keywordList = keywords.split(',').map((k) => k.trim()).filter(Boolean);
       if (keywordList.length > 0) {
@@ -397,10 +414,15 @@ router.get('/', async (req, res) => {
           const p = paramCount + i;
           return `(title ~* $${p} OR artist_name ~* $${p} OR venue_name ~* $${p} OR category ~* $${p})`;
         });
-        whereClause += ` AND (${orParts.join(' OR ')})`;
+        keywordsSql = `(${orParts.join(' OR ')})`;
         keywordList.forEach((kw) => params.push(`\\m${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\M`));
         paramCount += keywordList.length;
       }
+    }
+
+    const categoryOrKeywordsParts = [categorySql, keywordsSql].filter(Boolean);
+    if (categoryOrKeywordsParts.length > 0) {
+      whereClause += ` AND (${categoryOrKeywordsParts.join(' OR ')})`;
     }
 
     // TEMPORARY (see config/sourceVisibility.js): restricts the main

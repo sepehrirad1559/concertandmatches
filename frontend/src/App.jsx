@@ -654,12 +654,16 @@ function AffiliateDisclosure() {
 // (also OR'd) for leagues/genres that aren't their own category in the data.
 // Both are ANDed with whatever the customer types in the main search box.
 //
-// Consolidated to exactly 4 entries (Concerts / Sports / Theater / Comedy)
-// to match the new homepage design's "Popular categories" row — the old
-// NFL/NBA/NCAA Football tiles are now folded into one combined `sports`
-// entry (keywords OR'd together) so filtering behavior is unchanged, just
-// presented as one card instead of three. `tagline` and `icon` are the new
-// design's short descriptor + icon key for each card (see CategoryTiles).
+// Consolidated to exactly 3 entries (Concerts / Sports / Theater & Comedy)
+// to match the homepage design's "Popular categories" row — the old
+// NFL/NBA/NCAA Football tiles are folded into one combined `sports` entry
+// (keywords OR'd together), and Theater + Comedy are folded into one
+// `theater` entry the same way (its `category`/`keywords` OR'd together),
+// so filtering behavior for each original tile is unchanged, just
+// presented as one combined card instead of two. `tagline` and `icon` are
+// the design's short descriptor + icon key for each card (see
+// CategoryTiles) — the 'theater' icon (a pair of masks) already reads as
+// "theater & comedy", so it's kept as-is for the merged tile.
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -677,16 +681,10 @@ const EVENT_CATEGORIES = [
   },
   {
     id: 'theater',
-    label: 'Theater',
-    tagline: 'Bold Stories. Live On Stage.',
+    label: 'Theater & Comedy',
+    tagline: 'Bold Stories. Bigger Laughs.',
     icon: 'theater',
     category: ['Arts & Theatre'],
-  },
-  {
-    id: 'comedy',
-    label: 'Comedy',
-    tagline: 'Real People. Bigger Laughs.',
-    icon: 'comedy',
     keywords: ['Comedy', 'Stand-Up', 'Stand Up'],
   },
 ];
@@ -2097,7 +2095,7 @@ export default function App() {
           color: 'var(--cm-text-onnavy-muted)',
           margin: 0,
         }}>
-          Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;•&nbsp; Comedy
+          Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;&amp;&nbsp;Comedy
         </p>
 
         <span style={{
