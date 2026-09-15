@@ -2007,7 +2007,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          Compare Leading Marketplaces and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available Tickets</span>
+          Compare Leading Marketplaces<br />and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available Tickets</span>
         </h1>
 
         <p style={{
