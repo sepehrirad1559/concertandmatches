@@ -1179,7 +1179,7 @@ function CtaBanner({ onExplore }) {
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(100deg, #001633 0%, rgba(0,22,51,0.88) 32%, rgba(1,32,74,0.4) 65%, rgba(1,32,74,0.1) 100%)' }} />
       <div style={{ position: 'relative', maxWidth: '520px' }}>
         <h3 style={{ fontSize: 'clamp(22px, 3.4vw, 30px)', color: '#fff', margin: 0, lineHeight: 1.2 }}>
-          Your Next Unforgettable <span style={{ color: NAV_ACCENT_LIGHT }}>Event Awaits</span>
+          Your Next Unforgettable <span style={{ color: NAV_ACCENT_LIGHT }}>Event&nbsp;Awaits</span>
         </h3>
         <p style={{ color: '#d9e3f5', marginTop: '8px', fontSize: '14px' }}>More events. More moments. A brighter you.</p>
       </div>
@@ -2079,7 +2079,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          Compare Leading Marketplaces<br />and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available Tickets</span>
+          Compare Leading Marketplaces<br />and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available&nbsp;Tickets</span>
         </h1>
 
         <p style={{
