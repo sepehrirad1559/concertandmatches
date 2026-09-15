@@ -2134,7 +2134,13 @@ export default function App() {
             backgroundColor: '#fff',
             borderRadius: '999px',
             boxShadow: 'var(--cm-shadow-md)',
-            overflow: 'hidden',
+            // Not overflow:hidden — the Dates popover and the Search
+            // autocomplete list are absolutely positioned inside segments
+            // nested in this pill, and a hidden overflow here clips them
+            // out of view entirely (they still open/toggle in state, just
+            // invisible). The pill's rounded silhouette is preserved
+            // instead by rounding the Search button's own right corners
+            // below, since it's the only segment with its own background.
           }}>
           {/* LOCATION segment — icon + small uppercase label above the
               value, matching the reference three-field layout (Location /
@@ -2201,7 +2207,7 @@ export default function App() {
                   {draftStartDate ? `${formatShortDate(draftStartDate)}${draftEndDate ? ` – ${formatShortDate(draftEndDate)}` : ''}` : 'All Dates'}
                 </span>
               </span>
-              <span style={{ fontSize: '13px', color: '#5c6b85', flexShrink: 0 }} aria-hidden="true">⌄</span>
+              <span style={{ fontSize: '13px', color: '#5c6b85', flexShrink: 0, display: 'inline-block', transform: showDatesPicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} aria-hidden="true">⌄</span>
             </button>
             {showDatesPicker && (
               <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 20 }}>
@@ -2308,6 +2314,11 @@ export default function App() {
               fontWeight: 'bold',
               fontSize: '15px',
               flexShrink: 0,
+              // Matches the pill's own 999px radius on the right side only,
+              // now that the pill no longer clips its children to that
+              // shape via overflow:hidden (see the pill's style comment).
+              borderTopRightRadius: '999px',
+              borderBottomRightRadius: '999px',
             }}>
             Search
           </button>
