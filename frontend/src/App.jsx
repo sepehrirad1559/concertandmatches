@@ -248,7 +248,7 @@ function CalendarMonth({ monthStart, todayISO, rangeStart, rangeEnd, onPick, nav
                 fontSize: '14px',
                 fontWeight: isStart || isEnd ? 700 : 400,
                 color: isPast ? '#ccc' : (isStart || isEnd) ? '#fff' : '#1a0733',
-                backgroundColor: (isStart || isEnd) ? '#8b0000' : inRange ? '#f7e6e6' : 'transparent',
+                backgroundColor: (isStart || isEnd) ? '#2f7fe8' : inRange ? '#f7e6e6' : 'transparent',
               }}>
               {Number(iso.slice(-2))}
             </button>
@@ -317,7 +317,7 @@ function DatesPicker({ startDate, endDate, onApply, onCancel }) {
               padding: '10px 12px',
               fontSize: '14px',
               borderRadius: '8px',
-              border: !pickerStart || pickerEnd ? '2px solid var(--cm-border)' : '2px solid #8b0000',
+              border: !pickerStart || pickerEnd ? '2px solid var(--cm-border)' : '2px solid #2f7fe8',
               outline: 'none',
               color: '#1a0733',
             }}
@@ -336,7 +336,7 @@ function DatesPicker({ startDate, endDate, onApply, onCancel }) {
               padding: '10px 12px',
               fontSize: '14px',
               borderRadius: '8px',
-              border: pickerStart && !pickerEnd ? '2px solid #8b0000' : '2px solid var(--cm-border)',
+              border: pickerStart && !pickerEnd ? '2px solid #2f7fe8' : '2px solid var(--cm-border)',
               outline: 'none',
               color: '#1a0733',
             }}
@@ -356,7 +356,7 @@ function DatesPicker({ startDate, endDate, onApply, onCancel }) {
               type="button"
               onClick={() => setViewMonth((m) => addMonths(m, -1))}
               aria-label="Previous month"
-              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px', color: '#8b0000', fontWeight: 'bold' }}>
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px', color: '#2f7fe8', fontWeight: 'bold' }}>
               ←
             </button>
           ) : null}
@@ -372,7 +372,7 @@ function DatesPicker({ startDate, endDate, onApply, onCancel }) {
               type="button"
               onClick={() => setViewMonth((m) => addMonths(m, 1))}
               aria-label="Next month"
-              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px', color: '#8b0000', fontWeight: 'bold' }}>
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '18px', color: '#2f7fe8', fontWeight: 'bold' }}>
               →
             </button>
           )}
@@ -383,7 +383,7 @@ function DatesPicker({ startDate, endDate, onApply, onCancel }) {
         <button
           type="button"
           onClick={() => { setPickerStart(''); setPickerEnd(''); }}
-          style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8b0000', fontWeight: 700, fontSize: '14px', padding: 0 }}>
+          style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#2f7fe8', fontWeight: 700, fontSize: '14px', padding: 0 }}>
           Reset
         </button>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -398,7 +398,7 @@ function DatesPicker({ startDate, endDate, onApply, onCancel }) {
             type="button"
             onClick={() => onApply(pickerStart, pickerEnd)}
             className="cm-btn"
-            style={{ padding: '10px 22px', cursor: 'pointer', borderRadius: '999px', border: 'none', backgroundColor: '#8b0000', color: '#fff', fontWeight: 'bold' }}>
+            style={{ padding: '10px 22px', cursor: 'pointer', borderRadius: '999px', border: 'none', backgroundColor: '#2f7fe8', color: '#fff', fontWeight: 'bold' }}>
             Apply
           </button>
         </div>
@@ -643,117 +643,166 @@ function AffiliateDisclosure() {
 // comma-joined); `keywords` are matched against title/artist/venue text
 // (also OR'd) for leagues/genres that aren't their own category in the data.
 // Both are ANDed with whatever the customer types in the main search box.
-// Tile styling deliberately mirrors what the big ticket marketplaces do for
-// their own category/genre filter chips (StubHub's "All types / Sports /
-// Concerts / Theater & Comedy" pills, SeatGeek's "Location / Date" pills,
-// etc.): a flat white tile with a thin colored border, not a bold colored
-// gradient fill. Every tile shares the same single active-state color
-// (ACTIVE_TILE_COLOR below) instead of a per-category accent.
+//
+// Consolidated to exactly 4 entries (Concerts / Sports / Theater / Comedy)
+// to match the new homepage design's "Popular categories" row — the old
+// NFL/NBA/NCAA Football tiles are now folded into one combined `sports`
+// entry (keywords OR'd together) so filtering behavior is unchanged, just
+// presented as one card instead of three. `tagline` and `icon` are the new
+// design's short descriptor + icon key for each card (see CategoryTiles).
 const EVENT_CATEGORIES = [
-  {
-    id: 'nfl',
-    label: 'NFL',
-    emoji: '🏈',
-    keywords: ['NFL'],
-  },
   {
     id: 'concerts',
     label: 'Concerts',
-    emoji: '🎤',
+    tagline: 'Live Music. Bigger Together.',
+    icon: 'music',
     category: ['Music', 'Concert'],
   },
   {
-    id: 'nba',
-    label: 'NBA',
-    emoji: '🏀',
-    keywords: ['NBA', 'Basketball'],
-  },
-  {
-    id: 'ncaaf',
-    label: 'NCAA Football',
-    emoji: '🎓',
-    keywords: ['NCAA Football', 'College Football', 'NCAA'],
+    id: 'sports',
+    label: 'Sports',
+    tagline: 'Every Game. A Greater View.',
+    icon: 'sports',
+    keywords: ['NFL', 'NBA', 'Basketball', 'NCAA Football', 'College Football', 'NCAA'],
   },
   {
     id: 'theater',
     label: 'Theater',
-    emoji: '🎭',
+    tagline: 'Bold Stories. Live On Stage.',
+    icon: 'theater',
     category: ['Arts & Theatre'],
   },
   {
     id: 'comedy',
     label: 'Comedy',
-    emoji: '😂',
+    tagline: 'Real People. Bigger Laughs.',
+    icon: 'comedy',
     keywords: ['Comedy', 'Stand-Up', 'Stand Up'],
   },
 ];
 
-// The color a category tile (in CategoryTiles below) turns to when selected
-// — a single shared active color across every tile, per the reference swatch
-// provided for this.
-const ACTIVE_TILE_COLOR = '#c9660b';
+// Shared accent across the redesigned homepage (nav underline, category
+// card icons/hover, search button, event-card arrow button, etc.) — a
+// bright blue against the new dark-navy page background, matching the
+// reference design. --cm-accent-blue in App.css is the same value; kept
+// as a JS constant too since most of the homepage is still styled inline.
+const NAV_ACCENT_COLOR = '#2f7fe8';
+const NAV_ACCENT_LIGHT = '#6db4ff';
+const NAVY_BG = '#0a1628';
+const NAVY_PANEL = '#10213a';
+const NAVY_PANEL_LIGHT = '#16304f';
+const NAVY_BORDER = '#223a5c';
 
-// Shared accent for the top-nav "All"/category chips and the hero search
-// bar's Search button — user asked to move these off the red/maroon
-// (#8b0000) that used to be reused all over the page, without touching
-// every other spot that still legitimately uses that red (Find Tickets
-// buttons, date-picker Apply/Reset, etc.). Color is a user-supplied bright
-// blue swatch (#024ddf), sampled via PIL — replaces the earlier dark navy
-// (#0d1b4c) guess.
-const NAV_ACCENT_COLOR = '#024ddf';
+// Small line-style icon set for the category cards below — plain inline
+// SVG (no icon-font dependency) so each renders crisply inside the blue
+// icon circle at any size, matching the reference design's clean line
+// icons instead of emoji.
+function CategoryIcon({ icon, size = 22, color = '#fff' }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+  switch (icon) {
+    case 'music':
+      return (
+        <svg {...common}>
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
+        </svg>
+      );
+    case 'sports':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 3v18M3 12h18M5.6 5.6c2.1 2.6 2.1 10.2 0 12.8M18.4 5.6c-2.1 2.6-2.1 10.2 0 12.8" />
+        </svg>
+      );
+    case 'theater':
+      return (
+        <svg {...common}>
+          <path d="M4 5c2 2 2 5 0 7s-2 5 0 7c3-1 5-3 5-7s-2-6-5-7z" />
+          <path d="M20 5c-2 2-2 5 0 7s2 5 0 7c-3-1-5-3-5-7s2-6 5-7z" />
+        </svg>
+      );
+    case 'comedy':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8 10h.01M16 10h.01M8 15c1.2 1.2 2.6 1.8 4 1.8s2.8-.6 4-1.8" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
 
+// Popular-categories row: 4 dark-navy cards (icon, label, short tagline,
+// circular arrow button), replacing the old 6-tile flat-white grid. Same
+// filtering behavior as before (onSelect toggles activeCategoryId and
+// scrolls to the results grid) — only the visual treatment changed, to
+// match the new design's category cards.
 function CategoryTiles({ activeCategoryId, onSelect }) {
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-        gap: '12px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '16px',
         marginBottom: '20px',
       }}>
-      <button
-        type="button"
-        className="cm-tile"
-        onClick={() => {
-          onSelect(null);
-          document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-        }}
-        style={{
-          background: activeCategoryId === null ? ACTIVE_TILE_COLOR : '#fff',
-          border: activeCategoryId === null ? `2px solid ${ACTIVE_TILE_COLOR}` : '1px solid var(--cm-border)',
-          borderRadius: '16px',
-          padding: '18px 8px',
-          color: activeCategoryId === null ? '#fff' : '#222',
-          cursor: 'pointer',
-          textAlign: 'center',
-          boxShadow: activeCategoryId === null ? 'var(--cm-shadow-md)' : 'var(--cm-shadow-sm)',
-        }}>
-        <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎟️</div>
-        <div style={{ fontWeight: 'bold', fontSize: '18px' }}>All</div>
-      </button>
       {EVENT_CATEGORIES.map((cat) => {
         const isActive = activeCategoryId === cat.id;
         return (
           <button
             key={cat.id}
             type="button"
-            className="cm-tile"
+            className="cm-navy-card"
             onClick={() => {
               onSelect(isActive ? null : cat.id);
               document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
             }}
             style={{
-              background: isActive ? ACTIVE_TILE_COLOR : '#fff',
-              border: isActive ? `2px solid ${ACTIVE_TILE_COLOR}` : '1px solid var(--cm-border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              textAlign: 'left',
+              background: isActive ? NAVY_PANEL_LIGHT : NAVY_PANEL,
+              border: `1px solid ${isActive ? NAV_ACCENT_COLOR : NAVY_BORDER}`,
               borderRadius: '16px',
-              padding: '18px 8px',
-              color: isActive ? '#fff' : '#222',
+              padding: '16px 16px',
               cursor: 'pointer',
-              textAlign: 'center',
-              boxShadow: isActive ? 'var(--cm-shadow-md)' : 'var(--cm-shadow-sm)',
             }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>{cat.emoji}</div>
-            <div style={{ fontWeight: 'bold', fontSize: '18px' }}>{cat.label}</div>
+            <span style={{
+              flexShrink: 0,
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: NAV_ACCENT_COLOR,
+            }}>
+              <CategoryIcon icon={cat.icon} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontWeight: 800, fontSize: '17px', color: '#fff' }}>{cat.label}</span>
+              <span style={{ display: 'block', fontSize: '12.5px', color: 'var(--cm-text-onnavy-muted)', marginTop: '2px' }}>{cat.tagline}</span>
+            </span>
+            <span
+              className="cm-round-btn"
+              aria-hidden="true"
+              style={{
+                flexShrink: 0,
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: NAVY_BORDER,
+                color: '#fff',
+                fontSize: '15px',
+              }}>
+              →
+            </span>
           </button>
         );
       })}
@@ -824,7 +873,7 @@ function EventCard({ event, onSelect }) {
         )}
       </div>
       <div style={{ padding: '14px 16px 16px' }}>
-        <h4 style={{ fontSize: '16px', lineHeight: 1.3, marginBottom: '6px' }}>{event.title}</h4>
+        <h4 style={{ fontSize: '16px', lineHeight: 1.3, marginBottom: '6px', color: '#141b2d' }}>{event.title}</h4>
         <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📅 {formatDate(event.date)}</p>
         <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
         {formatOffersComparison(event) && (
@@ -832,42 +881,46 @@ function EventCard({ event, onSelect }) {
             {formatOffersComparison(event)}
           </p>
         )}
-        <button
-          className="cm-btn"
-          onClick={(e) => { e.stopPropagation(); onSelect(event); }}
-          style={{
-            marginTop: '12px',
-            padding: '10px 16px',
-            cursor: 'pointer',
-            width: '100%',
-            display: 'block',
-            border: 'none',
-            backgroundColor: '#024ddf',
-            color: 'white',
-            fontWeight: 'bold',
-            borderRadius: '10px',
-            letterSpacing: '0.01em',
-          }}>
-          Find Tickets
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '12px' }}>
+          <button
+            type="button"
+            className="cm-btn"
+            aria-label={`Find tickets for ${event.title}`}
+            onClick={(e) => { e.stopPropagation(); onSelect(event); }}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              backgroundColor: NAV_ACCENT_COLOR,
+              color: 'white',
+              fontSize: '17px',
+              fontWeight: 'bold',
+            }}>
+            →
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// Platform logo: a gradient ticket badge (reusing the same purple → pink →
-// orange gradient family as the category tiles above, so it reads as part
-// of the same brand) with a white ticket glyph — a perforated stub with a
-// small star accent. Works for both concerts and sporting-event tickets,
+// Platform logo: a gradient ticket badge with a white ticket glyph — a
+// perforated stub with a small star accent. Recolored to the new design's
+// blue palette (was a purple → pink → orange gradient) so it matches the
+// dark-navy homepage; works for both concerts and sporting-event tickets,
 // which is the whole point of the site.
 function Logo({ size = 36 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
         <linearGradient id="cmLogoGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#8e2de2" />
-          <stop offset="0.55" stopColor="#e91e8c" />
-          <stop offset="1" stopColor="#ff8c00" />
+          <stop stopColor="#1f5fc4" />
+          <stop offset="1" stopColor="#5aa9ff" />
         </linearGradient>
       </defs>
       <rect width="48" height="48" rx="12" fill="url(#cmLogoGrad)" />
@@ -875,13 +928,17 @@ function Logo({ size = 36 }) {
         d="M10 18a3 3 0 0 1 3-3h22a3 3 0 0 1 3 3v2a3 3 0 0 0 0 6v2a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3v-2a3 3 0 0 0 0-6v-2z"
         fill="white"
       />
-      <line x1="24" y1="16" x2="24" y2="32" stroke="#1a0733" strokeWidth="2" strokeDasharray="3 3" />
-      <path d="M31 20.5l1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.1-2.1 1.1.4-2.4-1.8-1.7 2.4-.3z" fill="#8e2de2" />
+      <line x1="24" y1="16" x2="24" y2="32" stroke="#0a1628" strokeWidth="2" strokeDasharray="3 3" />
+      <path d="M31 20.5l1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.1-2.1 1.1.4-2.4-1.8-1.7 2.4-.3z" fill="#1f5fc4" />
     </svg>
   );
 }
 
-// Logo + site name, clickable to return to the home page from anywhere.
+// Logo + site name (+ tagline), clickable to return to the home page from
+// anywhere. Tagline uses currentColor at reduced opacity rather than a
+// hardcoded light color so this still reads correctly on the plain-page
+// (light background) loading/error states that also render BrandLink, not
+// just the dark-navy hero.
 function BrandLink({ onClick }) {
   return (
     <button
@@ -899,24 +956,30 @@ function BrandLink({ onClick }) {
         cursor: 'pointer',
         font: 'inherit',
         color: 'inherit',
+        textAlign: 'left',
       }}>
-      <h2 style={{ margin: 0 }}>ConcertAndMatches</h2>
+      <Logo size={38} />
+      <span>
+        <span style={{ display: 'block', fontWeight: 800, fontSize: '19px', lineHeight: 1.15 }}>ConcertAndMatches.com</span>
+        <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', opacity: 0.65, marginTop: '2px' }}>
+          EVENT TICKETS. A BRIGHTER EXPERIENCE.
+        </span>
+      </span>
     </button>
   );
 }
 
 function Footer() {
-  const linkStyle = { color: '#888', marginRight: '16px', textDecoration: 'none' };
+  const linkStyle = { color: 'var(--cm-text-onnavy-muted)', marginRight: '16px', textDecoration: 'none' };
   return (
-    <footer style={{
+    <footer id="site-footer" style={{
       marginTop: '48px',
       padding: '24px 20px',
-      borderTop: '1px solid var(--cm-border)',
-      backgroundColor: '#fff',
+      borderTop: `1px solid ${NAVY_BORDER}`,
+      backgroundColor: NAVY_PANEL,
       borderRadius: 'var(--cm-radius)',
-      boxShadow: 'var(--cm-shadow-sm)',
       fontSize: '12px',
-      color: '#888',
+      color: 'var(--cm-text-onnavy-muted)',
     }}>
       <p>ConcertAndMatches is an independent event discovery site and is not affiliated with any ticket seller. We may earn a commission when you buy tickets through links on this site.</p>
       <p style={{ marginTop: '10px' }}>
@@ -927,9 +990,131 @@ function Footer() {
         <a href="/leagues" className="cm-link-underline" style={linkStyle}>Leagues</a>
         <a href="/teams" className="cm-link-underline" style={linkStyle}>Teams</a>
         <a href="/terms.html" className="cm-link-underline" style={linkStyle}>Terms of Service</a>
-        <a href="/privacy.html" className="cm-link-underline" style={{ color: '#888', textDecoration: 'none' }}>Privacy Policy</a>
+        <a href="/privacy.html" className="cm-link-underline" style={{ color: 'var(--cm-text-onnavy-muted)', textDecoration: 'none' }}>Privacy Policy</a>
       </p>
     </footer>
+  );
+}
+
+// 4-icon trust strip shown between the results grid and the closing CTA
+// banner — reinforces the site's actual value props (multi-marketplace
+// comparison, live pricing, no purchase risk since we link out to the
+// real seller, human support) in the reference design's icon-row format.
+const FEATURE_STRIP_ITEMS = [
+  { icon: 'shield', title: 'Compare Top Marketplaces', copy: 'See the best available tickets in one place.' },
+  { icon: 'bolt', title: 'Real-Time Availability', copy: 'Up-to-date tickets and pricing.' },
+  { icon: 'ticket', title: '100% Secure & Safe', copy: 'Your tickets. Your peace of mind.' },
+  { icon: 'people', title: 'Fans First Support', copy: 'Real people. Here to help.' },
+];
+
+function FeatureIcon({ icon, size = 20 }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: NAV_ACCENT_LIGHT, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+  switch (icon) {
+    case 'shield':
+      return <svg {...common}><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" /></svg>;
+    case 'bolt':
+      return <svg {...common}><path d="M13 3 5 14h6l-1 7 8-11h-6l1-7z" /></svg>;
+    case 'ticket':
+      return <svg {...common}><path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.5a1.8 1.8 0 0 0 0 3.6V15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.9a1.8 1.8 0 0 0 0-3.6V8z" /><line x1="14" y1="7" x2="14" y2="17" strokeDasharray="2 2" /></svg>;
+    case 'people':
+      return <svg {...common}><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /><circle cx="17" cy="9" r="2.4" /><path d="M15.5 14.2c2.4.4 4.5 2.5 4.5 5.8" /></svg>;
+    default:
+      return null;
+  }
+}
+
+function FeatureStrip() {
+  return (
+    <div style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '0',
+      backgroundColor: NAVY_PANEL,
+      border: `1px solid ${NAVY_BORDER}`,
+      borderRadius: '16px',
+      margin: '24px 0',
+      overflow: 'hidden',
+    }}>
+      {FEATURE_STRIP_ITEMS.map((item, i) => (
+        <div
+          key={item.title}
+          style={{
+            flex: '1 1 220px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '18px 20px',
+            borderLeft: i === 0 ? 'none' : `1px solid ${NAVY_BORDER}`,
+          }}>
+          <span style={{
+            flexShrink: 0,
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: NAVY_PANEL_LIGHT,
+          }}>
+            <FeatureIcon icon={item.icon} />
+          </span>
+          <span>
+            <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#fff' }}>{item.title}</div>
+            <div style={{ fontSize: '12px', color: 'var(--cm-text-onnavy-muted)', marginTop: '2px' }}>{item.copy}</div>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Closing CTA banner — purple-to-blue gradient with a couple of soft glow
+// blobs standing in for the reference design's photographic/particle
+// background (no licensed photo asset to use here, so this stays a pure-
+// CSS effect rather than pulling in a stock image). onExplore resets any
+// active search/category filters and scrolls back up to the results grid.
+function CtaBanner({ onExplore }) {
+  return (
+    <div style={{
+      position: 'relative',
+      overflow: 'hidden',
+      borderRadius: '20px',
+      margin: '24px 0',
+      padding: '40px 28px',
+      background: 'linear-gradient(120deg, #241a5c 0%, #3a2496 45%, #1f5fc4 100%)',
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '20px',
+    }}>
+      <div aria-hidden="true" style={{ position: 'absolute', top: '-60px', right: '10%', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(109,180,255,0.35)', filter: 'blur(50px)' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', bottom: '-70px', left: '5%', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(142,45,226,0.35)', filter: 'blur(55px)' }} />
+      <div style={{ position: 'relative', maxWidth: '520px' }}>
+        <h3 style={{ fontSize: 'clamp(22px, 3.4vw, 30px)', color: '#fff', margin: 0, lineHeight: 1.2 }}>
+          Your Next Unforgettable <span style={{ color: NAV_ACCENT_LIGHT }}>Event Awaits</span>
+        </h3>
+        <p style={{ color: '#d9e3f5', marginTop: '8px', fontSize: '14px' }}>More events. More moments. A brighter you.</p>
+      </div>
+      <button
+        type="button"
+        className="cm-btn"
+        onClick={onExplore}
+        style={{
+          position: 'relative',
+          padding: '14px 26px',
+          borderRadius: '999px',
+          border: 'none',
+          backgroundColor: NAV_ACCENT_COLOR,
+          color: '#fff',
+          fontWeight: 'bold',
+          fontSize: '15px',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}>
+        Explore Events →
+      </button>
+    </div>
   );
 }
 
@@ -962,9 +1147,11 @@ export default function App() {
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [activeSearch, setActiveSearch] = useState(initialQuery);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
-  // Accounts aren't built yet — clicking "Sign In" just lets the visitor
-  // know that, rather than pretending a login flow exists.
-  const [showSignInNotice, setShowSignInNotice] = useState(false);
+  // Accounts (and Favorites, which depends on accounts) aren't built yet —
+  // clicking Sign In/Sign Up/Favorites in the nav just lets the visitor
+  // know that, rather than pretending those flows exist. One shared
+  // message string drives the same modal for all three entry points.
+  const [authNoticeMessage, setAuthNoticeMessage] = useState('');
 
   // Autocomplete dropdown for the search box (spec: search/autocomplete
   // engine). Debounced so we don't hit the API on every keystroke; the
@@ -1425,12 +1612,12 @@ export default function App() {
     const priceTiers = getTicketPriceTiers(selectedEvent);
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        {/* Same dark-red band treatment as the homepage hero (#8b0000), so
+        {/* Same dark-navy band treatment as the redesigned homepage hero, so
             the event page's top zone matches it instead of sitting on the
             plain page background. The nav keeps its own white card on top
             of the band (same pattern as the homepage nav) so the brand
             logo/text stay fully readable regardless of the band color. */}
-        <div style={{ background: '#8b0000', borderRadius: '28px', padding: '20px', marginBottom: '24px' }}>
+        <div style={{ background: NAVY_BG, borderRadius: '28px', padding: '20px', marginBottom: '24px' }}>
           <nav style={{
             display: 'flex',
             gap: '16px',
@@ -1652,160 +1839,122 @@ export default function App() {
   // HOME PAGE
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      {/* Hero band: wraps the nav, headline, search bar and category tiles in
-          their own backdrop so this whole top-of-page zone reads as one
-          deliberate section, distinct from the plain page background the
-          results grid sits on below. Color is dark red (#8b0000, CSS's own
-          "darkred") — user asked to move this from the previous bold/light
-          red (#e60000) to a darker red — rather than the site's brand
-          purple/gradient. The white nav/search-bar/tile cards keep their
-          own backgrounds and sit on top of it unchanged; the heading/
-          subheading below get an explicit light text color since they sit
-          directly on this dark background. */}
+      {/* Full dark-navy hero band: wraps the nav, headline and search bar,
+          matching the reference design's continuous dark background (no
+          separate white nav card floating on top of it, unlike the old
+          red-band layout). Nav links/text are white/light-blue since they
+          sit directly on this background. */}
       <div style={{
-        background: '#8b0000',
+        background: NAVY_BG,
         borderRadius: '28px',
-        padding: '20px 20px 28px',
-        marginBottom: '24px',
+        padding: '20px 24px 32px',
+        marginBottom: '20px',
       }}>
-      <nav style={{
-        marginBottom: '24px',
-        display: 'flex',
-        gap: '16px',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        padding: '14px 18px',
-        backgroundColor: '#fff',
-        borderRadius: '16px',
-        boxShadow: 'var(--cm-shadow-sm)',
-        border: '1px solid var(--cm-border)',
-      }}>
-        <BrandLink onClick={() => navigate('/')} />
-        <div aria-label="Quick category filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-          <span
-            role="link"
-            tabIndex={0}
-            className="cm-chip"
-            onClick={() => {
-              setActiveCategoryId(null);
-              document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
+        <nav style={{
+          marginBottom: '32px',
+          display: 'flex',
+          gap: '20px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          color: '#fff',
+        }}>
+          <BrandLink onClick={() => navigate('/')} />
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '26px', alignItems: 'center', fontSize: '14.5px', fontWeight: 600 }}>
+            <span
+              role="link"
+              tabIndex={0}
+              className="cm-link-underline"
+              onClick={() => {
                 setActiveCategoryId(null);
                 document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            style={{
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              padding: '7px 14px',
-              borderRadius: '999px',
-              backgroundColor: activeCategoryId === null ? NAV_ACCENT_COLOR : '#f5f2f9',
-              color: activeCategoryId === null ? '#fff' : '#1a0733',
-            }}>
-            All
-          </span>
-          {EVENT_CATEGORIES.map((cat) => {
-            const isActive = activeCategoryId === cat.id;
-            return (
-              <span
-                key={cat.id}
-                role="link"
-                tabIndex={0}
-                className="cm-chip"
-                onClick={() => {
-                  setActiveCategoryId(isActive ? null : cat.id);
-                  document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setActiveCategoryId(isActive ? null : cat.id);
-                    document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                style={{
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontSize: '13px',
-                  padding: '7px 14px',
-                  borderRadius: '999px',
-                  backgroundColor: isActive ? NAV_ACCENT_COLOR : '#f5f2f9',
-                  color: isActive ? '#fff' : '#1a0733',
-                }}>
-                {cat.label}
-              </span>
-            );
-          })}
-        </div>
-        <div style={{ display: 'flex', gap: '18px', alignItems: 'center' }}>
-          <a
-            href="mailto:sepehrirad15@gmail.com"
-            className="cm-link-underline"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }}>
-            <span aria-hidden="true">✉️</span> Contact Us
-          </a>
-          <button
-            type="button"
-            onClick={() => setShowSignInNotice(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              margin: 0,
-              font: 'inherit',
-              fontWeight: 'bold',
-              color: 'inherit',
-              cursor: 'pointer',
-            }}>
-            <span aria-hidden="true">👤</span> Sign In
-          </button>
-        </div>
-      </nav>
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { setActiveCategoryId(null); document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' }); } }}
+              style={{ cursor: 'pointer', color: NAV_ACCENT_LIGHT }}>
+              Events
+            </span>
+            <a href="/venues" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Venues</a>
+            <a href="/cities" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Cities</a>
+            <span
+              role="link"
+              tabIndex={0}
+              className="cm-link-underline"
+              onClick={() => document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' })}
+              onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' }); }}
+              style={{ cursor: 'pointer', color: '#fff' }}>
+              About
+            </span>
+            <a href="mailto:sepehrirad15@gmail.com" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Help</a>
+          </div>
 
-      {showSignInNotice && (
-        <div
-          role="alertdialog"
-          aria-label="Sign in"
-          onClick={() => setShowSignInNotice(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-          }}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#fff',
-              color: '#222',
-              padding: '28px',
-              borderRadius: '18px',
-              maxWidth: '320px',
-              textAlign: 'center',
-              boxShadow: 'var(--cm-shadow-lg)',
-            }}>
-            <p style={{ marginBottom: '18px' }}>Accounts and sign-in are coming soon — check back shortly!</p>
+          <div style={{ display: 'flex', gap: '18px', alignItems: 'center', fontSize: '14px', fontWeight: 600 }}>
+            <button
+              type="button"
+              onClick={() => setAuthNoticeMessage('Favorites are coming soon — check back shortly!')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#fff', cursor: 'pointer' }}>
+              <span aria-hidden="true">♡</span> Favorites
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthNoticeMessage('Accounts and sign-in are coming soon — check back shortly!')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#fff', cursor: 'pointer' }}>
+              <span aria-hidden="true">👤</span> Sign In
+            </button>
             <button
               type="button"
               className="cm-btn"
-              onClick={() => setShowSignInNotice(false)}
-              style={{ padding: '10px 24px', cursor: 'pointer', border: 'none', borderRadius: '999px', backgroundColor: '#8b0000', color: 'white', fontWeight: 'bold' }}>
-              Got it
+              onClick={() => setAuthNoticeMessage('Accounts and sign-up are coming soon — check back shortly!')}
+              style={{
+                padding: '9px 20px',
+                cursor: 'pointer',
+                border: 'none',
+                borderRadius: '999px',
+                backgroundColor: NAV_ACCENT_COLOR,
+                color: '#fff',
+                fontWeight: 700,
+              }}>
+              Sign Up
             </button>
           </div>
-        </div>
-      )}
+        </nav>
+
+        {authNoticeMessage && (
+          <div
+            role="alertdialog"
+            aria-label="Notice"
+            onClick={() => setAuthNoticeMessage('')}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+            }}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: '#fff',
+                color: '#222',
+                padding: '28px',
+                borderRadius: '18px',
+                maxWidth: '320px',
+                textAlign: 'center',
+                boxShadow: 'var(--cm-shadow-lg)',
+              }}>
+              <p style={{ marginBottom: '18px' }}>{authNoticeMessage}</p>
+              <button
+                type="button"
+                className="cm-btn"
+                onClick={() => setAuthNoticeMessage('')}
+                style={{ padding: '10px 24px', cursor: 'pointer', border: 'none', borderRadius: '999px', backgroundColor: NAV_ACCENT_COLOR, color: 'white', fontWeight: 'bold' }}>
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
 
       <h1 style={{
         textAlign: 'center',
@@ -1813,27 +1962,21 @@ export default function App() {
         fontWeight: 800,
         letterSpacing: '-0.01em',
         lineHeight: 1.15,
-        margin: '28px 0 14px',
-        // The page's default text color (body's dark purple, App.css) reads
-        // fine on the light page background below, but this heading sits
-        // directly on the hero band's near-black background (#0a0101, no
-        // white card behind it) — dark-on-near-black would be unreadable,
-        // so it needs its own light color here.
+        margin: '28px 0 10px',
         color: '#fff',
       }}>
-        Be The First To Buy Your Ticket
+        Compare Leading Marketplaces and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available Tickets</span>
       </h1>
 
       <p style={{
         textAlign: 'center',
-        fontSize: 'clamp(17px, 2.6vw, 22px)',
+        fontSize: 'clamp(14px, 2vw, 17px)',
         fontWeight: 600,
-        // Was '#000' — fine against the old light gradient, unreadable
-        // against the new near-black hero band background (see h1 above).
-        color: '#f0f0f0',
-        margin: '0 0 20px',
+        letterSpacing: '0.02em',
+        color: 'var(--cm-text-onnavy-muted)',
+        margin: '0 0 26px',
       }}>
-        Compare Leading Ticket Marketplaces and Find the Best Available Ticket.
+        Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;•&nbsp; Comedy
       </p>
 
       <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'stretch', gap: '10px', marginTop: 0, marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -1847,8 +1990,8 @@ export default function App() {
             flexWrap: 'wrap',
             backgroundColor: '#fff',
             border: '1px solid var(--cm-border)',
-            borderRadius: '16px',
-            boxShadow: 'var(--cm-shadow-sm)',
+            borderRadius: '999px',
+            boxShadow: 'var(--cm-shadow-md)',
             overflow: 'hidden',
           }}>
           {/* LOCATION segment */}
@@ -1858,7 +2001,7 @@ export default function App() {
             gap: '10px',
             flex: '1',
             minWidth: '160px',
-            padding: '10px 18px',
+            padding: '10px 20px',
             borderRight: '1px solid var(--cm-border)',
           }}>
             <span style={{ fontSize: '20px' }} aria-hidden="true">📍</span>
@@ -1869,7 +2012,7 @@ export default function App() {
               <input
                 id="cm-search-location"
                 type="text"
-                placeholder="City or Zip Code"
+                placeholder="Near you"
                 value={draftLocation}
                 onChange={(e) => setDraftLocation(e.target.value)}
                 style={{
@@ -1946,7 +2089,7 @@ export default function App() {
               <input
                 id="cm-search-query"
                 type="text"
-                placeholder="Artist, Event or Venue"
+                placeholder="Search events, artists, teams, shows or cities..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
@@ -2035,24 +2178,31 @@ export default function App() {
       </form>
 
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
-      </div>
 
-      {/* Background is the exact dark-red swatch the user provided
-          (#8b0000, same value already used for the hero band and the
-          event-page nav band) — a saturated color, not a light tint, so
-          the heading/result-count/location-hint text that sits directly on
-          it (event cards below have their own white background and are
-          unaffected) keeps the explicit light color already set for
-          contrast. */}
-      <div id="featured-events" style={{ marginTop: '20px', backgroundColor: '#8b0000', borderRadius: '28px', padding: '20px' }}>
-        <h3 style={{ fontSize: '26px', color: '#fff' }}>
-          {activeCategoryId
-            ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
-            : 'All Events'}
-        </h3>
+      {/* Popular Events section — same continuous dark-navy background as
+          the hero above it (no seam between them, matching the reference
+          design's single-background page instead of the old two separate
+          rounded "islands"). Event cards keep their own white background
+          and are unaffected. */}
+      <div id="featured-events" style={{ marginTop: '8px', paddingTop: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+          <h3 style={{ fontSize: '24px', color: '#fff', margin: 0 }}>
+            {activeCategoryId
+              ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
+              : 'Popular Events Near You'}
+          </h3>
+          {(activeSearch || activeCategoryId || activeFilterCount > 0) && (
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: NAV_ACCENT_LIGHT, fontWeight: 700, fontSize: '13.5px', padding: 0 }}>
+              View All Events →
+            </button>
+          )}
+        </div>
 
         {(activeSearch || activeCategoryId || activeFilterCount > 0) && !eventsLoading && !eventsError && (
-          <p style={{ color: '#e0e9ff' }}>
+          <p style={{ color: 'var(--cm-text-onnavy-muted)' }}>
             {eventsTotal} result{eventsTotal === 1 ? '' : 's'}
             {activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}
             {activeSearch ? ` for "${activeSearch}"` : ''}
@@ -2061,22 +2211,22 @@ export default function App() {
         )}
 
         {!discoverLocation && (locationStatus === 'denied' || locationStatus === 'unavailable') && (
-          <p style={{ color: '#e0e9ff', fontSize: '13px' }}>
+          <p style={{ color: 'var(--cm-text-onnavy-muted)', fontSize: '13px' }}>
             Showing events by date. Enable location in your browser to see events near you first.
           </p>
         )}
 
-        {eventsLoading && <p style={{ color: '#fff' }}>Loading events...</p>}
-        {!eventsLoading && eventsError && <p style={{ color: '#fff' }}>{eventsError}</p>}
+        {eventsLoading && <p style={{ color: '#fff', marginTop: '12px' }}>Loading events...</p>}
+        {!eventsLoading && eventsError && <p style={{ color: '#fff', marginTop: '12px' }}>{eventsError}</p>}
         {!eventsLoading && !eventsError && events.length === 0 && (
-          <p style={{ color: '#fff' }}>
+          <p style={{ color: '#fff', marginTop: '12px' }}>
             {activeSearch || activeCategoryId || activeFilterCount > 0
               ? `No events found${activeCategoryId ? ` in ${EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label}` : ''}${activeSearch ? ` for "${activeSearch}"` : ''}${activeFilterCount > 0 ? ' with the selected filters' : ''}. Try adjusting your filters.`
               : 'No events available right now. Check back soon!'}
           </p>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '18px' }}>
           {events.map((event) => (
             <EventCard key={event.id} event={event} onSelect={handleSelectEvent} />
           ))}
@@ -2087,13 +2237,31 @@ export default function App() {
             <button
               onClick={handleLoadMore}
               disabled={eventsLoadingMore}
-              style={{ padding: '10px 24px', cursor: eventsLoadingMore ? 'default' : 'pointer' }}>
+              className="cm-btn"
+              style={{
+                padding: '10px 24px',
+                cursor: eventsLoadingMore ? 'default' : 'pointer',
+                border: `1px solid ${NAVY_BORDER}`,
+                borderRadius: '999px',
+                backgroundColor: NAVY_PANEL,
+                color: '#fff',
+              }}>
               {eventsLoadingMore ? 'Loading...' : `Load More (${events.length} of ${eventsTotal})`}
             </button>
           </div>
         )}
+      </div>
 
-        <Footer />
+      <FeatureStrip />
+
+      <CtaBanner
+        onExplore={() => {
+          handleClearSearch();
+          document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
+
+      <Footer />
       </div>
     </div>
   );
