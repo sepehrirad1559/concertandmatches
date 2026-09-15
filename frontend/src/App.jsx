@@ -686,12 +686,16 @@ const EVENT_CATEGORIES = [
 // bright blue against the new dark-navy page background, matching the
 // reference design. --cm-accent-blue in App.css is the same value; kept
 // as a JS constant too since most of the homepage is still styled inline.
-const NAV_ACCENT_COLOR = '#2f7fe8';
-const NAV_ACCENT_LIGHT = '#6db4ff';
-const NAVY_BG = '#0a1628';
-const NAVY_PANEL = '#10213a';
-const NAVY_PANEL_LIGHT = '#16304f';
-const NAVY_BORDER = '#223a5c';
+// Pixel-sampled directly from the reference mockup image (patch-mode most-
+// common-color sampling in small regions, to avoid anti-aliasing/glyph
+// interference) rather than approximated by eye, per the "pixel by pixel /
+// every color" request.
+const NAV_ACCENT_COLOR = '#008efe';
+const NAV_ACCENT_LIGHT = '#4fb8ff';
+const NAVY_BG = '#001633';
+const NAVY_PANEL = '#01204a';
+const NAVY_PANEL_LIGHT = '#0a2a5c';
+const NAVY_BORDER = '#0264ad';
 
 // Small line-style icon set for the category cards below — plain inline
 // SVG (no icon-font dependency) so each renders crisply inside the blue
@@ -919,8 +923,8 @@ function Logo({ size = 36 }) {
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
         <linearGradient id="cmLogoGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#1f5fc4" />
-          <stop offset="1" stopColor="#5aa9ff" />
+          <stop stopColor="#008efe" />
+          <stop offset="1" stopColor="#4fb8ff" />
         </linearGradient>
       </defs>
       <rect width="48" height="48" rx="12" fill="url(#cmLogoGrad)" />
@@ -928,8 +932,8 @@ function Logo({ size = 36 }) {
         d="M10 18a3 3 0 0 1 3-3h22a3 3 0 0 1 3 3v2a3 3 0 0 0 0 6v2a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3v-2a3 3 0 0 0 0-6v-2z"
         fill="white"
       />
-      <line x1="24" y1="16" x2="24" y2="32" stroke="#0a1628" strokeWidth="2" strokeDasharray="3 3" />
-      <path d="M31 20.5l1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.1-2.1 1.1.4-2.4-1.8-1.7 2.4-.3z" fill="#1f5fc4" />
+      <line x1="24" y1="16" x2="24" y2="32" stroke="#001633" strokeWidth="2" strokeDasharray="3 3" />
+      <path d="M31 20.5l1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.1-2.1 1.1.4-2.4-1.8-1.7 2.4-.3z" fill="#008efe" />
     </svg>
   );
 }
@@ -1091,7 +1095,7 @@ function CtaBanner({ onExplore }) {
       justifyContent: 'space-between',
       gap: '20px',
     }}>
-      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(100deg, #241a5c 0%, rgba(36,26,92,0.85) 30%, rgba(31,95,196,0.35) 65%, rgba(31,95,196,0.15) 100%)' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(100deg, #001633 0%, rgba(0,22,51,0.88) 32%, rgba(1,32,74,0.4) 65%, rgba(1,32,74,0.1) 100%)' }} />
       <div style={{ position: 'relative', maxWidth: '520px' }}>
         <h3 style={{ fontSize: 'clamp(22px, 3.4vw, 30px)', color: '#fff', margin: 0, lineHeight: 1.2 }}>
           Your Next Unforgettable <span style={{ color: NAV_ACCENT_LIGHT }}>Event Awaits</span>

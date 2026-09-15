@@ -42,12 +42,12 @@ html {
      (AdminPage.jsx) and anything else still reading those older tokens is
      completely unaffected — only App.jsx's homepage/event-detail views
      adopt these new ones. */
-  --cm-navy-bg: #0a1628;
-  --cm-navy-panel: #10213a;
-  --cm-navy-panel-light: #16304f;
-  --cm-navy-border: #223a5c;
-  --cm-accent-blue: #2f7fe8;
-  --cm-accent-blue-light: #6db4ff;
+  --cm-navy-bg: #001633;
+  --cm-navy-panel: #01204a;
+  --cm-navy-panel-light: #0a2a5c;
+  --cm-navy-border: #0264ad;
+  --cm-accent-blue: #008efe;
+  --cm-accent-blue-light: #4fb8ff;
   --cm-text-onnavy: #f2f6fc;
   --cm-text-onnavy-muted: #9fb3cf;
 }
