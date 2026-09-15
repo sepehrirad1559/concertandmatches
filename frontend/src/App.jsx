@@ -1972,46 +1972,82 @@ export default function App() {
           </div>
         )}
 
-      {/* Two-column hero, matching the reference design: text+search on the
-          left, the same concert-crowd photo from the reference mockup
-          bleeding off the right edge (cropped from the provided design —
-          see public/hero-crowd.jpg — with a left-edge fade into the navy
-          background so it blends in exactly like the reference). Stacks to
-          one column (photo panel drops below, still visible) on narrow
-          screens via flexWrap. */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'center' }}>
-      <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-      <h1 style={{
-        textAlign: 'left',
-        fontSize: 'clamp(28px, 4.2vw, 42px)',
-        fontWeight: 800,
-        letterSpacing: '-0.01em',
-        lineHeight: 1.15,
-        margin: '20px 0 10px',
-        color: '#fff',
-      }}>
-        Compare Leading Marketplaces and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available Tickets</span>
-      </h1>
+      {/* Single full-bleed photo banner, matching the reference exactly:
+          the concert-crowd photo spans the FULL width behind the headline
+          (not confined to a separate rounded box on the right) — a dark
+          navy-to-photo gradient keeps the text on the left readable while
+          the crowd is fully visible on the right, with the "Live Brings Us
+          Together" script sitting on the photo at bottom-right. The search
+          bar lives in its own plain-navy row below the banner, not
+          overlapping the photo, exactly as in the reference. */}
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: '20px 20px 0 0',
+          minHeight: '210px',
+          padding: '22px 28px 26px',
+          backgroundImage: 'url(/hero-crowd.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'right center',
+        }}>
+        <div aria-hidden="true" style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(90deg, ${NAVY_BG} 0%, ${NAVY_BG} 38%, rgba(0,22,51,0.55) 60%, rgba(0,22,51,0.15) 80%, rgba(0,22,51,0) 100%)`,
+        }} />
+        <h1 style={{
+          position: 'relative',
+          textAlign: 'left',
+          fontSize: 'clamp(26px, 3.6vw, 38px)',
+          fontWeight: 800,
+          letterSpacing: '-0.01em',
+          lineHeight: 1.15,
+          margin: '4px 0 8px',
+          color: '#fff',
+          maxWidth: '620px',
+        }}>
+          Compare Leading Marketplaces and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available Tickets</span>
+        </h1>
 
-      <p style={{
-        textAlign: 'left',
-        fontSize: 'clamp(14px, 2vw, 17px)',
-        fontWeight: 600,
-        letterSpacing: '0.02em',
-        color: 'var(--cm-text-onnavy-muted)',
-        margin: '0 0 26px',
-      }}>
-        Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;•&nbsp; Comedy
-      </p>
+        <p style={{
+          position: 'relative',
+          textAlign: 'left',
+          fontSize: 'clamp(13px, 1.6vw, 15px)',
+          fontWeight: 600,
+          letterSpacing: '0.02em',
+          color: 'var(--cm-text-onnavy-muted)',
+          margin: 0,
+        }}>
+          Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;•&nbsp; Comedy
+        </p>
 
-      {/* Search pill restructured to match the reference exactly: search
-          field, a hairline divider, the location field, then the Search
-          button flush against the right edge of the same white pill — no
-          stacked LOCATION/SEARCH captions and no separate Dates segment
-          (Dates is still available; its trigger just isn't part of this
-          pill's visual in the reference, so it now lives as a compact
-          icon-only button appended after Location). */}
-      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'stretch', marginTop: 0, marginBottom: '16px' }}>
+        <span style={{
+          position: 'absolute',
+          right: '24px',
+          bottom: '18px',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontStyle: 'italic',
+          fontWeight: 700,
+          fontSize: '19px',
+          lineHeight: 1.15,
+          color: 'rgba(255,255,255,0.92)',
+          textAlign: 'right',
+          textShadow: '0 2px 10px rgba(0,0,0,0.45)',
+        }}>
+          Live Brings Us<br />Together
+        </span>
+      </div>
+
+      {/* Search bar row — plain navy, sits directly below the photo banner
+          with no gap, matching the reference. Search pill: search field,
+          hairline divider, location field, then the Search button flush
+          against the right edge of the same white pill — no stacked
+          LOCATION/SEARCH captions and no separate Dates segment (Dates is
+          still available; its trigger lives as a compact icon-only button
+          appended after Location instead of a labeled third segment). */}
+      <div style={{ backgroundColor: NAVY_BG, borderRadius: '0 0 20px 20px', padding: '18px 28px 24px' }}>
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'stretch', margin: 0 }}>
         <div
           className="cm-card"
           style={{
@@ -2198,47 +2234,6 @@ export default function App() {
           </button>
         )}
       </form>
-      </div>
-
-      <div
-        aria-hidden="true"
-        style={{
-          flex: '1 1 320px',
-          minWidth: '260px',
-          alignSelf: 'stretch',
-          minHeight: '280px',
-          borderRadius: '24px',
-          position: 'relative',
-          overflow: 'hidden',
-          backgroundImage: 'url(/hero-crowd.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}>
-        {/* Left-edge fade into the hero's navy background, same effect as
-            the reference design's photo blending into the dark panel
-            beside it, plus a light bottom-left vignette so any UI placed
-            near this panel's edge stays readable. */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: `linear-gradient(90deg, ${NAVY_BG} 0%, rgba(10,22,40,0) 30%), linear-gradient(0deg, rgba(10,22,40,0.35) 0%, rgba(10,22,40,0) 40%)`,
-        }} />
-        <span style={{
-          position: 'absolute',
-          right: '18px',
-          bottom: '16px',
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          fontStyle: 'italic',
-          fontWeight: 700,
-          fontSize: '20px',
-          lineHeight: 1.15,
-          color: 'rgba(255,255,255,0.92)',
-          textAlign: 'right',
-          textShadow: '0 2px 10px rgba(0,0,0,0.45)',
-        }}>
-          Live Brings Us<br />Together
-        </span>
-      </div>
       </div>
 
       <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
