@@ -1,0 +1,228 @@
+// Utilities for matching "the same real-world event" across data sources
+// (Ticketmaster, SeatGeek) so the events API can merge duplicate listings
+// into a single card with one offer per source — the actual comparison
+// layer — instead of showing the same concert twice.
+
+import { normalizeState } from './states.js';
+
+// Low-signal words stripped before comparing titles/artist names. Removing
+// these means "Beyoncé World Tour" and "Beyoncé" score as a strong match
+// instead of being dragged down by words one source includes and the other
+// doesn't.
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'at', 'in', 'on', 'of', 'presents', 'presented',
+  'tour', 'live', 'world', 'concert', 'featuring', 'feat', 'ft', 'with',
+  'special', 'guest', 'guests', 'tickets', 'tickets!',
+]);
+
+// A few British/American spelling variants that differ between
+// Ticketmaster and SeatGeek venue names ("Theatre" vs "Theater", etc.).
+const WORD_ALIASES = {
+  theatre: 'theater',
+  centre: 'center',
+  amphitheatre: 'amphitheater',
+  // Sports-specific: SeatGeek/Ticketmaster team names are sometimes given
+  // with an abbreviated city and sometimes spelled out, and this differs
+  // by source/team in ways WORD_ALIASES needs to bridge explicitly (no
+  // general abbreviation-expansion logic exists here) — otherwise "LA
+  // Lakers" vs "Los Angeles Lakers" scores as barely-related token sets
+  // despite being the same team. Each maps to a SPACE-SEPARATED expansion
+  // (possibly multiple words) — normalizeTokens below splits these back
+  // out into individual tokens so "la" still overlaps with the separate
+  // "los" and "angeles" tokens the spelled-out side produces.
+  // Deliberately excludes ambiguous short words that are also common
+  // English words in real titles ("no" for New Orleans being the obvious
+  // one — aliasing it would risk "No Doubt" or similar picking up stray
+  // "new orleans" tokens) — the day+city+state prefilter in isSameEvent
+  // makes a false merge unlikely even so, but there's no upside to adding
+  // that risk for one team's abbreviation.
+  la: 'los angeles', ny: 'new york', sf: 'san francisco', gs: 'golden state',
+  dc: 'washington', okc: 'oklahoma city',
+};
+
+// Lowercase, strip accents/punctuation, collapse whitespace, normalize a
+// few spelling variants, and drop stopwords — leaves a token list that's
+// robust to the small wording differences between two APIs describing the
+// same show.
+export function normalizeTokens(text) {
+  if (!text) return [];
+  const cleaned = text
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned) return [];
+
+  return cleaned
+    .split(' ')
+    .filter(Boolean)
+    // WORD_ALIASES values may be multi-word ("la" -> "los angeles") —
+    // flatMap + re-split so an abbreviation expands into the same
+    // individual tokens the spelled-out form would produce, not one fused
+    // token that would never overlap with anything.
+    .flatMap((w) => (WORD_ALIASES[w] || w).split(' '))
+    .filter((w) => !STOPWORDS.has(w));
+}
+
+// Dice coefficient over token sets (2 * overlap / total tokens). Robust to
+// word order and to one string containing extra words the other doesn't.
+// Returns 0..1.
+export function tokenSimilarity(a, b) {
+  const setA = new Set(normalizeTokens(a));
+  const setB = new Set(normalizeTokens(b));
+  if (setA.size === 0 || setB.size === 0) return 0;
+  let overlap = 0;
+  for (const t of setA) if (setB.has(t)) overlap++;
+  return (2 * overlap) / (setA.size + setB.size);
+}
+
+// TicketNetwork's catalog (services/ticketnetwork.js) gives a LaunchDate
+// with no real start time — every TicketNetwork row lands as exactly
+// midnight UTC (see the isMidnightUTC comment further down for the full
+// story). Ticketmaster/SeatGeek, by contrast, store a genuine UTC timestamp
+// converted from the event's real local start time. Every US/Canada
+// timezone sits BEHIND UTC, so converting an evening/night local start time
+// to UTC routinely pushes the UTC calendar day one day LATER than the
+// event's true (local) calendar date — e.g. 8:00 PM CDT on the 16th is
+// 01:00 UTC on the 17th. TicketNetwork's date-only value has no such
+// conversion applied, so it already sits on the TRUE local calendar date —
+// meaning a TicketNetwork row dated "the 16th" and a Ticketmaster row whose
+// UTC timestamp lands on "the 17th" can be the exact same real-world event.
+// (Confirmed in production: "Joe Jordan" at Shank Hall, Milwaukee — TN row
+// 2026-09-16T00:00:00.000Z, Ticketmaster row 2026-09-17T01:00:00.000Z, same
+// show, previously shown as two separate, un-merged listings.)
+function isMidnightUTC(date) {
+  const d = new Date(date);
+  return !Number.isNaN(d.getTime()) &&
+    d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
+    d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+}
+
+// Same calendar day, compared via UTC date components rather than exact
+// timestamps — tolerant of the small start-time/timezone-formatting
+// differences between sources without needing to guess a threshold.
+//
+// Ordinarily this requires an EXACT UTC-day match. But when either side is
+// a midnight-UTC value (see isMidnightUTC above), a 1-day gap is allowed
+// too — that's the exact shape of the TicketNetwork-vs-Ticketmaster gap
+// described above, not a coincidence, so it's safe to treat as "same day"
+// specifically in that case. Checked in both directions (±1, not just +1)
+// since a small number of TicketNetwork rows carry a non-zero timezone
+// offset per services/ticketnetwork.js's LaunchDate comment, and this stays
+// safe either way: isSameEvent still requires an exact city/state match plus
+// a strong title or venue match before treating two rows as the same event.
+export function isSameDay(dateA, dateB) {
+  if (!dateA || !dateB) return false;
+  const a = new Date(dateA);
+  const b = new Date(dateB);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false;
+  const dayA = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate());
+  const dayB = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate());
+  const dayDiff = Math.round((dayA - dayB) / (24 * 60 * 60 * 1000));
+  if (dayDiff === 0) return true;
+  return Math.abs(dayDiff) === 1 && (isMidnightUTC(a) || isMidnightUTC(b));
+}
+
+// isSameDay alone (calendar day only, ignoring time) was the sole date
+// signal isSameEvent used to gate on — fine for concerts, where a venue
+// essentially never hosts two different unrelated shows on the same
+// calendar day, but not fine for sports: a same-day doubleheader (common in
+// MLB) or an afternoon-vs-evening slate at one venue means TWO different,
+// unrelated games can share a venue AND a calendar day. Without also
+// checking how close the actual start TIMES are, those could pass the
+// venue-match branch of isSameEvent (weak title floor + strong venue
+// match) and get wrongly merged into one comparison card — the same class
+// of bug the Sphere/arena regression test guards against for artists,
+// just triggered by date instead of by venue alone.
+//
+// 6 hours tolerates real cross-source formatting slop (a source reporting
+// local start time without full timezone info, gate-open time vs.
+// first-pitch time, etc.) while still being tight enough that a 1pm and a
+// 7pm game the same day at the same park don't get treated as the same
+// game.
+const SAME_TIME_TOLERANCE_MS = 6 * 60 * 60 * 1000;
+
+export function isCloseInTime(dateA, dateB, toleranceMs = SAME_TIME_TOLERANCE_MS) {
+  if (!dateA || !dateB) return false;
+  const a = new Date(dateA);
+  const b = new Date(dateB);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false;
+  return Math.abs(a.getTime() - b.getTime()) <= toleranceMs;
+}
+
+// (isMidnightUTC itself now lives above, next to isSameDay, since both
+// need it — see e.g. the "Western Illinois Leathernecks at Wisconsin
+// Badgers Football" case that originally motivated it: a Ticketmaster/
+// SeatGeek row at 2026-09-12T18:15:00.000Z vs. the matching TicketNetwork
+// row at 2026-09-12T00:00:00.000Z, an 18+ hour gap that blew straight
+// through the 6-hour doubleheader-guard tolerance above. A row with an
+// exact midnight-UTC timestamp doesn't carry a real time signal to compare,
+// so it's treated as "time unknown" rather than "time = 00:00" below.)
+
+// Best-effort "is this the same real-world event" check across two rows
+// from DIFFERENT sources. Two listings are only merged when they're on the
+// same day and in the same city/state (cheap, exact, and reliable), AND
+// the artist/title strings are a strong match on their own OR (a weaker
+// title match backed by a strong venue-name match).
+//
+// Earlier this only required EITHER a venue match OR a title match, which
+// turned out to be unsafe in production: big multi-use venues (arenas,
+// residency venues like Sphere, amphitheaters) host a different act every
+// night, so "same venue, same day" alone merged completely unrelated shows
+// — e.g. a real case where a Ticketmaster "Chance The Rapper" listing got
+// merged with a SeatGeek "Jack Harlow" listing purely because they shared
+// a venue and date. Requiring at least SOME title/artist token overlap
+// even in the venue-match branch (TITLE_FLOOR) closes that hole — real
+// duplicates of the same show still share artist-name tokens even when
+// venue names are formatted differently, but two different artists never
+// do. The tradeoff is this will occasionally miss a genuine duplicate
+// where one source's title is a fully generic string with zero overlap;
+// that's the safer failure mode for a price-comparison feature than
+// showing two different concerts as if they were "offers" for one event.
+const TITLE_STRONG_MATCH = 0.6;
+const VENUE_STRONG_MATCH = 0.5;
+const TITLE_FLOOR_FOR_VENUE_MATCH = 0.15;
+
+export function isSameEvent(a, b) {
+  if (!a || !b) return false;
+  if (a.source === b.source) return false; // only merge ACROSS sources
+  if (!isSameDay(a.date, b.date)) return false;
+  // Skip the doubleheader-guard time check when either side's timestamp has
+  // no real time-of-day component (see isMidnightUTC above) — a source that
+  // only gives a date, not a start time, can't be compared on time at all,
+  // and treating its implicit "00:00" as a real value would wrongly reject
+  // same-day matches against sources that do report a real start time.
+  if (!isMidnightUTC(a.date) && !isMidnightUTC(b.date) && !isCloseInTime(a.date, b.date)) return false;
+  if ((a.city || '').toLowerCase().trim() !== (b.city || '').toLowerCase().trim()) return false;
+  // normalizeState handles sources that disagree on format (e.g.
+  // TicketNetwork's "Wisconsin" vs. Ticketmaster/SeatGeek's "WI") — see
+  // utils/states.js for the full story.
+  if (normalizeState(a.state) !== normalizeState(b.state)) return false;
+
+  const venueScore = tokenSimilarity(a.venue_name, b.venue_name);
+
+  // Two ways to compare "what is this event of/about", and we take
+  // whichever scores higher — they diverge specifically for team sports.
+  // Ticketmaster's artist_name is never populated (concerts or sports —
+  // see ticketmaster.js's storeEvent, which has no artist_name column in
+  // its INSERT at all), so `a.artist_name || a.title` always falls back to
+  // Ticketmaster's title, which for a game is the full matchup ("Dallas
+  // Cowboys at Philadelphia Eagles"). SeatGeek DOES populate artist_name
+  // (performers[0].name), but for a team-sports event that's only ONE
+  // team, not the matchup — so comparing artist-name-preferring fields
+  // ends up comparing a two-team title against a one-team name, a much
+  // weaker signal than comparing SeatGeek's own (also full-matchup) title
+  // against Ticketmaster's. For concerts this rarely matters since
+  // artist_name and title usually describe the same thing there; for
+  // sports it was the main reason same-game listings from both sources
+  // failed to merge into one comparison card.
+  const artistPreferredScore = tokenSimilarity(a.artist_name || a.title, b.artist_name || b.title);
+  const titleOnlyScore = tokenSimilarity(a.title, b.title);
+  const titleScore = Math.max(artistPreferredScore, titleOnlyScore);
+
+  if (titleScore >= TITLE_STRONG_MATCH) return true;
+  if (venueScore >= VENUE_STRONG_MATCH && titleScore >= TITLE_FLOOR_FOR_VENUE_MATCH) return true;
+  return false;
+}

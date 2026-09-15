@@ -1,0 +1,811 @@
+import axios from 'axios';
+import { pool } from '../index.js';
+import { US_STATES } from './ticketmaster.js';
+import { isSameEvent } from '../utils/matching.js';
+
+const SEATGEEK_CLIENT_ID = process.env.SEATGEEK_CLIENT_ID;
+const SEATGEEK_BASE_URL = 'https://api.seatgeek.com/2';
+
+// Same purpose as ticketmaster.js's trackApiError — every low-level fetch
+// below used to swallow API errors and return an empty array, which reads
+// identically to "SeatGeek genuinely has 0 events for this query." This
+// lets syncSeatGeekEvents report whether requests were actually failing
+// instead of just reporting a suspiciously-low totalEvents with no context.
+let recentApiErrors = [];
+function trackApiError(where, error) {
+  recentApiErrors.push({
+    where,
+    status: error.response?.status ?? null,
+    message: error.response?.data?.errors?.[0]?.message || error.message,
+  });
+}
+
+// A handful of Canadian provinces, for the same reason Ticketmaster's sync
+// covers Canada separately (spec: discover events across the US AND
+// Canada). Confirmed against SeatGeek's own docs that `venue.state` is a
+// real filter (https://seatgeek.github.io/), but unlike the US state list
+// above (reused from Ticketmaster's own working code) this hasn't been
+// verified against real Canadian SeatGeek listings — if a code is wrong or
+// SeatGeek simply has no venues there, that state/province just contributes
+// 0 events, same as any other empty page. Not a failure mode worth guarding
+// against further.
+const CANADIAN_PROVINCES = ['ON', 'BC', 'QC', 'AB', 'MB', 'SK', 'NS', 'NB'];
+
+// SeatGeek taxonomy slugs (https://platform.seatgeek.com/ — `taxonomies.name`
+// filter) for the sports leagues the site needs dedicated coverage for.
+// Every fetch function below filtered on `'taxonomies.name': 'concert'`
+// only, so NFL/NBA/NCAA Football events were never even requested from
+// SeatGeek — not "sparse", literally zero. Sports volume per league is much
+// smaller than concerts, so unlike the concert sync these don't need
+// per-state segmentation to get real coverage; a straight national page-
+// through per league is enough.
+// Each entry's `totalWanted` is sized to that league's real schedule volume
+// rather than one shared number: NFL (~272 regular-season games + playoffs)
+// and NBA (~1,230 regular-season games) comfortably fit well under 1,000,
+// but NCAA Football spans well over 100 FBS/FCS programs plus Division
+// II/III — enough scheduled games that a shared 1,000 cap could silently
+// truncate it the way the old flat concert fetch used to (see
+// fetchManySeatGeekEvents's comment above).
+const SPORTS_TAXONOMY_CONFIG = [
+  { taxonomy: 'nfl', totalWanted: 1000 },
+  { taxonomy: 'nba', totalWanted: 1500 },
+  { taxonomy: 'ncaa_football', totalWanted: 4000 },
+];
+const SPORTS_TAXONOMIES = SPORTS_TAXONOMY_CONFIG.map((c) => c.taxonomy);
+
+// Maps a SeatGeek taxonomy slug to the display category used on the site.
+// Extended (spec: "add ALL of the SeatGeek events") well beyond the original
+// three sports leagues — the general region fetch below no longer filters
+// by taxonomy at all, so it now pulls every event type SeatGeek has
+// (theater, comedy, festivals, minor/major league sports beyond
+// NFL/NBA/NCAA Football, etc.), and those need real category labels instead
+// of all silently collapsing into the 'Concert' fallback.
+const CATEGORY_LABELS = {
+  nfl: 'NFL',
+  nba: 'NBA',
+  ncaa_football: 'NCAA Football',
+  ncaa_basketball: 'NCAA Basketball',
+  mlb: 'MLB',
+  nhl: 'NHL',
+  mls: 'MLS',
+  boxing: 'Boxing',
+  mma: 'MMA',
+  golf: 'Golf',
+  tennis: 'Tennis',
+  wwe: 'Wrestling',
+  motor_sports_racing: 'Motorsports',
+  theater: 'Theater',
+  broadway_tickets_national: 'Theater',
+  comedy: 'Comedy',
+  classical: 'Concert',
+  concert: 'Concert',
+  family: 'Family',
+  festivals: 'Festival',
+};
+
+// Derives an event's category from the taxonomies SeatGeek attaches to it
+// (each event carries a `taxonomies: [{ id, name, priority }, ...]` array,
+// most-specific/highest-priority first). Falls back to null so callers can
+// apply their own default rather than this function guessing one.
+function categoryFromTaxonomies(taxonomies) {
+  if (!Array.isArray(taxonomies)) return null;
+  for (const t of taxonomies) {
+    const label = CATEGORY_LABELS[t?.name];
+    if (label) return label;
+  }
+  // Not one of the taxonomies we have a friendly label for — use SeatGeek's
+  // own (highest-priority) taxonomy name rather than silently mislabeling
+  // it as a Concert, title-casing it for display (e.g. 'minor_league_baseball'
+  // -> 'Minor League Baseball').
+  const primary = taxonomies?.[0]?.name;
+  if (!primary) return null;
+  return primary.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+// Fetch a page of concert events from SeatGeek's Platform API.
+// Docs: https://platform.seatgeek.com/
+export const fetchSeatGeekEvents = async (page = 1, perPage = 100) => {
+  try {
+    const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+      params: {
+        client_id: SEATGEEK_CLIENT_ID,
+        'taxonomies.name': 'concert',
+        per_page: perPage,
+        page,
+        sort: 'datetime_local.asc',
+      },
+    });
+
+    return response.data?.events || [];
+  } catch (error) {
+    console.error('SeatGeek API error:', error.response?.data || error.message);
+    trackApiError('fetchSeatGeekEvents', error);
+    return [];
+  }
+};
+
+// Fetch events for one US state or Canadian province via SeatGeek's
+// documented `venue.state` filter (https://seatgeek.github.io/) — the same
+// per-region approach Ticketmaster's fetchAllUSEvents/fetchAllCanadianEvents
+// already use via market codes. Segmenting by region (instead of just
+// pulling more of a globally-sorted feed) means SeatGeek's coverage
+// actually spreads across the country the way Ticketmaster's does, rather
+// than clustering wherever the next few days happen to have the most
+// events — which is what was silently capping cross-source overlap before.
+export const fetchSeatGeekEventsByState = async (stateCode, perState = 100) => {
+  // SeatGeek's Platform API caps per_page at 100 regardless of what's
+  // requested — asking for more than that in a single call silently returns
+  // only the first 100. To actually honor a perState above 100, page through
+  // in chunks of 100 (same pattern as fetchManySeatGeekEvents below) rather
+  // than relying on a single oversized request that the API would just cap.
+  const PAGE_SIZE = 100;
+  const events = [];
+  const totalPages = Math.ceil(perState / PAGE_SIZE);
+
+  for (let page = 1; page <= totalPages; page++) {
+    try {
+      const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+        params: {
+          client_id: SEATGEEK_CLIENT_ID,
+          'taxonomies.name': 'concert',
+          'venue.state': stateCode,
+          per_page: Math.min(PAGE_SIZE, perState - events.length),
+          page,
+          sort: 'datetime_local.asc',
+        },
+      });
+      const pageEvents = response.data?.events || [];
+      events.push(...pageEvents);
+      // Fewer than a full page back means this state/province is out of
+      // events — no point requesting further pages for it.
+      if (pageEvents.length < PAGE_SIZE) break;
+    } catch (error) {
+      console.error(`SeatGeek API error (venue.state=${stateCode}, page=${page}):`, error.response?.data || error.message);
+      trackApiError('fetchSeatGeekEventsByState', error);
+      break;
+    }
+    // Politeness delay between pages of the SAME state — separate from (and
+    // shorter than) the between-state delay in fetchSeatGeekEventsByRegion.
+    if (page < totalPages) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+
+  return events;
+};
+
+// Same per-region pagination as fetchSeatGeekEventsByState, but with NO
+// `taxonomies.name` filter — i.e. every event type SeatGeek has, not just
+// concerts. Spec: "add ALL of the SeatGeek events" — the concert-only
+// region fetch below (and the three-league sports-only fetch further down)
+// each deliberately excluded everything outside their one taxonomy, which
+// meant theater, comedy, festivals, and every sport beyond
+// NFL/NBA/NCAA Football were never even requested. This is the actual
+// "get everything" fetch; the older, narrower ones are left in place below
+// since storeEvent upserts on external_id (any overlap just updates the
+// same row) and they're a reasonable fallback if this heavier one partially
+// fails.
+export const fetchAllSeatGeekEventsByState = async (stateCode, perState = 2000) => {
+  const PAGE_SIZE = 100;
+  const events = [];
+  const totalPages = Math.ceil(perState / PAGE_SIZE);
+
+  for (let page = 1; page <= totalPages; page++) {
+    try {
+      const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+        params: {
+          client_id: SEATGEEK_CLIENT_ID,
+          'venue.state': stateCode,
+          per_page: Math.min(PAGE_SIZE, perState - events.length),
+          page,
+          sort: 'datetime_local.asc',
+        },
+      });
+      const pageEvents = response.data?.events || [];
+      events.push(...pageEvents);
+      if (pageEvents.length < PAGE_SIZE) break;
+    } catch (error) {
+      console.error(`SeatGeek API error (all-types, venue.state=${stateCode}, page=${page}):`, error.response?.data || error.message);
+      trackApiError('fetchAllSeatGeekEventsByState', error);
+      break;
+    }
+    if (page < totalPages) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+
+  return events;
+};
+
+export const fetchAllSeatGeekEventsByRegion = async (perState = 2000) => {
+  const events = [];
+  const regions = [...US_STATES, ...CANADIAN_PROVINCES];
+
+  for (const stateCode of regions) {
+    console.log(`🌎 Fetching ALL SeatGeek events for ${stateCode}...`);
+    const stateEvents = await fetchAllSeatGeekEventsByState(stateCode, perState);
+    events.push(...stateEvents);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  console.log(`✅ Total SeatGeek events fetched across ${regions.length} regions (all types): ${events.length}`);
+  return events;
+};
+
+// Loops the same US state list Ticketmaster's sync uses, plus a handful of
+// Canadian provinces, pulling up to `perState` events from each. This is
+// now the primary strategy syncSeatGeekEvents uses (see below) — it
+// directly targets the same geographic footprint Ticketmaster covers,
+// rather than relying on a single global feed and hoping enough volume
+// happens to land in the same places.
+export const fetchSeatGeekEventsByRegion = async (perState = 300) => {
+  const events = [];
+  const regions = [...US_STATES, ...CANADIAN_PROVINCES];
+
+  for (const stateCode of regions) {
+    console.log(`📍 Fetching SeatGeek events for ${stateCode}...`);
+    const stateEvents = await fetchSeatGeekEventsByState(stateCode, perState);
+    events.push(...stateEvents);
+    // Politeness delay between requests, same rationale as the existing
+    // page-based fetch below.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  console.log(`✅ Total SeatGeek events fetched across ${regions.length} regions: ${events.length}`);
+  return events;
+};
+
+// Fetch multiple pages up to a total event count. Kept as a fallback/simpler
+// path (e.g. for callers that don't need regional segmentation) — the
+// primary sync now uses fetchSeatGeekEventsByRegion above instead, since a
+// low total here (originally 300) meant SeatGeek's coverage was a tiny,
+// essentially random slice of the calendar next to Ticketmaster's ~2,800-
+// event spread across 28 US/Canada markets, and even raising the total
+// alone doesn't fix the lack of geographic spread — see that function's
+// comment for the full story on why region-based fetching is the better fix.
+export const fetchManySeatGeekEvents = async (totalWanted = 3000) => {
+  const perPage = 100;
+  const pages = Math.ceil(totalWanted / perPage);
+  const events = [];
+
+  for (let page = 1; page <= pages; page++) {
+    console.log(`📍 Fetching SeatGeek page ${page}...`);
+    const pageEvents = await fetchSeatGeekEvents(page, perPage);
+    if (pageEvents.length === 0) break;
+    events.push(...pageEvents);
+    // Rate limiting - be polite between requests
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  console.log(`✅ Total SeatGeek events fetched: ${events.length}`);
+  return events;
+};
+
+// Pages through SeatGeek's /events endpoint filtered to one taxonomy
+// (e.g. 'nfl'), nationally — no per-state segmentation, since league
+// schedules are small enough that a straight page-through already gets
+// full coverage (unlike concerts, which needed fetchSeatGeekEventsByRegion
+// to avoid a random slice of the calendar). Capped at 100/page per
+// SeatGeek's API limit, same as fetchSeatGeekEventsByState above.
+export const fetchSeatGeekEventsByTaxonomy = async (taxonomyName, totalWanted = 1000) => {
+  const PAGE_SIZE = 100;
+  const events = [];
+  const totalPages = Math.ceil(totalWanted / PAGE_SIZE);
+
+  for (let page = 1; page <= totalPages; page++) {
+    try {
+      const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+        params: {
+          client_id: SEATGEEK_CLIENT_ID,
+          'taxonomies.name': taxonomyName,
+          per_page: PAGE_SIZE,
+          page,
+          sort: 'datetime_local.asc',
+        },
+      });
+      const pageEvents = response.data?.events || [];
+      events.push(...pageEvents);
+      if (pageEvents.length < PAGE_SIZE) break;
+    } catch (error) {
+      console.error(`SeatGeek API error (taxonomies.name=${taxonomyName}, page=${page}):`, error.response?.data || error.message);
+      trackApiError('fetchSeatGeekEventsByTaxonomy', error);
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  return events;
+};
+
+// Fetches every configured sports league (see SPORTS_TAXONOMY_CONFIG) so
+// NFL/NBA/NCAA Football get dedicated coverage from SeatGeek, the same way
+// fetchSeatGeekEventsByRegion gives concerts dedicated regional coverage.
+export const fetchSeatGeekSportsEvents = async () => {
+  const events = [];
+  for (const { taxonomy, totalWanted } of SPORTS_TAXONOMY_CONFIG) {
+    console.log(`🏈 Fetching SeatGeek ${taxonomy} events (up to ${totalWanted})...`);
+    const taxEvents = await fetchSeatGeekEventsByTaxonomy(taxonomy, totalWanted);
+    events.push(...taxEvents);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  console.log(`✅ Total SeatGeek Sports events fetched: ${events.length}`);
+  return events;
+};
+
+// Process and store a SeatGeek event in the shared events table.
+// external_id is prefixed with "sg-" so it can never collide with
+// Ticketmaster's numeric/alphanumeric external IDs in the same column.
+export const storeEvent = async (sgEvent) => {
+  try {
+    const { id, title, datetime_local, venue, performers, url, stats, taxonomies } = sgEvent;
+
+    const externalId = `sg-${id}`;
+    const eventTitle = title || performers?.[0]?.name || 'Untitled Event';
+    // Was hardcoded to 'Concert' for every SeatGeek event regardless of what
+    // it actually was — meaning even a sports event that did get fetched
+    // would have been mislabeled and effectively invisible as NFL/NBA/NCAA
+    // Football on the site. Derive it from the event's own taxonomies
+    // instead, falling back to 'Concert' only when nothing more specific matches.
+    const category = categoryFromTaxonomies(taxonomies) || 'Concert';
+    const date = new Date(datetime_local);
+    const image = performers?.[0]?.image || null;
+    const sourceUrl = url;
+    const artistName = performers?.[0]?.name || null;
+
+    // Data-quality guard (spec §32): an event with no valid date is useless
+    // for a comparison site — skip it rather than storing a broken row.
+    if (Number.isNaN(date.getTime())) {
+      console.warn(`Skipping SeatGeek event ${id} — missing/invalid date`);
+      return null;
+    }
+
+    const venueName = venue?.name || 'Unknown Venue';
+    const city = venue?.city || 'Unknown';
+    const state = venue?.state || 'Unknown';
+    const country = venue?.country === 'CA' ? 'Canada' : 'USA';
+
+    // Venue coordinates, used to sort events by distance from the customer.
+    // SeatGeek returns these as numbers already, nested under venue.location.
+    const latitude = venue?.location?.lat ?? null;
+    const longitude = venue?.location?.lon ?? null;
+
+    // SeatGeek's free Platform API tier doesn't reliably return listing
+    // price stats (often an empty {} object) — leave pricing null rather
+    // than defaulting to a fake $0, which would otherwise look like a real
+    // (and very wrong) price on the event page.
+    // Data-quality guard (spec §32): a negative price is never valid —
+    // treat it as unknown (null) rather than storing/displaying it.
+    const rawMinPrice = stats?.lowest_price != null ? stats.lowest_price : null;
+    const rawMaxPrice = stats?.highest_price != null ? stats.highest_price : (rawMinPrice != null ? rawMinPrice : null);
+    const minPrice = rawMinPrice != null && rawMinPrice >= 0 ? rawMinPrice : null;
+    const maxPrice = rawMaxPrice != null && rawMaxPrice >= 0 ? rawMaxPrice : null;
+
+    const existingEvent = await pool.query(
+      'SELECT id FROM events WHERE external_id = $1',
+      [externalId]
+    );
+
+    if (existingEvent.rows.length > 0) {
+      // ROOT CAUSE (permanent, structural) of SeatGeek prices repeatedly
+      // vanishing after being backfilled — see the matching comment in
+      // services/ticketmaster.js's storeEvent, same bug, same fix. SeatGeek's
+      // bulk /events listing (what the daily scheduleSeatGeekSync loop and
+      // every /admin/sync call use) "often returns an empty stats object"
+      // (see the comment above on rawMinPrice) even for events that DO have
+      // a real price once fetched individually — which is exactly what
+      // backfillMissingPrices below does. Before this fix, this UPDATE set
+      // min_price/max_price unconditionally from THIS call's (usually
+      // empty) stats, so every daily re-sync silently wiped out whatever the
+      // backfill job had just filled in, sending the event straight back
+      // into the "min_price IS NULL" backfill queue — an endless loop that
+      // meant SeatGeek events essentially never kept a price. COALESCE fixes
+      // it: only overwrite when this call actually found a price; otherwise
+      // keep whatever is already stored.
+      await pool.query(
+        `UPDATE events SET
+         min_price = COALESCE($1, min_price),
+         max_price = COALESCE($2, max_price),
+         latitude = $3, longitude = $4, updated_at = NOW()
+         WHERE external_id = $5`,
+        [minPrice, maxPrice, latitude, longitude, externalId]
+      );
+      return existingEvent.rows[0].id;
+    } else {
+      const result = await pool.query(
+        `INSERT INTO events (
+          external_id, title, description, category, date, country, state, city,
+          venue_name, venue_address, image_url, source, source_url, min_price, max_price, artist_name,
+          latitude, longitude
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        RETURNING id`,
+        [externalId, eventTitle, '', category, date, country, state, city,
+         venueName, venue?.address || '', image, 'seatgeek', sourceUrl, minPrice, maxPrice, artistName,
+         latitude, longitude]
+      );
+      return result.rows[0].id;
+    }
+  } catch (error) {
+    console.error('Error storing SeatGeek event:', error);
+    return null;
+  }
+};
+
+// Fetch a single event by SeatGeek's own id (not our prefixed "sg-<id>").
+// Used for price backfill rather than the bulk sync, which pages through
+// the /events search endpoint.
+// Returns { data, errorInfo } instead of swallowing failures into a bare
+// `null`, matching services/ticketmaster.js's getTicketmasterEventDetails —
+// added for the same reason: a backfill run that comes back "checked: 300,
+// updated: 0" is otherwise indistinguishable from "every one of these 300
+// events genuinely has no price yet at the source" vs. "every single API
+// call is failing" (bad/expired client_id, rate limiting, etc). Before this
+// fix backfillMissingPrices had no way to tell those apart, and neither did
+// anything reading its result (the admin dashboard's sync-health table, or
+// admin.js's log write) — a systemic outage would have looked identical to
+// normal "no price available yet" data-source behavior in every place this
+// result surfaces.
+// Retries once on a 429 rather than counting it straight into apiErrors — a
+// real backfill run showed a batch of "API rate limit exceeded" responses
+// while SeatGeek's own hours-long nationwide discovery sync was running
+// concurrently on the same client_id, which is exactly the kind of
+// transient contention a short backoff clears up rather than a real,
+// permanent failure worth reporting as one.
+export const fetchSeatGeekEventById = async (seatgeekId, _isRetry = false) => {
+  try {
+    const response = await axios.get(`${SEATGEEK_BASE_URL}/events/${seatgeekId}`, {
+      params: { client_id: SEATGEEK_CLIENT_ID },
+    });
+    return { data: response.data || null, errorInfo: null };
+  } catch (error) {
+    const status = error.response?.status;
+    const body = error.response?.data;
+
+    if (status === 429 && !_isRetry) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return fetchSeatGeekEventById(seatgeekId, true);
+    }
+
+    const errorInfo = status
+      ? `HTTP ${status}: ${JSON.stringify(body).slice(0, 300)}`
+      : error.message;
+    console.error('SeatGeek event detail error:', errorInfo);
+    return { data: null, errorInfo };
+  }
+};
+
+// Backfill pricing for SeatGeek events stored with no price. SeatGeek's
+// free Platform API tier often returns an empty `stats` object on the bulk
+// /events listing even when the same event's own detail endpoint reports
+// real numbers (e.g. once listings actually appear closer to the event
+// date) — this re-checks each event individually and updates it if pricing
+// is now available. Note: for some events this genuinely never fills in
+// on the free tier; that's a data-source limitation, not a bug here.
+//
+// Returns apiErrors/noPriceInResponse counts alongside `updated`, mirroring
+// backfillMissingPrices in services/ticketmaster.js, so a "0 updated" run is
+// legible from the result alone instead of silently looking identical to a
+// healthy run (see fetchSeatGeekEventById's comment above for why this was
+// added — admin.js's sync-log write previously had nothing to report here
+// beyond a bare "0 updated, no error").
+// Same concurrency guard as ticketmaster.js's backfillMissingPrices — see
+// its comment for why overlapping runs (scheduled + manual, or two manual
+// calls) actively make rate-limiting worse rather than just being wasted
+// duplicate work.
+let backfillInProgress = false;
+
+export const backfillMissingPrices = async (limit = 100) => {
+  if (backfillInProgress) {
+    return { success: false, error: 'A SeatGeek price backfill is already running — try again once it finishes (check GET /admin/health).' };
+  }
+  backfillInProgress = true;
+  try {
+    if (!SEATGEEK_CLIENT_ID) {
+      return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
+    }
+
+    // date >= NOW() — see the matching comment in
+    // services/ticketmaster.js's backfillMissingPrices: without this, rows
+    // for past events that never got a price (and never will) pile up at
+    // the front of the date-ASC queue forever, since they're re-selected by
+    // every run and never leave the NULL set. Past a few hundred of those,
+    // no upcoming event is ever reached again. Excluding past events also
+    // just makes sense on its own — nobody can buy a ticket to a show that
+    // already happened.
+    const { rows } = await pool.query(
+      `SELECT id, external_id FROM events
+       WHERE source = 'seatgeek' AND min_price IS NULL AND date >= NOW()
+       ORDER BY date ASC
+       LIMIT $1`,
+      [limit]
+    );
+
+    let updated = 0;
+    let apiErrors = 0;
+    let noPriceInResponse = 0;
+    const errorSamples = [];
+
+    for (const row of rows) {
+      const seatgeekId = row.external_id.replace(/^sg-/, '');
+      const { data: detail, errorInfo } = await fetchSeatGeekEventById(seatgeekId);
+
+      if (errorInfo) {
+        apiErrors++;
+        if (errorSamples.length < 3) {
+          errorSamples.push({ external_id: row.external_id, error: errorInfo });
+        }
+      }
+
+      const stats = detail?.stats;
+      const minPrice = stats?.lowest_price != null ? stats.lowest_price : null;
+      const maxPrice = stats?.highest_price != null ? stats.highest_price : minPrice;
+
+      if (minPrice != null) {
+        await pool.query(
+          `UPDATE events SET min_price = $1, max_price = $2, updated_at = NOW() WHERE id = $3`,
+          [minPrice, maxPrice, row.id]
+        );
+        updated++;
+      } else if (!errorInfo) {
+        noPriceInResponse++;
+      }
+
+      // Rate limiting — one detail call per event, be polite to the API.
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    return { success: true, checked: rows.length, updated, apiErrors, noPriceInResponse, errorSamples };
+  } catch (error) {
+    console.error('SeatGeek price backfill failed:', error);
+    return { success: false, error: error.message };
+  } finally {
+    backfillInProgress = false;
+  }
+};
+
+// Sync SeatGeek concert events into the events table. Now region-segmented
+// (see fetchSeatGeekEventsByRegion above) rather than one global
+// soonest-first feed — perState now defaults to 300 (raised from the
+// Ticketmaster-matching 100 after measuring that region-segmentation alone
+// plateaued around a 3% cross-source overlap rate; combining region spread
+// with more depth per region gave more absolute matches, so this pushes
+// that further) — paginated via fetchSeatGeekEventsByState above since
+// SeatGeek's API caps a single request at 100 results.
+export const syncSeatGeekEvents = async (perState = 300) => {
+  recentApiErrors = [];
+  try {
+    console.log('🔄 Starting SeatGeek sync...');
+
+    if (!SEATGEEK_CLIENT_ID) {
+      console.error('SEATGEEK_CLIENT_ID is not set — skipping SeatGeek sync.');
+      return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
+    }
+
+    const events = await fetchSeatGeekEventsByRegion(perState);
+    console.log(`Processing ${events.length} SeatGeek events...`);
+
+    for (const event of events) {
+      await storeEvent(event);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Dedicated NFL/NBA/NCAA Football pull — see fetchSeatGeekSportsEvents
+    // above. The concert-only fetch above never surfaces these regardless
+    // of perState, since it's hard-filtered to 'taxonomies.name': 'concert'.
+    const sportsEvents = await fetchSeatGeekSportsEvents();
+    console.log(`Processing ${sportsEvents.length} SeatGeek Sports events...`);
+
+    for (const event of sportsEvents) {
+      await storeEvent(event);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // The actual comprehensive pull (spec: "add ALL of the SeatGeek
+    // events") — every event type, every region, not just concerts plus
+    // three sports leagues. See fetchAllSeatGeekEventsByRegion above.
+    const allTypeEvents = await fetchAllSeatGeekEventsByRegion();
+    console.log(`Processing ${allTypeEvents.length} SeatGeek events (all types)...`);
+
+    for (const event of allTypeEvents) {
+      await storeEvent(event);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    console.log('✅ SeatGeek sync complete!');
+    const result = {
+      success: true,
+      totalEvents: events.length + sportsEvents.length + allTypeEvents.length,
+      apiErrorCount: recentApiErrors.length,
+    };
+    if (recentApiErrors.length > 0) {
+      result.sampleApiErrors = recentApiErrors.slice(0, 5);
+    }
+    return result;
+  } catch (error) {
+    console.error('SeatGeek sync failed:', error);
+    return { success: false, error: error.message, apiErrorCount: recentApiErrors.length, sampleApiErrors: recentApiErrors.slice(0, 5) };
+  }
+};
+
+// Free-text search against SeatGeek's /events endpoint, bounded to a date
+// window around the event we're trying to match — used by
+// syncSeatGeekMatchesForExistingEvents below to look up ONE specific
+// already-listed event (e.g. from Ticketmaster/TicketNetwork) rather than
+// bulk-discovering everything SeatGeek has. `q` is SeatGeek's documented
+// fuzzy full-text search param (https://platform.seatgeek.com/); results
+// still need to be run through utils/matching.js's isSameEvent before
+// being trusted, since a text search alone can return same-artist-
+// different-date or similarly-named-but-different events.
+//
+// Retries once on 429 after a backoff, same pattern as
+// fetchSeatGeekEventById above — added after a real limit=3000 run showed
+// 2863/3000 calls failing with API errors: the first batch went through
+// fine, then SeatGeek's rate limit kicked in and every subsequent call
+// failed for the rest of the run with no recovery, since (unlike
+// fetchSeatGeekEventById) this had no retry at all. A single 429 shouldn't
+// permanently blacklist the rest of a long run.
+async function searchSeatGeekEventCandidates(query, dateFrom, dateTo, _isRetry = false) {
+  try {
+    const response = await axios.get(`${SEATGEEK_BASE_URL}/events`, {
+      params: {
+        client_id: SEATGEEK_CLIENT_ID,
+        q: query,
+        'datetime_local.gte': dateFrom,
+        'datetime_local.lte': dateTo,
+        per_page: 10,
+      },
+    });
+    return response.data?.events || [];
+  } catch (error) {
+    if (error.response?.status === 429 && !_isRetry) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return searchSeatGeekEventCandidates(query, dateFrom, dateTo, true);
+    }
+    trackApiError('searchSeatGeekEventCandidates', error);
+    return { error: error.response?.status ? `HTTP ${error.response.status}` : error.message };
+  }
+}
+
+// Shapes a raw SeatGeek /events result into the plain fields
+// utils/matching.js's isSameEvent compares against (source/date/city/
+// state/venue_name/title/artist_name) — the same shape our own `events`
+// table rows already have, so isSameEvent can compare one directly against
+// the other without either side needing special-casing.
+function shapeSeatGeekCandidate(sgEvent) {
+  return {
+    source: 'seatgeek',
+    date: sgEvent.datetime_local,
+    city: sgEvent.venue?.city,
+    state: sgEvent.venue?.state,
+    venue_name: sgEvent.venue?.name,
+    title: sgEvent.title,
+    artist_name: sgEvent.performers?.[0]?.name,
+  };
+}
+
+// Targeted counterpart to syncSeatGeekEvents' broad regional discovery
+// (spec follow-up: "find our first 100 events in seatgeek with their price
+// and add them"). Instead of bulk-fetching everything SeatGeek has and
+// hoping enough of it overlaps with what's already on the site, this walks
+// our OWN soonest-upcoming events (the ones customers actually see first)
+// and, for each, does a targeted SeatGeek search + isSameEvent check
+// (utils/matching.js — same exact-city/state + strong title/venue logic
+// every other cross-source match on this site uses) to find that SPECIFIC
+// event on SeatGeek. A confirmed match is stored via the existing
+// storeEvent (external_id "sg-<id>", so it can never collide with another
+// source's row) — it doesn't touch the original event row at all; the
+// merge into one comparison card happens at read time via isSameEvent,
+// same as every other Ticketmaster/TicketNetwork/SeatGeek overlap already
+// on the site.
+export const syncSeatGeekMatchesForExistingEvents = async (limit = 100) => {
+  recentApiErrors = [];
+  if (!SEATGEEK_CLIENT_ID) {
+    return { success: false, error: 'SEATGEEK_CLIENT_ID not configured' };
+  }
+
+  // Excludes rows already sourced FROM SeatGeek — searching SeatGeek for an
+  // event that already IS a SeatGeek row is a no-op by definition. Ordered
+  // the same way the site's own event list is (date ASC — see
+  // routes/events.js) so "first 100" means the 100 events a customer would
+  // actually see first, not an arbitrary DB order.
+  const { rows } = await pool.query(
+    `SELECT id, external_id, title, artist_name, date, city, state, venue_name, source
+     FROM events
+     WHERE source != 'seatgeek' AND date >= NOW()
+     ORDER BY date ASC
+     LIMIT $1`,
+    [limit]
+  );
+
+  let matched = 0;
+  let stored = 0;
+  let apiErrors = 0;
+  let noMatchFound = 0;
+  const matches = [];
+
+  // Adaptive backoff on top of the fixed per-call delay below and the
+  // single-retry in searchSeatGeekEventCandidates itself: a real
+  // limit=3000 run showed the first ~140 calls succeed, then rate limiting
+  // sets in and every subsequent call fails for the rest of the run (2863
+  // of 3000) — a single retry per call wasn't enough once the API was
+  // genuinely still throttling on the retry too. Three consecutive
+  // failures now pause considerably longer before continuing, giving the
+  // rate limit window time to actually clear instead of hammering straight
+  // through it.
+  let consecutiveErrors = 0;
+
+  for (const ourEvent of rows) {
+    const query = ourEvent.artist_name || ourEvent.title;
+    const eventDate = new Date(ourEvent.date);
+    // +/-2 days: loose enough to tolerate the same cross-source date-
+    // formatting slop isSameDay/isCloseInTime already account for, tight
+    // enough to keep each search response small and relevant.
+    const dateFrom = new Date(eventDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const dateTo = new Date(eventDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
+
+    const candidates = await searchSeatGeekEventCandidates(query, dateFrom, dateTo);
+
+    if (candidates && candidates.error) {
+      apiErrors++;
+      consecutiveErrors++;
+      if (consecutiveErrors >= 3) {
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        consecutiveErrors = 0;
+      }
+    } else {
+      consecutiveErrors = 0;
+      const match = (candidates || []).find((c) => isSameEvent(ourEvent, shapeSeatGeekCandidate(c)));
+      if (match) {
+        matched++;
+        const storedId = await storeEvent(match);
+        if (storedId) {
+          stored++;
+          matches.push({
+            ourEvent: { id: ourEvent.id, title: ourEvent.title, city: ourEvent.city, state: ourEvent.state, date: ourEvent.date, source: ourEvent.source },
+            seatgeek: { id: match.id, title: match.title, price: match.stats?.lowest_price ?? null, url: match.url },
+          });
+        }
+      } else {
+        noMatchFound++;
+      }
+    }
+
+    // Politeness delay between search calls — raised from 300ms after the
+    // rate-limiting seen in the limit=3000 run above.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  return {
+    success: true,
+    checked: rows.length,
+    matched,
+    stored,
+    noMatchFound,
+    apiErrors,
+    matches,
+  };
+};
+
+// Run automatically every 24 hours, same cadence as the Ticketmaster sync.
+export const scheduleSeatGeekSync = (intervalMs = 24 * 60 * 60 * 1000) => {
+  console.log('⏰ Scheduling automatic SeatGeek sync every 24 hours');
+
+  setInterval(() => {
+    console.log('🔄 Running scheduled SeatGeek sync...');
+    syncSeatGeekEvents();
+  }, intervalMs);
+};
+
+export default {
+  fetchSeatGeekEvents,
+  fetchManySeatGeekEvents,
+  fetchSeatGeekEventsByTaxonomy,
+  fetchSeatGeekSportsEvents,
+  fetchAllSeatGeekEventsByState,
+  fetchAllSeatGeekEventsByRegion,
+  fetchSeatGeekEventById,
+  storeEvent,
+  syncSeatGeekEvents,
+  syncSeatGeekMatchesForExistingEvents,
+  backfillMissingPrices,
+  scheduleSeatGeekSync,
+};

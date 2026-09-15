@@ -1,0 +1,283 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* The browser's own scroll-anchoring feature watches for layout shifts
+   above/within the viewport during a scroll and "corrects" the scroll
+   position to compensate — which is exactly what was freezing the
+   search-triggered smooth scroll to #featured-events partway down the
+   page (always at the same ~123px, reproduced every time). A 50ms
+   setTimeout deferral (see handleSearchSubmit) wasn't enough: search
+   results keep streaming in and resizing sections while the ~10,000px
+   smooth-scroll animation is still in flight, so anchoring kept
+   re-triggering throughout the animation, not just at its start.
+   Disabling anchoring document-wide removes the race at its root instead
+   of chasing timing — the one thing this feature is for (keeping reading
+   position stable while you read and content above shifts) isn't a
+   behavior this app relies on anywhere. */
+html {
+  overflow-anchor: none;
+}
+
+:root {
+  /* Same brand colors the app already used inline everywhere — named here
+     purely so the new hover/shadow utility classes below have something
+     consistent to reference. No color values changed, nothing recolored. */
+  --cm-purple: #1a0733;
+  --cm-red: #8b0000;
+  --cm-red-dark: #6e0000;
+  --cm-blue: #1a56db;
+  --cm-border: #e6e2ee;
+  --cm-shadow-sm: 0 1px 2px rgba(26, 7, 51, 0.06), 0 1px 3px rgba(26, 7, 51, 0.08);
+  --cm-shadow-md: 0 4px 10px rgba(26, 7, 51, 0.08), 0 2px 4px rgba(26, 7, 51, 0.06);
+  --cm-shadow-lg: 0 12px 24px rgba(26, 7, 51, 0.12), 0 4px 8px rgba(26, 7, 51, 0.06);
+  --cm-radius: 14px;
+
+  /* Dark-navy homepage redesign (matches the provided reference mockup):
+     a deep navy page background with a single bright-blue accent, white
+     cards for content, light text on the navy. Kept as separate tokens
+     rather than repointing --cm-purple/--cm-red so the admin dashboard
+     (AdminPage.jsx) and anything else still reading those older tokens is
+     completely unaffected — only App.jsx's homepage/event-detail views
+     adopt these new ones. */
+  --cm-navy-bg: #001634;
+  --cm-navy-panel: #01214a;
+  --cm-navy-panel-light: #0a2a5c;
+  --cm-navy-border: #0c4c89;
+  --cm-accent-blue: #008efe;
+  --cm-accent-blue-light: #4fb8ff;
+  --cm-text-onnavy: #f2f6fc;
+  --cm-text-onnavy-muted: #9fb3cf;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Researched the 5 leading ticket-selling platforms (Ticketmaster,
+     StubHub, SeatGeek, Vivid Seats, AXS) before choosing this: every one of
+     them uses a light/white page background with a single bold brand
+     accent color, rather than an all-over dark/colored background. Moved
+     ConcertAndMatches to the same pattern for a more familiar, easier-to-
+     read ticket-marketplace feel, while keeping our brand identity: the
+     background carries a faint tint of our original indigo-purple
+     (#1a0733), and that same purple now does double duty as the default
+     text color instead of the page background.
+     Page text (headings, event card text, etc.) has no per-element color
+     set in App.jsx — it just inherits from here — so the "color" below
+     controls nearly all body text. The white/#f5f5f5 content panels (Find
+     Tickets, event details, etc.) set their own dark text colors inline,
+     so they're unaffected and stay exactly as before. */
+  background-color: #001634;
+  color: #f2f6fc;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ---- Pure-visual polish utilities (appearance only — no behavior here) ----
+   Added for the design refresh inspired by tallyseats.com: soft elevation,
+   rounded corners, and a hover "lift" on cards/buttons. Applied alongside
+   existing inline styles via className, so none of the existing inline
+   colors/spacing/logic had to move. */
+
+.cm-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cm-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--cm-shadow-lg);
+}
+
+.cm-btn {
+  transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.cm-btn:hover {
+  filter: brightness(1.08);
+  box-shadow: var(--cm-shadow-md);
+}
+.cm-btn:active {
+  transform: translateY(1px);
+}
+
+.cm-chip {
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.cm-chip:hover {
+  box-shadow: var(--cm-shadow-sm);
+}
+
+.cm-tile {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cm-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cm-shadow-md);
+}
+
+.cm-link-underline {
+  position: relative;
+  text-decoration: none;
+}
+.cm-link-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.15s ease;
+}
+.cm-link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* ---- Dark-navy redesign utilities ---- */
+
+.cm-navy-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.cm-navy-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--cm-accent-blue);
+}
+
+.cm-round-btn {
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.cm-round-btn:hover {
+  transform: translateX(2px);
+  background-color: var(--cm-accent-blue-light);
+}
+
+/* -------------------------------------------------------------------------
+   ConcertAndMatches reference homepage
+   The supplied design is desktop-first, but this layer keeps the exact
+   visual system intact while making the same layout work cleanly on phones.
+   ------------------------------------------------------------------------- */
+.cm-home-page {
+  min-height: 100vh;
+  padding: 0 36px 28px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #001634;
+  color: #f2f6fc;
+}
+
+.cm-home-page input::placeholder {
+  color: #667692;
+  opacity: 1;
+}
+
+.cm-home-page button,
+.cm-home-page input {
+  font-family: inherit;
+}
+
+.cm-home-page .cm-home-hero {
+  background-color: #001634;
+}
+
+@media (max-width: 1100px) {
+  .cm-home-page { padding-left: 24px; padding-right: 24px; }
+}
+
+@media (max-width: 760px) {
+  .cm-home-page { padding: 0 14px 20px; }
+
+  /* The desktop nav has three horizontal groups. On mobile they become a
+     compact brand row followed by a horizontally scrollable link row. */
+  .cm-home-page nav {
+    gap: 14px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .cm-home-page nav > div:nth-child(2) {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .cm-home-page nav > div:nth-child(2)::-webkit-scrollbar { display: none; }
+
+  .cm-home-page nav > div:nth-child(3) {
+    margin-left: auto;
+    gap: 10px !important;
+  }
+  .cm-home-page nav > div:nth-child(3) button:first-child { display: none !important; }
+  .cm-home-page nav > div:nth-child(3) button:nth-child(2) { font-size: 0 !important; }
+  .cm-home-page nav > div:nth-child(3) button:nth-child(2) span { font-size: 20px !important; }
+  .cm-home-page nav > div:nth-child(3) button:last-child { padding: 9px 14px !important; }
+
+  .cm-home-page h1 { max-width: 100% !important; font-size: 29px !important; }
+
+  /* Photo, slogan, and search stay in the same order as the reference,
+     with the photo becoming taller so the focal concert image remains clear. */
+  .cm-home-page .cm-hero-photo { min-height: 250px !important; padding: 24px 20px 28px !important; }
+  .cm-home-page .cm-hero-photo > span { right: 16px !important; bottom: 14px !important; font-size: 17px !important; }
+
+  .cm-home-page .cm-search-row { padding: 12px 12px 16px !important; }
+  .cm-home-page .cm-search-form { display: block !important; }
+  .cm-home-page .cm-search-pill {
+    display: block !important;
+    border-radius: 18px !important;
+    overflow: visible !important;
+  }
+  .cm-home-page .cm-search-pill > div:first-child,
+  .cm-home-page .cm-search-pill > div:nth-child(3) {
+    width: 100% !important;
+    min-height: 52px;
+    padding: 0 16px !important;
+  }
+  .cm-home-page .cm-search-pill > div:nth-child(2) { display: none !important; }
+  .cm-home-page .cm-search-pill > div:nth-child(4) {
+    position: absolute !important;
+    right: 8px;
+    bottom: 62px;
+  }
+  .cm-home-page .cm-search-pill > button:last-child {
+    width: 100%;
+    height: 48px;
+    border-radius: 12px !important;
+  }
+
+  .cm-home-page .cm-category-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .cm-home-page .cm-event-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .cm-home-page .cm-feature-strip > div {
+    flex: 1 1 100% !important;
+    border-left: none !important;
+    border-top: 1px solid #0c4c89;
+  }
+  .cm-home-page .cm-feature-strip > div:first-child { border-top: none; }
+
+  .cm-home-page .cm-cta-banner {
+    padding: 28px 20px !important;
+    border-radius: 16px !important;
+  }
+
+  .cm-home-page footer p { line-height: 1.55; }
+}
+
+@media (max-width: 430px) {
+  .cm-home-page .cm-category-grid { grid-template-columns: 1fr !important; }
+  .cm-home-page h1 { font-size: 26px !important; }
+}

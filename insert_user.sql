@@ -1,0 +1,1 @@
+INSERT INTO users (email, password_hash, first_name, last_name, is_admin) VALUES ('test@example.com', '$2a$10$h6ljSsl5Ra/sUO2SjFstI.xbY2VoTulV.YsBQbUGMaGLVWJTwkmqm', 'Test', 'User', false);
