@@ -233,19 +233,16 @@ body {
     border-radius: 18px !important;
     overflow: visible !important;
   }
-  .cm-home-page .cm-search-pill > div:first-child,
-  .cm-home-page .cm-search-pill > div:nth-child(3) {
+  .cm-home-page .cm-search-pill .cm-search-seg {
     width: 100% !important;
     min-height: 52px;
-    padding: 0 16px !important;
+    padding: 10px 16px !important;
   }
-  .cm-home-page .cm-search-pill > div:nth-child(2) { display: none !important; }
-  .cm-home-page .cm-search-pill > div:nth-child(4) {
-    position: absolute !important;
-    right: 8px;
-    bottom: 62px;
+  .cm-home-page .cm-search-pill .cm-search-seg-dates button {
+    padding: 0 !important;
   }
-  .cm-home-page .cm-search-pill > button:last-child {
+  .cm-home-page .cm-search-pill .cm-search-divider { display: none !important; }
+  .cm-home-page .cm-search-pill .cm-search-submit {
     width: 100%;
     height: 48px;
     border-radius: 12px !important;
