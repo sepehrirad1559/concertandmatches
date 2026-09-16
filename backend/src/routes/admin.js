@@ -790,6 +790,39 @@ router.post('/schema/add-listing-columns', async (req, res) => {
   }
 });
 
+// One-time migration for the price-backfill starvation fix (2026-09-16) —
+// see services/ticketmaster.js and services/seatgeek.js's backfillMissingPrices
+// for the full explanation. Both now order their backfill candidates by
+// price_backfill_checked_at (NULLS FIRST) instead of date alone, so a
+// permanently-unpriced event stops eating a fresh API call on every single
+// run once it's been tried once. Needs this column (and an index for the
+// ORDER BY, since both services also filter WHERE min_price IS NULL — a
+// partial index keeps it small since priced rows never need it again) before
+// that code path can run.
+router.post('/schema/add-price-backfill-tracking', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS price_backfill_checked_at TIMESTAMPTZ');
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_events_price_backfill_queue
+        ON events (source, price_backfill_checked_at, date)
+        WHERE min_price IS NULL
+    `);
+    res.json({ success: true, message: 'events extended with price_backfill_checked_at; partial index created for the backfill queue.' });
+  } catch (error) {
+    console.error('Error adding price_backfill_checked_at:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Rebuilds canonical_events + ticket_offers from the current `events` table
 // (the real source of truth) using the same cross-source matching logic that
 // powers the live price-comparison feature. Safe to run repeatedly — fully

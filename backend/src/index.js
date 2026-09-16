@@ -164,19 +164,38 @@ console.log(`📦 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.
 // events fill in and refresh far sooner after a sync — see
 // EVENT_SYNC_INTERVAL_MS below for the shared reasoning on how far this can
 // go before risking Ticketmaster's daily API quota (roughly 5,000 calls/day
-// on the free Discovery API tier; each backfilled event costs one call per
-// source, so a full 600-event batch on both sources is up to ~1,200 calls —
-// ~2,400 Ticketmaster calls/day at 4 runs/day, plus ~240/day from the event
-// sync below, comfortably under the 5,000/day quota with headroom left for
-// manual /admin/sync|backfill/* triggers too).
+// on the free Discovery API tier).
 const BACKFILL_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const BACKFILL_BATCH_SIZE = 600;
+// Split per-source (2026-09-16) — these hit separate APIs with separate
+// quotas, so there's no reason to share one number between them.
+//
+// Ticketmaster raised 600 -> 900: with the starvation fix above actually
+// making forward progress through the backlog (previously the same ~600
+// permanently-unpriced near-term events silently ate almost every batch —
+// confirmed live via GET /admin/diagnostics/providers/provider_sync_logs
+// showing repeated "checked: 600, updated: 0" runs), the real constraint is
+// now genuinely the daily quota, not wasted calls. Per EVENT_SYNC_INTERVAL_MS's
+// comment below, discovery costs ~250-550 calls/day (once/day) and this now
+// costs 900 x 4 = 3,600/day, ~3,850-4,150/day total — comfortably under the
+// ~5,000/day quota with real headroom left for manual /admin/sync|backfill/*
+// calls. Coverage was 3,734 of 54,438 (~7%) before this change; watch
+// GET /admin/diagnostics/providers after a few runs to confirm it's climbing
+// and not hitting 429s — back off if it is.
+const TICKETMASTER_BACKFILL_BATCH_SIZE = 900;
+// SeatGeek's own quota isn't documented anywhere in this codebase the way
+// Ticketmaster's is, and unlike Ticketmaster its ~0% price coverage is a
+// known data-source gap (see config/sourceVisibility.js — free-tier Platform
+// API stats are frequently empty even for on-sale events), not primarily a
+// starvation problem, so raising its throughput wouldn't reliably buy more
+// priced events the way it does for Ticketmaster. Left unchanged pending
+// actual measurement of what this batch size accomplishes post-fix.
+const SEATGEEK_BACKFILL_BATCH_SIZE = 600;
 
 async function runScheduledPriceBackfill() {
 console.log('🔄 Running scheduled price backfill...');
 let startedAt = new Date();
 try {
-const tmResult = await backfillTicketmasterPrices(BACKFILL_BATCH_SIZE);
+const tmResult = await backfillTicketmasterPrices(TICKETMASTER_BACKFILL_BATCH_SIZE);
 console.log('Ticketmaster backfill result:', tmResult);
 await logProviderSync({
   providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
@@ -189,7 +208,7 @@ await logProviderSync({ providerName: 'ticketmaster', syncType: 'price_backfill'
 }
 startedAt = new Date();
 try {
-const sgResult = await backfillSeatGeekPrices(BACKFILL_BATCH_SIZE);
+const sgResult = await backfillSeatGeekPrices(SEATGEEK_BACKFILL_BATCH_SIZE);
 console.log('SeatGeek backfill result:', sgResult);
 await logProviderSync({
   providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),

@@ -511,10 +511,16 @@ export const backfillMissingPrices = async (limit = 100) => {
     // no upcoming event is ever reached again. Excluding past events also
     // just makes sense on its own — nobody can buy a ticket to a show that
     // already happened.
+    // Same starvation fix as services/ticketmaster.js's backfillMissingPrices
+    // — see its comment for the full explanation. Ordering by date ASC alone
+    // meant a permanently-unpriced event never left the front of the queue,
+    // so every run re-spent a call re-checking the same dead rows instead of
+    // making progress through the backlog. price_backfill_checked_at (NULLS
+    // FIRST) ensures never-yet-tried rows always go first.
     const { rows } = await pool.query(
       `SELECT id, external_id FROM events
        WHERE source = 'seatgeek' AND min_price IS NULL AND date >= NOW()
-       ORDER BY date ASC
+       ORDER BY price_backfill_checked_at ASC NULLS FIRST, date ASC
        LIMIT $1`,
       [limit]
     );
@@ -541,12 +547,18 @@ export const backfillMissingPrices = async (limit = 100) => {
 
       if (minPrice != null) {
         await pool.query(
-          `UPDATE events SET min_price = $1, max_price = $2, updated_at = NOW() WHERE id = $3`,
+          `UPDATE events SET min_price = $1, max_price = $2, price_backfill_checked_at = NOW(), updated_at = NOW() WHERE id = $3`,
           [minPrice, maxPrice, row.id]
         );
         updated++;
-      } else if (!errorInfo) {
-        noPriceInResponse++;
+      } else {
+        // Stamp checked_at regardless of outcome so this row rotates to the
+        // back of the queue instead of blocking the same batch slot on every
+        // future run — see the starvation comment on the SELECT above.
+        await pool.query(`UPDATE events SET price_backfill_checked_at = NOW() WHERE id = $1`, [row.id]);
+        if (!errorInfo) {
+          noPriceInResponse++;
+        }
       }
 
       // Rate limiting — one detail call per event, be polite to the API.

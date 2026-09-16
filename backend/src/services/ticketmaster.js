@@ -697,10 +697,30 @@ export const backfillMissingPrices = async (limit = 100) => {
     // entirely (their pricing is moot anyway — nobody can buy a ticket to a
     // show that already happened), which keeps the queue moving through
     // upcoming events instead of spinning on the same stuck ones.
+    // STARVATION BUG (found 2026-09-16, the real reason Ticketmaster price
+    // coverage was stuck around ~7% — 3,734 of 54,438 — despite this backfill
+    // running 4x/day): ordering by date ASC alone means the exact same
+    // soonest-date rows get selected on EVERY run, forever, regardless of
+    // whether they were already tried. An event Ticketmaster's detail
+    // endpoint genuinely never returns a price for (pulled, off-sale, etc.)
+    // never leaves the `min_price IS NULL` set, so it keeps sorting to the
+    // front and keeps consuming one of this batch's `limit` API calls on
+    // every single run — while the tens of thousands of events further back
+    // in date order that have never been attempted even once sit untouched
+    // indefinitely. The `date >= NOW()` fix (see its comment above) only
+    // solved this for events whose date has passed; it does nothing for a
+    // permanently-unpriced event that's still upcoming.
+    // Fix: track when each row was last attempted (price_backfill_checked_at,
+    // set below after every attempt regardless of outcome) and order by that
+    // first (NULLS FIRST — never-attempted rows go first), falling back to
+    // date ASC only to break ties among equally-fresh rows. That guarantees
+    // every unpriced event gets at least one attempt before any event gets a
+    // second one, so a full pass through the backlog actually happens instead
+    // of the same handful of dead rows eating the whole batch forever.
     const { rows } = await pool.query(
       `SELECT id, external_id FROM events
        WHERE source = 'ticketmaster' AND min_price IS NULL AND date >= NOW()
-       ORDER BY date ASC
+       ORDER BY price_backfill_checked_at ASC NULLS FIRST, date ASC
        LIMIT $1`,
       [limit]
     );
@@ -753,18 +773,34 @@ export const backfillMissingPrices = async (limit = 100) => {
           : null;
 
         await pool.query(
-          `UPDATE events SET min_price = $1, max_price = $2, price_breakdown = $3, updated_at = NOW() WHERE id = $4`,
+          `UPDATE events SET min_price = $1, max_price = $2, price_breakdown = $3, price_backfill_checked_at = NOW(), updated_at = NOW() WHERE id = $4`,
           [minPrice, maxPrice, priceBreakdown, row.id]
         );
         updated++;
-      } else if (!errorInfo) {
-        noPriceInResponse++;
-        if (noPriceSamples.length < 3) {
-          noPriceSamples.push({
-            external_id: row.external_id,
-            hasPriceRangesField: priceRanges !== undefined,
-            responseKeys: detail ? Object.keys(detail).slice(0, 15) : [],
-          });
+      } else {
+        // No usable price this time — whether Ticketmaster's detail endpoint
+        // came back with no priceRanges, or the call itself errored (404,
+        // malformed id, etc — anything short of quotaExhausted, which broke
+        // out above before reaching here). Stamp price_backfill_checked_at
+        // regardless so this row moves to the back of next run's queue
+        // instead of being reselected and re-failing identically every run
+        // forever (see the starvation comment on the SELECT above) — a
+        // single permanently-broken row could otherwise block the same slot
+        // in the batch indefinitely, same failure mode as the dead-price
+        // case this fix primarily targets.
+        await pool.query(
+          `UPDATE events SET price_backfill_checked_at = NOW() WHERE id = $1`,
+          [row.id]
+        );
+        if (!errorInfo) {
+          noPriceInResponse++;
+          if (noPriceSamples.length < 3) {
+            noPriceSamples.push({
+              external_id: row.external_id,
+              hasPriceRangesField: priceRanges !== undefined,
+              responseKeys: detail ? Object.keys(detail).slice(0, 15) : [],
+            });
+          }
         }
       }
 
