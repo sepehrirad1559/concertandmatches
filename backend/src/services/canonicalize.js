@@ -112,6 +112,22 @@ export async function rebuildCanonicalEvents() {
     let offerCount = 0;
     let skippedNoProvider = 0;
 
+    // How many groups to process between yields back to Node's event loop.
+    // This whole loop is one long chain of awaited client.query() calls, but
+    // those all resolve on the same pooled connection inside a single
+    // transaction, so in practice the run monopolizes the process for its
+    // entire duration and public requests queue behind it (already flagged
+    // at the top of this file as a known risk). An explicit setImmediate
+    // every few hundred groups hands control back long enough for pending
+    // I/O callbacks — i.e. other visitors' requests — to be serviced. It is
+    // deliberately a cheap mitigation, not a fix: the real fix is not
+    // rebuilding the entire derived layer from scratch each run. Low
+    // hundreds keeps the added overhead to a few thousand extra event-loop
+    // turns across a full rebuild, which is nothing next to the hundreds of
+    // thousands of queries the loop already issues.
+    const YIELD_EVERY_N_GROUPS = 250;
+    let groupsProcessed = 0;
+
     for (const group of groups) {
       const primary = group.primary;
       // Prefer whichever row in the group has the richest data for fields
@@ -119,6 +135,28 @@ export async function rebuildCanonicalEvents() {
       // backfill-from-duplicates behavior).
       const imageRow = group.rows.find((r) => r.image_url) || primary;
       const artistRow = group.rows.find((r) => r.artist_name) || primary;
+      // description is backfilled from a duplicate the same way image_url
+      // and artist_name are, because the live merge in routes/events.js
+      // backfills exactly those three fields (plus distance_km, which is
+      // request-scoped and has no equivalent here). venue_address and
+      // price_breakdown are deliberately NOT backfilled: the live merge
+      // leaves both at the primary row's value, and the listing endpoint now
+      // reads them from here, so backfilling would make the two paths
+      // disagree.
+      const descriptionRow = group.rows.find((r) => r.description) || primary;
+
+      // Number of DISTINCT sources on this event, precomputed so the public
+      // listing's default "most retailers first" ordering can be a plain
+      // indexed column in ORDER BY instead of a count over ticket_offers per
+      // candidate row. Distinct by SOURCE rather than by row on purpose:
+      // that is what the live merge's offers.length counts (it collapses two
+      // rows from one seller into a single offer), and it's what the listing
+      // query's DISTINCT ON (provider) offer list returns. Rows whose source
+      // has no providers row are excluded here for the same reason they're
+      // skipped as offers below — they never become an offer at all.
+      const offerSources = new Set(
+        group.rows.filter((r) => providerIdByName.has(r.source)).map((r) => r.source)
+      );
 
       // Excludes 'official' rows from the best-price comparison for the same
       // reason routes/events.js's live merge does — see that file's comment.
@@ -144,8 +182,9 @@ export async function rebuildCanonicalEvents() {
         `INSERT INTO canonical_events
            (title, normalized_title, category, event_date, venue_name, city, state, country,
             latitude, longitude, image_url, artist_name, best_price, best_source,
-            performer, highest_price)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+            performer, highest_price,
+            primary_event_row_id, description, venue_address, price_breakdown, offer_count)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
          RETURNING id`,
         [
           primary.title,
@@ -164,6 +203,17 @@ export async function rebuildCanonicalEvents() {
           best ? best.source : null,
           artistRow.artist_name, // performer — same value as artist_name under the spec's field name
           worst ? worst.min_price : null,
+          // The representative RAW events.id for this merged event. This —
+          // never canonical_events.id, which is reassigned by the TRUNCATE
+          // ... RESTART IDENTITY above on every single rebuild — is what the
+          // public listing endpoint returns as each event's `id`, what the
+          // /event/:id-:slug detail URLs and /go/event/:id affiliate
+          // redirects are built from, and what click tracking logs against.
+          primary.id,
+          descriptionRow.description,
+          primary.venue_address,
+          primary.price_breakdown,
+          offerSources.size,
         ]
       );
       const canonicalId = canonicalResult.rows[0].id;
@@ -219,6 +269,17 @@ export async function rebuildCanonicalEvents() {
            VALUES ($1,$2,$3,$4,$5)`,
           [canonicalId, providerId, row.external_id, row.min_price, totalPrice]
         );
+      }
+
+      // Yield the event loop periodically (see YIELD_EVERY_N_GROUPS above)
+      // so a multi-minute rebuild doesn't starve every concurrent public
+      // request for its entire duration. Safe to do mid-transaction: the
+      // transaction lives on `client`, which stays checked out of the pool
+      // across the yield, so nothing else can interleave statements into it
+      // — other requests use their own pooled connections.
+      groupsProcessed++;
+      if (groupsProcessed % YIELD_EVERY_N_GROUPS === 0) {
+        await new Promise((resolve) => setImmediate(resolve));
       }
     }
 

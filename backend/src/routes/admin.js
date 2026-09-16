@@ -699,6 +699,97 @@ router.post('/schema/add-offer-details', async (req, res) => {
   }
 });
 
+// Everything the public listing endpoint (GET /api/events) needs in order to
+// be answered entirely by the database instead of by merging up to 30,000
+// raw rows in Node on every request. Additive and idempotent, same as every
+// other /schema/* route here. Run it once after deploy, then POST
+// /admin/canonicalize/rebuild to populate the new columns.
+//
+// Three groups of changes:
+//
+// 1. canonical_events gains the few fields the listing response needs that
+//    the rebuild was dropping on the floor, plus the stable id it has to
+//    return. primary_event_row_id is the important one: canonical_events.id
+//    is reassigned by the rebuild's TRUNCATE ... RESTART IDENTITY on EVERY
+//    run, so it can never be exposed to the frontend as an event's `id` —
+//    detail-page URLs, the /go/event/:id affiliate redirect and click
+//    tracking are all keyed on a raw events.id and must stay that way.
+//    description and price_breakdown are needed because the frontend hands
+//    the list object straight to the event detail view on click WITHOUT
+//    re-fetching (App.jsx only calls /events/detail/:id on a cold load), and
+//    that view renders both. venue_address is included for exact response-
+//    shape parity even though nothing currently reads it — it costs one
+//    nullable column and avoids a silent field disappearing from the API.
+//    offer_count is the precomputed "how many retailers list this event"
+//    number the default listing order sorts by.
+//
+// 2. Indexes for the new query patterns on canonical_events. event_date
+//    already had one from /schema/add-canonical-tables; the rest are new.
+//    Each is issued as its own pool.query rather than batched into one
+//    multi-statement string, so any single one can later be switched to
+//    CREATE INDEX CONCURRENTLY (which cannot run inside an implicit
+//    multi-statement transaction) without restructuring this route.
+//
+// 3. Basic indexes on the RAW `events` table, which had none at all beyond
+//    its primary key and the external_id unique constraint. Those help the
+//    rebuild's own full scan, the admin/diagnostic queries, and the
+//    raw-table fallback path in routes/events.js.
+//
+// Also seeds a `curated` providers row. Without it, the curated Rockefeller
+// Center events (services/curatedAttractions.js) are counted by
+// canonicalize.js's skippedNoProvider and get NO ticket_offers rows at all —
+// which was harmless while the derived layer was admin-only, but would make
+// those events render with an empty offers array (and therefore no
+// buy-ticket link) once the public listing reads from it.
+router.post('/schema/add-listing-columns', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query(`
+      ALTER TABLE canonical_events
+        ADD COLUMN IF NOT EXISTS primary_event_row_id INTEGER REFERENCES events(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS description TEXT,
+        ADD COLUMN IF NOT EXISTS venue_address TEXT,
+        ADD COLUMN IF NOT EXISTS price_breakdown JSONB,
+        ADD COLUMN IF NOT EXISTS offer_count INTEGER NOT NULL DEFAULT 0;
+    `);
+
+    // canonical_events indexes for the listing endpoint's WHERE/ORDER BY.
+    // event_date already has idx_canonical_events_date from
+    // /schema/add-canonical-tables, so it's not repeated here.
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_canonical_events_category ON canonical_events (category)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_canonical_events_city_state ON canonical_events (city, state)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_canonical_events_best_price ON canonical_events (best_price)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_canonical_events_primary_event_row ON canonical_events (primary_event_row_id)');
+
+    // Raw `events` indexes — the table had none of these, despite every
+    // listing/detail/sync query filtering or ordering on them.
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_events_date ON events (date)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_events_city ON events (city)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_events_state ON events (state)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_events_category ON events (category)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_events_source ON events (source)');
+
+    await pool.query(`
+      INSERT INTO providers (name, provider_type, api_endpoint, commercial_use_allowed, redistribution_allowed, affiliate_enabled, attribution_required, active)
+      VALUES ('curated', 'licensed_database', NULL, true, true, true, false, true)
+      ON CONFLICT (name) DO NOTHING;
+    `);
+
+    res.json({ success: true, message: 'canonical_events extended with primary_event_row_id/description/venue_address/price_breakdown/offer_count; canonical_events + events indexes created; curated provider seeded. Run POST /admin/canonicalize/rebuild to populate.' });
+  } catch (error) {
+    console.error('Error adding listing columns/indexes:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Rebuilds canonical_events + ticket_offers from the current `events` table
 // (the real source of truth) using the same cross-source matching logic that
 // powers the live price-comparison feature. Safe to run repeatedly — fully

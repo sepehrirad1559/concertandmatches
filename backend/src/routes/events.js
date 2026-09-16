@@ -22,6 +22,13 @@ const router = express.Router();
 // becoming slow/timing out. Still a cap, not "no limit" — the real fix for
 // unbounded growth is proper SQL-level pagination, but this comfortably
 // covers the current catalog size with headroom.
+//
+// As of the canonical-layer listing rewrite below, this cap only governs the
+// FALLBACK path (listEventsFromRawEventsTable) — used when the derived
+// canonical_events layer has never been rebuilt, or when a query against it
+// fails. The normal path is now real SQL WHERE/ORDER BY/LIMIT/OFFSET against
+// canonical_events and has no equivalent cap at all, which is the "real fix
+// for unbounded growth" this comment was asking for.
 const MAX_RAW_ROWS = 30000;
 
 // Merge rows that represent the same real-world event (per isSameEvent)
@@ -267,8 +274,579 @@ function applyLocationRetailerOrder(events, hasCoords) {
   });
 }
 
+// Derives best_price/best_source/min_price/max_price/price_comparison for
+// ONE event from its already-assembled `offers` array, using exactly the
+// same rules mergeEventsAcrossSources applies at the end of its own merge
+// (see the long comment there for why 'official' rows are excluded from the
+// comparison, and why price_difference_pct is null rather than 0/Infinity
+// when the lowest price is 0).
+//
+// Extracted so the SQL-backed listing path below can produce a byte-for-byte
+// identical price_comparison object without re-running the whole in-memory
+// merge: once the database has handed back an event's offers, deriving these
+// five fields is pure arithmetic over a handful of offers, so there is no
+// value in pushing it into SQL — and doing it here guarantees the two code
+// paths can never drift apart in how they compute a "best price".
+//
+// Mutates `event` in place and returns it, same as the loop it was lifted
+// from. mergeEventsAcrossSources itself still contains its own copy of this
+// logic rather than calling this helper — deliberately left alone so this
+// change cannot alter the behavior of the merge the /discover, /detail and
+// sitemap paths all still depend on.
+function applyPriceComparisonFields(event) {
+  const priced = event.offers.filter((o) => o.min_price != null && o.source !== 'official');
+  if (priced.length === 0) {
+    event.best_price = null;
+    event.best_source = null;
+    event.price_comparison = null;
+    return event;
+  }
+
+  const best = priced.reduce((a, b) => (Number(a.min_price) <= Number(b.min_price) ? a : b));
+  const worst = priced.reduce((a, b) => (Number(a.min_price) >= Number(b.min_price) ? a : b));
+  event.best_price = best.min_price;
+  event.best_source = best.source;
+  // Top-level min_price/max_price mirror the WINNING offer's own price pair
+  // — not canonical_events.best_price/highest_price, which are the lowest
+  // and highest *min* prices and can therefore come from two different
+  // offers. Matching the live merge here matters: the frontend renders
+  // "from $min – $max" from these two fields, and pairing the cheapest
+  // seller's min with a different seller's min would invent a range no
+  // single retailer actually offers.
+  event.min_price = best.min_price;
+  event.max_price = best.max_price;
+
+  event.price_comparison = {
+    lowest_price: Number(best.min_price),
+    highest_price: Number(worst.min_price),
+    price_difference: Number((Number(worst.min_price) - Number(best.min_price)).toFixed(2)),
+    price_difference_pct: Number(best.min_price) > 0
+      ? Number((((Number(worst.min_price) - Number(best.min_price)) / Number(best.min_price)) * 100).toFixed(1))
+      : null,
+    offers: priced
+      .slice()
+      .sort((a, b) => Number(a.min_price) - Number(b.min_price))
+      .map((o, i) => ({
+        rank: i + 1,
+        source: o.source,
+        price: Number(o.min_price),
+        is_best_price: i === 0,
+        url: o.source_url,
+        price_type: 'unknown',
+      })),
+  };
+  return event;
+}
+
+// ---- Canonical-layer availability probe -------------------------------
+//
+// GET / is served from the precomputed canonical_events/ticket_offers layer
+// (see listEventsFromCanonicalLayer below), but that layer is DERIVED: it
+// starts empty on a fresh database and only becomes populated once someone
+// runs POST /admin/schema/add-canonical-tables + /admin/schema/add-listing-
+// columns and then POST /admin/canonicalize/rebuild (or the scheduled jobs
+// in index.js get there first). Making the main public listing hard-depend
+// on it would mean a brand-new or half-migrated deploy serves an empty site
+// even though the raw `events` table is full of perfectly good rows.
+//
+// So: probe once, cache the answer for CANONICAL_PROBE_TTL_MS, and fall back
+// to the original raw-`events` implementation (kept below, unchanged, as
+// listEventsFromRawEventsTable) whenever the probe says "empty". The TTL is
+// what keeps this from defeating the point of the whole change — one extra
+// `SELECT 1 ... LIMIT 1` per minute across all traffic, not one per request.
+// A minute is short enough that the site starts using the canonical layer on
+// its own shortly after the first rebuild finishes, with no restart needed.
+const CANONICAL_PROBE_TTL_MS = 60 * 1000;
+const canonicalLayerState = { populated: false, checkedAt: 0 };
+
+async function canonicalLayerIsPopulated() {
+  const now = Date.now();
+  if (now - canonicalLayerState.checkedAt < CANONICAL_PROBE_TTL_MS) {
+    return canonicalLayerState.populated;
+  }
+  canonicalLayerState.checkedAt = now;
+  try {
+    // Tests primary_event_row_id specifically, not just "any row exists":
+    // a database that was canonicalized by the PREVIOUS version of
+    // services/canonicalize.js has plenty of canonical_events rows, but all
+    // of them with a NULL primary_event_row_id — and since that column is
+    // the `id` the listing returns, such rows are unusable and the listing
+    // query filters them all out. Probing for a bare row would happily
+    // declare that layer "populated" and serve an empty site until someone
+    // noticed. Probing for a usable row means the endpoint only switches
+    // over once a rebuild on the NEW code has actually happened.
+    const probe = await pool.query('SELECT 1 FROM canonical_events WHERE primary_event_row_id IS NOT NULL LIMIT 1');
+    canonicalLayerState.populated = probe.rows.length > 0;
+  } catch (error) {
+    // Table doesn't exist yet (migration not run) or the database is
+    // unhappy — either way, the raw-events path is the safer answer.
+    console.error('canonical_events probe failed, falling back to raw events listing:', error.message);
+    canonicalLayerState.populated = false;
+  }
+  return canonicalLayerState.populated;
+}
+
 // Get All Events with Filters
+//
+// Two implementations live below. The canonical one does all the work in
+// SQL (WHERE + ORDER BY + LIMIT/OFFSET), which is the whole point: the old
+// implementation pulled up to MAX_RAW_ROWS (30,000) rows into Node on EVERY
+// request and merged/filtered/sorted/sliced them in JS, which both burned
+// the event loop per request and made every event past that cap invisible in
+// a 220k+ row table no matter how far a visitor paginated. The raw one is
+// retained verbatim as the fallback for a database whose canonical layer has
+// never been rebuilt.
 router.get('/', async (req, res) => {
+  let served = false;
+  try {
+    if (await canonicalLayerIsPopulated()) {
+      await listEventsFromCanonicalLayer(req, res);
+      served = true;
+    }
+  } catch (error) {
+    // A failure in the SQL path (e.g. the newer columns this endpoint needs
+    // haven't been added yet because /admin/schema/add-listing-columns was
+    // never POSTed) must degrade to the old behavior rather than 500 the
+    // homepage. Mark the layer unusable so the next TTL window's worth of
+    // requests skip straight to the fallback instead of each re-discovering
+    // the same failure.
+    console.error('Canonical listing query failed, falling back to raw events table:', error);
+    canonicalLayerState.populated = false;
+    canonicalLayerState.checkedAt = Date.now();
+    if (res.headersSent) return;
+  }
+  if (!served) {
+    await listEventsFromRawEventsTable(req, res);
+  }
+});
+
+// Hard ceiling on `?limit=`. The old in-memory implementation sliced an
+// already-materialized array, so an absurd limit cost nothing extra beyond
+// what it had already fetched; with real SQL LIMIT/OFFSET, `?limit=500000`
+// would be an open invitation to make the database do unbounded work on an
+// unauthenticated endpoint. The frontend's own page size is 24
+// (EVENTS_PAGE_SIZE in App.jsx), so this is far above anything the site
+// itself asks for.
+const MAX_PAGE_SIZE = 200;
+
+// SQL-backed implementation of GET /. Reads the precomputed
+// canonical_events/ticket_offers layer (services/canonicalize.js) — which
+// already applies the exact same cross-source merge semantics as
+// mergeEventsAcrossSources, just as a batch job instead of per request — so
+// filtering, ordering and pagination can all be expressed as a single
+// indexed query returning ONE page of rows, instead of dragging up to 30,000
+// raw rows through Node on every request.
+//
+// Throws on any SQL failure rather than responding 500 itself: the route
+// wrapper above catches that and degrades to listEventsFromRawEventsTable,
+// so a missing column or an un-rebuilt derived layer can never take the
+// public listing down.
+async function listEventsFromCanonicalLayer(req, res) {
+  const { city, state, country, category, keywords, minPrice, maxPrice, startDate, endDate, search, location, sort, lat, lng, limit = 20, offset = 0, excludeIds } = req.query;
+
+  const parsedLimit = Number.parseInt(limit, 10);
+  const parsedOffset = Number.parseInt(offset, 10);
+  const effectiveLimit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), MAX_PAGE_SIZE) : 20;
+  const effectiveOffset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0;
+
+  // Same semantics as the raw path: ids the homepage's discover carousels
+  // have already shown, which the Featured Events grid must not repeat.
+  // These are raw `events` ids, which is exactly what
+  // canonical_events.primary_event_row_id holds — so this is now a SQL
+  // NOT-IN rather than a post-fetch JS .filter() that silently shrank the
+  // page below the requested limit.
+  const excludeIdList = (excludeIds || '')
+    .split(',')
+    .map((id) => parseInt(id, 10))
+    .filter((id) => Number.isInteger(id));
+
+  const customerLat = lat !== undefined ? parseFloat(lat) : null;
+  const customerLng = lng !== undefined ? parseFloat(lng) : null;
+  const hasLocation = Number.isFinite(customerLat) && Number.isFinite(customerLng);
+  const effectiveSort = sort || (hasLocation ? 'distance' : 'date');
+
+  const params = [];
+  let paramCount = 1;
+
+  // TEMPORARY (see config/sourceVisibility.js): "source" is a per-OFFER /
+  // per-provider concept in this layer (providers.name on ticket_offers),
+  // not a column on canonical_events, so appendSourceFilter's raw-table
+  // `AND source = ANY(...)` shape doesn't apply here. The equivalent is
+  // applied at the offer level instead: only offers from an active provider
+  // are returned or counted, an event is only listed if it still has at
+  // least one such offer, and its best price is ranked among those offers
+  // only. ACTIVE_SOURCES itself is imported and reused directly — the
+  // decision about WHICH sources are visible still lives in exactly one
+  // place. Currently null (inert), in which case none of this is emitted at
+  // all and the precomputed ce.best_price / ce.offer_count columns are used
+  // as-is; re-enabling it swaps in the equivalent per-offer subqueries.
+  let activeSourcesParam = null;
+  if (ACTIVE_SOURCES) {
+    activeSourcesParam = paramCount;
+    params.push(ACTIVE_SOURCES);
+    paramCount++;
+  }
+  const offerSourceCondition = activeSourcesParam ? ` AND p.name = ANY($${activeSourcesParam}::text[])` : '';
+
+  // best_price on canonical_events is computed by the rebuild from exactly
+  // the same rules the live merge uses (lowest non-null min_price, excluding
+  // 'official' rows) — verified in services/canonicalize.js — so it is the
+  // canonical-layer equivalent of the raw path's own best-price computation
+  // and can be filtered/sorted on directly. Only when ACTIVE_SOURCES hides a
+  // provider does that precomputed value stop being the right answer (it
+  // would still rank a hidden provider's offer as the winner), so in that
+  // case only, it's recomputed per event over the visible offers.
+  const bestPriceSql = activeSourcesParam
+    ? `(SELECT MIN(o.price) FROM ticket_offers o JOIN providers p ON p.id = o.provider_id
+        WHERE o.canonical_event_id = ce.id AND o.price IS NOT NULL AND p.name <> 'official'${offerSourceCondition})`
+    : 'ce.best_price';
+
+  // Retailer count, used by the default ordering rule below. Precomputed by
+  // the rebuild as the number of DISTINCT providers on the event (matching
+  // what the live merge's offers.length counts, since that merge collapses
+  // several rows from one source into a single offer); recomputed per event
+  // only when ACTIVE_SOURCES is restricting which providers count.
+  const offerCountSql = activeSourcesParam
+    ? `(SELECT COUNT(DISTINCT p.name) FROM ticket_offers o JOIN providers p ON p.id = o.provider_id
+        WHERE o.canonical_event_id = ce.id${offerSourceCondition})`
+    : 'ce.offer_count';
+
+  // Past events are excluded unconditionally, same as the raw path — see
+  // that function's comment for why this is not tied to startDate.
+  // primary_event_row_id IS NOT NULL is additionally required because that
+  // column IS the `id` this endpoint returns: an event whose representative
+  // raw row has since been deleted (the FK is ON DELETE SET NULL) has no
+  // stable id to link to, so it cannot be rendered as a card anyway.
+  let whereClause = ' WHERE ce.event_date >= NOW() AND ce.primary_event_row_id IS NOT NULL';
+
+  if (country) {
+    whereClause += ` AND ce.country = $${paramCount}`;
+    params.push(country);
+    paramCount++;
+  }
+
+  if (state) {
+    whereClause += ` AND ce.state = $${paramCount}`;
+    params.push(state);
+    paramCount++;
+  }
+
+  if (city) {
+    whereClause += ` AND ce.city = $${paramCount}`;
+    params.push(city);
+    paramCount++;
+  }
+
+  // Free-text "Location" filter box — partial, case-insensitive, across
+  // city/state/venue, exactly as on the raw path.
+  if (location) {
+    whereClause += ` AND (ce.city ILIKE $${paramCount} OR ce.state ILIKE $${paramCount} OR ce.venue_name ILIKE $${paramCount})`;
+    params.push(`%${location}%`);
+    paramCount++;
+  }
+
+  // category / keywords keep the raw path's exact structure, including the
+  // crucial detail that the two are OR'd together rather than AND'd when a
+  // single tile sets both (e.g. "Theater & Comedy" = category 'Arts &
+  // Theatre' OR keyword 'Comedy') — see the long comment on the raw path for
+  // why ANDing them silently emptied those tiles.
+  let categorySql = '';
+  if (category) {
+    const categoryList = category.split(',').map((c) => c.trim()).filter(Boolean);
+    if (categoryList.length > 0) {
+      categorySql = `ce.category = ANY($${paramCount}::text[])`;
+      params.push(categoryList);
+      paramCount++;
+    }
+  }
+
+  // Word-boundary (\m...\M) regex matching, same as the raw path, so a short
+  // league acronym like "NFL" can't match inside "Inflatable"; matched
+  // against category too, since a game's title is usually just the matchup.
+  let keywordsSql = '';
+  if (keywords) {
+    const keywordList = keywords.split(',').map((k) => k.trim()).filter(Boolean);
+    if (keywordList.length > 0) {
+      const orParts = keywordList.map((_, i) => {
+        const p = paramCount + i;
+        return `(ce.title ~* $${p} OR ce.artist_name ~* $${p} OR ce.venue_name ~* $${p} OR ce.category ~* $${p})`;
+      });
+      keywordsSql = `(${orParts.join(' OR ')})`;
+      keywordList.forEach((kw) => params.push(`\\m${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\M`));
+      paramCount += keywordList.length;
+    }
+  }
+
+  const categoryOrKeywordsParts = [categorySql, keywordsSql].filter(Boolean);
+  if (categoryOrKeywordsParts.length > 0) {
+    whereClause += ` AND (${categoryOrKeywordsParts.join(' OR ')})`;
+  }
+
+  if (startDate) {
+    whereClause += ` AND ce.event_date >= $${paramCount}`;
+    params.push(new Date(startDate));
+    paramCount++;
+  }
+
+  if (endDate) {
+    whereClause += ` AND ce.event_date <= $${paramCount}`;
+    params.push(new Date(endDate));
+    paramCount++;
+  }
+
+  if (search) {
+    whereClause += ` AND (ce.title ILIKE $${paramCount} OR ce.artist_name ILIKE $${paramCount} OR ce.venue_name ILIKE $${paramCount})`;
+    params.push(`%${search}%`);
+    paramCount++;
+  }
+
+  // minPrice/maxPrice compare against the event's BEST price across sources
+  // — same semantics as the raw path's post-merge JS filter (an event isn't
+  // excluded because one source's offer is out of range while a cheaper one
+  // is in range), except it's now a real indexed WHERE on a real column
+  // rather than a filter applied to 30,000 already-fetched rows.
+  if (minPrice) {
+    const min = parseFloat(minPrice);
+    if (Number.isFinite(min)) {
+      whereClause += ` AND ${bestPriceSql} >= $${paramCount}`;
+      params.push(min);
+      paramCount++;
+    }
+  }
+  if (maxPrice) {
+    const max = parseFloat(maxPrice);
+    if (Number.isFinite(max)) {
+      whereClause += ` AND ${bestPriceSql} <= $${paramCount}`;
+      params.push(max);
+      paramCount++;
+    }
+  }
+
+  if (excludeIdList.length > 0) {
+    whereClause += ` AND ce.primary_event_row_id != ALL($${paramCount}::int[])`;
+    params.push(excludeIdList);
+    paramCount++;
+  }
+
+  // PERMANENT (see config/priceVisibility.js): never list an event with no
+  // tickets actually for sale. appendPricedOnlyFilter's raw-row test is
+  // `min_price IS NOT NULL OR max_price IS NOT NULL` on a single source row;
+  // the canonical-layer equivalent is "this event has a usable best price
+  // from at least one real seller". NOTE the two are not exactly identical
+  // at the edges: a row whose ONLY price data is max_price, or whose only
+  // priced offer is an 'official' row, passed the raw test but has a NULL
+  // best_price here and is therefore now hidden. That is a stricter reading
+  // of the same rule (neither case gives a visitor a real, comparable price
+  // to click through on), and both are vanishingly rare — the 'official'
+  // scraper no longer runs at all — but it is a real behavior difference and
+  // is called out here deliberately.
+  whereClause += ` AND ${bestPriceSql} IS NOT NULL`;
+
+  // Distance from the customer, via the same Haversine expression the raw
+  // path uses — copied verbatim apart from the ce. qualification, so an
+  // event's reported distance_km can't drift between the two code paths.
+  // Events without stored coordinates come back NULL and sort last rather
+  // than being excluded.
+  let distanceSelect = '';
+  if (hasLocation) {
+    distanceSelect = `, (
+           CASE WHEN ce.latitude IS NULL OR ce.longitude IS NULL THEN NULL ELSE
+             6371 * acos(
+               LEAST(1, GREATEST(-1,
+                 cos(radians($${paramCount})) * cos(radians(ce.latitude)) * cos(radians(ce.longitude) - radians($${paramCount + 1}))
+                 + sin(radians($${paramCount})) * sin(radians(ce.latitude))
+               ))
+             )
+           END
+         ) AS distance_km`;
+  }
+
+  // Ordering, translated clause for clause from applyLocationRetailerOrder
+  // (the default) and compareEvents (an explicit ?sort=), including their
+  // null handling: every one of those comparators sorts missing data LAST
+  // regardless of direction, which is NULLS LAST in both ASC and DESC here
+  // (Postgres's own default is NULLS LAST for ASC but NULLS FIRST for DESC,
+  // so the DESC cases must say so explicitly).
+  //
+  // Each entry is [inner, outer]: the inner form runs inside the subquery
+  // that does the actual LIMIT/OFFSET (where `ce` and the select aliases are
+  // in scope), and the identical outer form is re-applied on the final
+  // result of the offers join. Repeating it is not redundant — a subquery's
+  // ordering is not guaranteed to survive being joined to, so the outer
+  // ORDER BY is what actually guarantees the response order.
+  const orderSpecs = [];
+  if (!sort) {
+    // Standing rule for every default listing view: closest first (strictly,
+    // across all retailers), then — only among events at the exact same
+    // distance — the ones listed by more retailers, then soonest.
+    if (hasLocation) orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
+    orderSpecs.push(['offer_count DESC', 'page.offer_count DESC']);
+    orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+  } else if (effectiveSort === 'distance' && hasLocation) {
+    orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
+  } else if (effectiveSort === 'price-low') {
+    orderSpecs.push(['sort_best_price ASC NULLS LAST', 'page.sort_best_price ASC NULLS LAST']);
+  } else if (effectiveSort === 'price-high') {
+    orderSpecs.push(['sort_best_price DESC NULLS LAST', 'page.sort_best_price DESC NULLS LAST']);
+  } else if (effectiveSort === 'name') {
+    orderSpecs.push(['ce.title ASC', 'page.title ASC']);
+  } else {
+    // 'date', an unrecognized sort value, or ?sort=distance with no
+    // coordinates — all of which the JS comparator resolved to (or degraded
+    // into) plain date-ascending.
+    orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+  }
+  // Deterministic final tiebreak. The JS comparators returned 0 for ties and
+  // relied on the surrounding array's incidental order, which was harmless
+  // when the whole result set was sorted in one go — but with real
+  // LIMIT/OFFSET, two rows that tie under an unstable sort can appear on
+  // both page 1 and page 2 (or on neither), so the ordering has to be a
+  // total order. canonical_events.id is used purely as that tiebreak and is
+  // never exposed in the response.
+  orderSpecs.push(['ce.id ASC', 'page.canonical_event_id ASC']);
+  const innerOrderBy = orderSpecs.map(([inner]) => inner).join(', ');
+  const outerOrderBy = orderSpecs.map(([, outer]) => outer).join(', ');
+
+  const listParams = [...params];
+  if (hasLocation) {
+    listParams.push(customerLat, customerLng);
+    paramCount += 2;
+  }
+  const limitParam = paramCount;
+  const offsetParam = paramCount + 1;
+  listParams.push(effectiveLimit, effectiveOffset);
+
+  // The select list is deliberately explicit rather than `ce.*`, so that the
+  // response's field set is auditable against what the raw path returned
+  // (which was the whole `events` row spread out). Mapping, raw column ->
+  // canonical column: id -> primary_event_row_id (a real, stable events.id —
+  // canonical_events.id must NEVER be exposed as `id`, it is reassigned on
+  // every rebuild), date -> event_date. external_id/source/source_url are
+  // re-attached in JS below from the primary row's own offer, since those
+  // are per-source values that live on ticket_offers here. created_at/
+  // updated_at are the CANONICAL row's timestamps (when the derived layer
+  // was last rebuilt), not the raw row's — the fields are still present so
+  // nothing breaks, but nothing in the frontend reads them.
+  const query = `
+    SELECT page.*, COALESCE(offer_list.offers, '[]'::json) AS offers
+    FROM (
+      SELECT
+        ce.id AS canonical_event_id,
+        ce.primary_event_row_id AS id,
+        ce.title,
+        ce.description,
+        ce.category,
+        ce.event_date AS "date",
+        ce.country,
+        ce.state,
+        ce.city,
+        ce.venue_name,
+        ce.venue_address,
+        ce.image_url,
+        ce.artist_name,
+        ce.latitude,
+        ce.longitude,
+        ce.price_breakdown,
+        ce.created_at,
+        ce.updated_at,
+        ${offerCountSql} AS offer_count,
+        ${bestPriceSql} AS sort_best_price${distanceSelect}
+      FROM canonical_events ce
+      ${whereClause}
+      ORDER BY ${innerOrderBy}
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    ) page
+    LEFT JOIN LATERAL (
+      SELECT json_agg(json_build_object(
+        'event_row_id', d.source_event_row_id,
+        'external_id', d.provider_offer_id,
+        'source', d.source,
+        'source_url', d.seller_url,
+        'min_price', d.price::text,
+        'max_price', d.max_price::text,
+        'currency', d.currency
+      )) AS offers
+      FROM (
+        -- One offer per SOURCE, not per ticket_offers row. The live merge
+        -- collapses two rows from the same seller (e.g. the same
+        -- TicketNetwork performance listed under two external_ids) into a
+        -- single offer, keeping whichever has a real price, and the lower
+        -- one when both do — otherwise a card renders
+        -- "ticketnetwork from $X · ticketnetwork from $X". The rebuild
+        -- stores every such row as its own ticket_offers row, so that same
+        -- collapse is reproduced here with DISTINCT ON + the matching
+        -- ordering (priced rows first, then cheapest).
+        SELECT DISTINCT ON (p.name)
+          p.name AS source,
+          o.source_event_row_id,
+          o.provider_offer_id,
+          o.seller_url,
+          o.price,
+          o.max_price,
+          o.currency
+        FROM ticket_offers o
+        JOIN providers p ON p.id = o.provider_id
+        WHERE o.canonical_event_id = page.canonical_event_id${offerSourceCondition}
+        ORDER BY p.name, (o.price IS NULL) ASC, o.price ASC
+      ) d
+    ) offer_list ON TRUE
+    ORDER BY ${outerOrderBy}
+  `;
+
+  // `total` comes from a COUNT over the identical WHERE rather than the old
+  // `merged.length` (which was only ever the length of whatever fit under
+  // MAX_RAW_ROWS). Run alongside the page query rather than after it — they
+  // are independent, and both hit the same index.
+  const countQuery = `SELECT COUNT(*)::int AS total FROM canonical_events ce ${whereClause}`;
+
+  const [pageResult, countResult] = await Promise.all([
+    pool.query(query, listParams),
+    pool.query(countQuery, params),
+  ]);
+
+  const total = countResult.rows[0] ? countResult.rows[0].total : 0;
+
+  const events = pageResult.rows.map((row) => {
+    // canonical_event_id / offer_count / sort_best_price are internal
+    // bookkeeping for the query above and are stripped before responding —
+    // canonical_event_id in particular must never leak out, since it is
+    // reassigned by every rebuild.
+    const { canonical_event_id, offer_count, sort_best_price, offers, ...rest } = row;
+    const event = { ...rest, offers: offers || [] };
+
+    // The raw path spread the PRIMARY row into the response, so these three
+    // top-level fields carried that one row's source identity (the frontend
+    // only uses them as a legacy fallback when `offers` is absent, but they
+    // are part of the response shape). Here they are read back off the
+    // offer belonging to the primary row.
+    const primaryOffer = event.offers.find((o) => o.event_row_id === event.id) || null;
+    event.external_id = primaryOffer ? primaryOffer.external_id : null;
+    event.source = primaryOffer ? primaryOffer.source : null;
+    event.source_url = primaryOffer ? primaryOffer.source_url : null;
+
+    // Defaults for the (now impossible, given the best-price filter above,
+    // but cheap to guarantee) case of an event that came back with no usable
+    // offers at all — keeps the response shape stable rather than omitting
+    // the keys entirely.
+    event.min_price = null;
+    event.max_price = null;
+    applyPriceComparisonFields(event);
+    return event;
+  });
+
+  res.json({
+    events,
+    total,
+    limit: effectiveLimit,
+    offset: effectiveOffset,
+    hasMore: (effectiveOffset + effectiveLimit) < total,
+  });
+}
+
+// The original implementation, preserved unchanged as the safety net
+// described above. Everything here operates on the raw `events` table and
+// merges in memory; see MAX_RAW_ROWS at the top of this file for its limits.
+async function listEventsFromRawEventsTable(req, res) {
   try {
     const { city, state, country, category, keywords, minPrice, maxPrice, startDate, endDate, search, location, sort, lat, lng, limit = 20, offset = 0, excludeIds } = req.query;
 
@@ -508,7 +1086,7 @@ router.get('/', async (req, res) => {
     console.error('Error fetching events:', error);
     res.status(500).json({ error: 'Failed to fetch events' });
   }
-});
+}
 
 // Get a single event MERGED with any same-event offers from other sources
 // (spec §12, §20-22 — real per-event pages need the same price-comparison

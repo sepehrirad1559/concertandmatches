@@ -200,6 +200,25 @@ await logProviderSync({
 console.error('SeatGeek backfill failed:', err);
 await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
+
+// NOT rebuilding canonical_events here on purpose, even though this job is
+// exactly what fills in the prices the canonical layer's best_price depends
+// on. The public listing endpoint (routes/events.js's GET /) now reads that
+// precomputed layer, so a price this job fills in stays invisible to
+// visitors until the next rebuild — currently only the once-daily one after
+// the discovery sync below, so there IS a real freshness gap (up to ~24h)
+// versus the old merge-on-every-request behavior. Deliberately not adding a
+// second full rebuild here to close that gap: a rebuild is a full
+// TRUNCATE-and-rebuild of the whole canonical_events/ticket_offers/
+// price_history layer, and running it 5x/day instead of 1x/day (this job
+// runs every BACKFILL_INTERVAL_MS, currently 6h) would proportionally grow
+// price_history's write rate with no retention policy on that table, on a
+// production database this change has not been load-tested against. If
+// tighter price freshness turns out to matter more than that cost, the
+// right fix is either an incremental/UPSERT rebuild instead of a full one,
+// or calling rebuildCanonicalEvents() here too once the full-rebuild cost is
+// actually measured on production data — not a decision to make silently
+// inside this diff.
 }
 
 // First run 5 minutes after boot (so it doesn't compete with startup
@@ -317,11 +336,24 @@ await logProviderSync({ providerName: 'curated', syncType: 'discovery', startedA
 }
 
 console.log('🔄 Rebuilding canonical events after event sync...');
+startedAt = new Date();
 try {
 const rebuildResult = await rebuildCanonicalEvents();
 console.log('Canonicalize rebuild result:', rebuildResult);
+// Logged the same way as the post-backfill rebuild above (and as
+// POST /admin/canonicalize/rebuild) so GET /admin/diagnostics/providers'
+// "last successful rebuild" lookup sees scheduled runs too, not only
+// manually-triggered ones. Previously this run wrote nothing at all to
+// provider_sync_logs, so a daily rebuild looked identical to no rebuild.
+await logProviderSync({
+  providerName: 'canonicalize', syncType: 'rebuild', startedAt, finishedAt: new Date(),
+  recordsReceived: rebuildResult.rawEventRows ?? null, recordsUpdated: rebuildResult.canonicalEvents ?? null,
+  status: 'success',
+  errorMessage: rebuildResult.skippedNoProvider > 0 ? `${rebuildResult.skippedNoProvider} offer(s) skipped — no matching providers row` : null,
+});
 } catch (err) {
 console.error('Canonicalize rebuild failed:', err);
+await logProviderSync({ providerName: 'canonicalize', syncType: 'rebuild', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
 }
 
