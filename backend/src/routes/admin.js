@@ -9,6 +9,7 @@ import { logProviderSync } from '../utils/syncLog.js';
 import { getProvider } from '../providers/registry.js';
 import { isSameEvent, tokenSimilarity, isSameDay } from '../utils/matching.js';
 import { syncSeatGeekMatchesForExistingEvents } from '../services/seatgeek.js';
+import { trackedTicketmasterLink } from '../services/ticketmaster.js';
 import { syncCuratedAttractions } from '../services/curatedAttractions.js';
 import axios from 'axios';
 
@@ -821,6 +822,76 @@ router.post('/schema/add-price-backfill-tracking', async (req, res) => {
     console.error('Error adding price_backfill_checked_at:', error);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// One-time backfill for the Ticketmaster affiliate-link fix (2026-09-16) —
+// see services/ticketmaster.js's trackedTicketmasterLink for the full
+// explanation. That fix only wraps the outbound URL for events stored from
+// this point forward (storeEvent's INSERT path); every Ticketmaster event
+// already in the database still has the old, untracked, raw
+// ticketmaster.com URL as its source_url, since storeEvent's UPDATE path
+// never touches source_url after insert. This walks every existing
+// Ticketmaster row and rewrites source_url through the same tracked-link
+// wrapper, so referrals from already-synced events start earning
+// commission too instead of only new ones going forward. Idempotent — a
+// row whose source_url is already a tracked link (starts with the
+// tracking domain) is skipped, so running this twice is harmless.
+//
+// A rebuild (POST /api/admin/canonicalize/rebuild) still needs to run after
+// this to propagate the updated source_url into ticket_offers.affiliate_url,
+// same as any other events-table change — this route only touches the
+// events table.
+router.post('/schema/wrap-ticketmaster-affiliate-links', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const startedAt = new Date();
+  res.json({ success: true, message: 'Ticketmaster affiliate-link backfill started in the background. Check GET /admin/health for completion.' });
+
+  (async () => {
+    const BATCH_SIZE = 2000;
+    let updated = 0;
+    let skippedAlreadyTracked = 0;
+    try {
+      while (true) {
+        const { rows } = await pool.query(
+          `SELECT id, source_url FROM events
+           WHERE source = 'ticketmaster' AND source_url IS NOT NULL
+             AND source_url NOT LIKE 'https://ticketmaster.evyy.net/%'
+           LIMIT $1`,
+          [BATCH_SIZE]
+        );
+        if (rows.length === 0) break;
+
+        for (const row of rows) {
+          const tracked = trackedTicketmasterLink(row.source_url);
+          if (tracked === row.source_url) {
+            skippedAlreadyTracked++;
+            continue;
+          }
+          await pool.query('UPDATE events SET source_url = $1 WHERE id = $2', [tracked, row.id]);
+          updated++;
+        }
+      }
+      await logProviderSync({
+        providerName: 'ticketmaster', syncType: 'affiliate_link_backfill', startedAt, finishedAt: new Date(),
+        recordsReceived: updated + skippedAlreadyTracked, recordsUpdated: updated, status: 'success',
+        errorMessage: null,
+      });
+    } catch (error) {
+      console.error('Error wrapping Ticketmaster affiliate links:', error);
+      await logProviderSync({
+        providerName: 'ticketmaster', syncType: 'affiliate_link_backfill', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: updated, status: 'error', errorMessage: error.message,
+      });
+    }
+  })();
 });
 
 // Rebuilds canonical_events + ticket_offers from the current `events` table

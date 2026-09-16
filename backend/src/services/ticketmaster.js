@@ -4,6 +4,42 @@ import { pool } from '../index.js';
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
 const TICKETMASTER_BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
 
+// Ticketmaster affiliate tracking link (2026-09-16) — this account is
+// Approved for Ticketmaster's affiliate program via Impact.com (found while
+// investigating a user report; confirmed on Impact.com's own program page:
+// it's a commission program, 0.5%-5% depending on sale type, NOT a
+// different/better pricing API — Ticketmaster's Discovery API still doesn't
+// return priceRanges for most events regardless of this). Before this,
+// every Ticketmaster outbound link was the raw, untracked event `url` from
+// the Discovery API, so every referral to Ticketmaster earned $0 even
+// though we're approved and eligible — unlike TicketNetwork
+// (services/ticketnetwork.js, whose Impact.com catalog Url field already
+// comes back as a ready-to-use tracked link) and curatedAttractions.js's
+// static Rockefeller Center link, both of which were already wired up.
+//
+// Impact.com's deep-link format is the same for every program:
+//   https://{tracking-subdomain}/c/{mediaPartnerId}/{adId}/{campaignId}?u={destination, URL-encoded}
+// mediaPartnerId (7649497) and campaignId (4272) identify this account and
+// the Ticketmaster program; adId (557537) is a plain "Text Link" asset
+// ("Ticket Deals All Offers") rather than a specific banner/widget's ad id,
+// so every click attributes to a generic text link in Impact's own
+// reporting instead of misleadingly showing as clicks on one particular
+// creative. Confirmed live against Impact.com's "Get Tracking Link" panel
+// for that asset before hardcoding these ids.
+const TICKETMASTER_IMPACT_TRACKING_DOMAIN = 'https://ticketmaster.evyy.net';
+const TICKETMASTER_IMPACT_MEDIA_PARTNER_ID = '7649497';
+const TICKETMASTER_IMPACT_AD_ID = '557537';
+const TICKETMASTER_IMPACT_CAMPAIGN_ID = '4272';
+
+export function trackedTicketmasterLink(rawUrl) {
+  if (!rawUrl) return rawUrl;
+  // Idempotent: a URL that's already one of our tracked links (e.g. if this
+  // ever runs twice against the same value) is returned unchanged instead
+  // of being wrapped again.
+  if (rawUrl.startsWith(TICKETMASTER_IMPACT_TRACKING_DOMAIN)) return rawUrl;
+  return `${TICKETMASTER_IMPACT_TRACKING_DOMAIN}/c/${TICKETMASTER_IMPACT_MEDIA_PARTNER_ID}/${TICKETMASTER_IMPACT_AD_ID}/${TICKETMASTER_IMPACT_CAMPAIGN_ID}?u=${encodeURIComponent(rawUrl)}`;
+}
+
 // Every low-level fetch below used to swallow API errors completely — log
 // to console (which nobody but Railway's own dashboard can see) and return
 // an empty array, indistinguishable from "this market/month genuinely has
@@ -388,7 +424,7 @@ export const storeEvent = async (tmEvent) => {
     }
     const date = new Date(dates.start.dateTime);
     const image = images?.[0]?.url || null;
-    const sourceUrl = url;
+    const sourceUrl = trackedTicketmasterLink(url);
 
     // Basic data-quality guard (spec §32): an event with no valid date is
     // useless for a comparison site — it can't be shown, sorted, or matched
@@ -961,6 +997,7 @@ export default {
   fetchClosestTicketmasterEvents,
   syncClosestEvents,
   getTicketmasterEventDetails,
+  trackedTicketmasterLink,
   backfillMissingPrices,
   scheduleEventSync
 };
