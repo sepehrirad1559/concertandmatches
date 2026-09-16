@@ -212,7 +212,21 @@ export async function rebuildCanonicalEvents() {
           primary.id,
           descriptionRow.description,
           primary.venue_address,
-          primary.price_breakdown,
+          // primary.price_breakdown comes back from the earlier `SELECT *
+          // FROM events` already parsed into a native JS value (jsonb
+          // columns round-trip that way in node-postgres) — here that's
+          // an Array (e.g. [{max,min,type,currency}]) or null. Passing a
+          // JS Array straight through as a query parameter does NOT
+          // serialize it as JSON: node-postgres's default parameter
+          // serializer treats plain arrays specially and encodes them as
+          // a Postgres ARRAY literal ("{...}") instead, which is not
+          // valid input for a jsonb column and made every single rebuild
+          // since this column was added fail with "invalid input syntax
+          // for type json", silently rolling back the whole transaction
+          // (see the try/catch below) and leaving canonical_events stuck
+          // on its last good pre-migration data. Re-stringifying here
+          // gives Postgres the JSON text it actually expects.
+          primary.price_breakdown != null ? JSON.stringify(primary.price_breakdown) : null,
           offerSources.size,
         ]
       );
