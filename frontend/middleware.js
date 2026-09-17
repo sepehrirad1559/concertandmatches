@@ -1,3 +1,16 @@
+// NOT DEPLOYED (confirmed 2026-09-16). This file sits in frontend/, but
+// this Vercel project's Root Directory is the repo root (see Build and
+// Deployment settings: the build command is manually overridden to
+// `cd frontend && npm install && npm run build`, output `frontend/dist` —
+// that override only makes sense if Vercel starts at the repo root).
+// Vercel Routing Middleware is only picked up from a middleware file at
+// the actual Root Directory, so the file that's live is /middleware.mjs at
+// the repo root, not this one. Keeping this here (rather than deleting it
+// outright) only because an earlier fix attempt got this backwards, edited
+// THIS file, and deleted the real one — leaving this note so that mistake
+// isn't repeated. If you're trying to change bot-prerendering behavior for
+// /event pages, edit /middleware.mjs at the repo root instead.
+//
 // Vercel Routing Middleware (framework-agnostic — this is a Vite/React SPA,
 // not Next.js). Runs at Vercel's edge before any static file or rewrite is
 // served.
