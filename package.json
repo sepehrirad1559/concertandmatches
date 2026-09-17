@@ -1,0 +1,8 @@
+{
+  "name": "concertandmatches",
+  "private": true,
+  "description": "Repo root — exists only so Vercel's default Install Command (run at the project's actual Root Directory, the repo root — see Build and Deployment settings, whose Build Command is manually overridden to `cd frontend && npm install && npm run build`) has a package.json to install from. Without this file there is nothing here for `npm install` to act on, so /middleware.mjs's `import { next } from '@vercel/functions'` can't resolve at build time and Vercel silently does not deploy the Edge Middleware at all — confirmed 2026-09-17 via a deployment's Resources tab, which listed only Static Assets, no Functions/Middleware entry, despite middleware.mjs being present and vercel.json's matcher config being correct. This file must keep @vercel/functions as a dependency for that reason; it is not used for anything else (no scripts, no other deps) — frontend/package.json remains the real app manifest.",
+  "dependencies": {
+    "@vercel/functions": "^1.5.0"
+  }
+}
