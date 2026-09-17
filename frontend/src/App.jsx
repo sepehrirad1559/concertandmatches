@@ -2126,7 +2126,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          Lowest Total Price Guaranteed.<br />No Hidden Fees. <span style={{ color: NAV_ACCENT_LIGHT }}>No Checkout&nbsp;Surprises.</span>
+          Lowest Total Price Guaranteed.<br /><span style={{ color: NAV_ACCENT_LIGHT, whiteSpace: 'nowrap' }}>No Hidden Fees. No Checkout Surprises.</span>
         </h1>
 
         <p style={{
