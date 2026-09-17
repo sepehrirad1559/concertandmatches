@@ -2126,7 +2126,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          Compare Leading Marketplaces<br />and Find the <span style={{ color: NAV_ACCENT_LIGHT }}>Best Available&nbsp;Tickets</span>
+          Lowest Total Price Guaranteed.<br />No Hidden Fees. <span style={{ color: NAV_ACCENT_LIGHT }}>No Checkout&nbsp;Surprises.</span>
         </h1>
 
         <p style={{
