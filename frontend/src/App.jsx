@@ -654,16 +654,21 @@ function AffiliateDisclosure() {
 // (also OR'd) for leagues/genres that aren't their own category in the data.
 // Both are ANDed with whatever the customer types in the main search box.
 //
-// Consolidated to exactly 3 entries (Concerts / Sports / Theater & Comedy)
-// to match the homepage design's "Popular categories" row — the old
-// NFL/NBA/NCAA Football tiles are folded into one combined `sports` entry
-// (keywords OR'd together), and Theater + Comedy are folded into one
-// `theater` entry the same way (its `category`/`keywords` OR'd together),
-// so filtering behavior for each original tile is unchanged, just
-// presented as one combined card instead of two. `tagline` and `icon` are
-// the design's short descriptor + icon key for each card (see
-// CategoryTiles) — the 'theater' icon (a pair of masks) already reads as
-// "theater & comedy", so it's kept as-is for the merged tile.
+// Concerts and Theater & Comedy stay single combined tiles (their
+// `category`/`keywords` OR'd together — see backend/src/routes/events.js's
+// long comment on categorySql/keywordsSql for why OR, not AND). The single
+// catch-all "Sports" tile (2026-09) was split back out into 5 league-specific
+// tiles (NFL/NBA/NHL/MLB/MLS) per request — each just sets `keywords` (no
+// `category`, same as the old NFL/NBA tiles), matched with word-boundary
+// regex server-side (see keywordsSql) so e.g. "NFL" can't false-positive
+// inside another word. `tagline` and `icon` are the design's short
+// descriptor + icon key for each card (see CategoryTiles) — there's no
+// per-league icon art yet, so every league tile reuses the generic 'sports'
+// icon rather than leaving new tiles unstyled; swap in dedicated league
+// icons in CategoryIcon later if desired. Keep backend/src/routes/events.js's
+// DISCOVER_CATEGORY_RULES in sync with this list (its own comment explains
+// why) so the homepage's "Popular near you"-style sections split sports the
+// same way these tiles do.
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -673,11 +678,39 @@ const EVENT_CATEGORIES = [
     category: ['Music', 'Concert'],
   },
   {
-    id: 'sports',
-    label: 'Sports',
-    tagline: 'Every Game. A Greater View.',
+    id: 'nfl',
+    label: 'NFL',
+    tagline: 'Every Sunday. Bigger Stakes.',
     icon: 'sports',
-    keywords: ['NFL', 'NBA', 'Basketball', 'NCAA Football', 'College Football', 'NCAA'],
+    keywords: ['NFL'],
+  },
+  {
+    id: 'nba',
+    label: 'NBA',
+    tagline: 'Every Basket. Bigger Moments.',
+    icon: 'sports',
+    keywords: ['NBA', 'Basketball'],
+  },
+  {
+    id: 'nhl',
+    label: 'NHL',
+    tagline: 'Every Shift. Bigger Battles.',
+    icon: 'sports',
+    keywords: ['NHL', 'Hockey'],
+  },
+  {
+    id: 'mlb',
+    label: 'MLB',
+    tagline: 'Every Pitch. Bigger Stakes.',
+    icon: 'sports',
+    keywords: ['MLB', 'Baseball'],
+  },
+  {
+    id: 'mls',
+    label: 'MLS',
+    tagline: 'Every Match. Bigger Rivalries.',
+    icon: 'sports',
+    keywords: ['MLS', 'Soccer'],
   },
   {
     id: 'theater',

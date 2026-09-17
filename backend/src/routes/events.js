@@ -1146,14 +1146,17 @@ async function getMergedEventById(eventRowId) {
 // Category match rules mirror the frontend's own quick-filter tiles (see
 // EVENT_CATEGORIES in frontend/src/App.jsx) so a section here contains
 // exactly the same kinds of events those tiles would show. The generic
-// "Sports" bucket was replaced with dedicated nfl/nba/ncaaFootball rules
-// (matching the tiles' own NFL/NBA/NCAA Football keyword lists exactly) so
+// "Sports" bucket was replaced with dedicated nfl/nba/nhl/mlb/mls/
+// ncaaFootball rules (matching the tiles' own keyword lists exactly) so
 // the homepage sections split sports the same way the tiles do, rather than
 // lumping every sport into one catch-all section.
 const DISCOVER_CATEGORY_RULES = {
   nfl: { categories: [], keywords: ['NFL'] },
   concerts: { categories: ['Music', 'Concert'], keywords: [] },
   nba: { categories: [], keywords: ['NBA', 'Basketball'] },
+  nhl: { categories: [], keywords: ['NHL', 'Hockey'] },
+  mlb: { categories: [], keywords: ['MLB', 'Baseball'] },
+  mls: { categories: [], keywords: ['MLS', 'Soccer'] },
   ncaaFootball: { categories: [], keywords: ['NCAA Football', 'College Football', 'NCAA'] },
   theater: { categories: ['Arts & Theatre', 'Theatre', 'Theater'], keywords: [] },
   comedy: { categories: [], keywords: ['Comedy', 'Stand-Up', 'Stand Up'] },
