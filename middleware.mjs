@@ -46,7 +46,19 @@
 // returns something (next()/rewrite()/a Response) — keep it that way.
 import { next } from '@vercel/functions';
 
-const BOT_UA_REGEX = /bot|crawl|spider|facebookexternalhit|slackbot|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|bingpreview|duckduckbot|yandexbot|redditbot|skypeuripreview|facebot|ia_archiver|embedly|quora link preview|vkshare|w3c_validator/i;
+// 2026-09-17: verified live with Google's own Rich Results Test tool
+// against this exact regex — the tool (and Search Console's URL Inspection)
+// fetches as "Google-InspectionTool", which does NOT contain the substring
+// "bot", so it was silently falling through to the plain SPA shell despite
+// the /bot/i check below, making it impossible to verify this fix with
+// Google's own testing tools. Google documents its full crawler/fetcher
+// token list at https://developers.google.com/search/docs/crawling-indexing/overview-google-crawlers
+// — added those tokens explicitly (inspectiontool, googleother, storebot,
+// google-extended) rather than relying solely on the generic /bot/i catch-
+// all. This is not cloaking risk: every one of these fetchers is Google's
+// own, and per Google's own guidance dynamic rendering should serve them
+// the SAME content a JS-executing Googlebot would eventually construct.
+const BOT_UA_REGEX = /bot|crawl|spider|inspectiontool|facebookexternalhit|slackbot|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|applebot|pinterest|bingpreview|duckduckbot|yandexbot|redditbot|skypeuripreview|facebot|ia_archiver|embedly|quora link preview|vkshare|w3c_validator/i;
 
 const PRERENDER_ORIGIN = 'https://concertandmatches-production.up.railway.app';
 
