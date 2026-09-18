@@ -11,6 +11,7 @@ import { isSameEvent, tokenSimilarity, isSameDay } from '../utils/matching.js';
 import { syncSeatGeekMatchesForExistingEvents } from '../services/seatgeek.js';
 import { trackedTicketmasterLink } from '../services/ticketmaster.js';
 import { syncCuratedAttractions } from '../services/curatedAttractions.js';
+import { backfillMissingPricesViaApify } from '../services/apifyPriceService.js';
 import axios from 'axios';
 
 const router = express.Router();
@@ -822,6 +823,71 @@ router.post('/schema/add-price-backfill-tracking', async (req, res) => {
     console.error('Error adding price_backfill_checked_at:', error);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// Schema prep for services/apifyPriceService.js's Apify live-price backfill
+// (the tier below the regular Ticketmaster/SeatGeek API backfills — see
+// that file's header comment). min_price_is_estimated lets the frontend
+// (and this dashboard) tell a real scraped price apart from the 0.80 x
+// TicketNetwork estimate used when a scrape fails, instead of silently
+// mixing the two into min_price with no way to tell which is which.
+router.post('/schema/add-apify-price-tracking', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS min_price_is_estimated BOOLEAN NOT NULL DEFAULT false');
+    res.json({ success: true, message: 'events extended with min_price_is_estimated.' });
+  } catch (error) {
+    console.error('Error adding min_price_is_estimated:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Live-price backfill via Apify (services/apifyPriceService.js) — the next
+// tier after POST /backfill/ticketmaster-prices and /backfill/seatgeek-prices
+// above: scrapes each event's public page directly for events those two
+// still couldn't price. Slower and costs Apify usage credits per event
+// (unlike the two routes above, which are "free" API calls), so this
+// defaults to a much smaller batch (10, not 100) — raise ?limit= deliberately,
+// not by habit. Requires POST /schema/add-price-backfill-tracking AND
+// /schema/add-apify-price-tracking to have been run once first, and
+// APIFY_TOKEN configured (falls through to the TicketNetwork-estimate
+// fallback for every row otherwise — see that file's header comment).
+router.post('/backfill/apify-live-prices', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const limit = Number(req.query.limit) || 10;
+  const startedAt = new Date();
+  res.json({ success: true, message: `Apify live-price backfill started in the background (limit=${limit}). Check GET /admin/health or Railway logs for completion.` });
+
+  backfillMissingPricesViaApify(limit)
+    .then((result) => logProviderSync({
+      providerName: 'apify', syncType: 'live_price_backfill', startedAt, finishedAt: new Date(),
+      recordsReceived: result.checked ?? null, recordsUpdated: (result.scraped ?? 0) + (result.estimated ?? 0),
+      status: result.success ? 'success' : 'error', errorMessage: result.error ?? null,
+    }))
+    .catch((error) => {
+      console.error('Background Apify live-price backfill failed:', error);
+      return logProviderSync({
+        providerName: 'apify', syncType: 'live_price_backfill', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 // One-time backfill for the Ticketmaster affiliate-link fix (2026-09-16) —
