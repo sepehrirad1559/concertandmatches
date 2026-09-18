@@ -713,6 +713,13 @@ const EVENT_CATEGORIES = [
     keywords: ['MLS', 'Soccer'],
   },
   {
+    id: 'boxing',
+    label: 'Boxing',
+    tagline: 'Every Round. Bigger Fights.',
+    icon: 'sports',
+    keywords: ['Boxing'],
+  },
+  {
     id: 'theater',
     label: 'Theater & Comedy',
     tagline: 'Bold Stories. Bigger Laughs.',

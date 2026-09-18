@@ -1157,6 +1157,7 @@ const DISCOVER_CATEGORY_RULES = {
   nhl: { categories: [], keywords: ['NHL', 'Hockey'] },
   mlb: { categories: [], keywords: ['MLB', 'Baseball'] },
   mls: { categories: [], keywords: ['MLS', 'Soccer'] },
+  boxing: { categories: [], keywords: ['Boxing'] },
   ncaaFootball: { categories: [], keywords: ['NCAA Football', 'College Football', 'NCAA'] },
   theater: { categories: ['Arts & Theatre', 'Theatre', 'Theater'], keywords: [] },
   comedy: { categories: [], keywords: ['Comedy', 'Stand-Up', 'Stand Up'] },
