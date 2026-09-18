@@ -669,6 +669,24 @@ function AffiliateDisclosure() {
 // DISCOVER_CATEGORY_RULES in sync with this list (its own comment explains
 // why) so the homepage's "Popular near you"-style sections split sports the
 // same way these tiles do.
+// NBA team roster for the "NBA" category tile's own sub-page (see
+// TeamTiles below) — clicking NBA doesn't filter the main grid directly
+// like the other tiles; it opens this list of all 30 franchises first, and
+// picking one filters events by that team's name (reusing the plain
+// search mechanism — searchInput/activeSearch — since a team name is a
+// perfectly good, already-supported search query and needs no backend
+// changes).
+const NBA_TEAMS = [
+  'Atlanta Hawks', 'Boston Celtics', 'Brooklyn Nets', 'Charlotte Hornets',
+  'Chicago Bulls', 'Cleveland Cavaliers', 'Dallas Mavericks', 'Denver Nuggets',
+  'Detroit Pistons', 'Golden State Warriors', 'Houston Rockets', 'Indiana Pacers',
+  'Los Angeles Clippers', 'Los Angeles Lakers', 'Memphis Grizzlies', 'Miami Heat',
+  'Milwaukee Bucks', 'Minnesota Timberwolves', 'New Orleans Pelicans', 'New York Knicks',
+  'Oklahoma City Thunder', 'Orlando Magic', 'Philadelphia 76ers', 'Phoenix Suns',
+  'Portland Trail Blazers', 'Sacramento Kings', 'San Antonio Spurs', 'Toronto Raptors',
+  'Utah Jazz', 'Washington Wizards',
+];
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -690,6 +708,7 @@ const EVENT_CATEGORIES = [
     tagline: 'Every Basket. Bigger Moments.',
     icon: 'sports',
     keywords: ['NBA', 'Basketball'],
+    teams: NBA_TEAMS,
   },
   {
     id: 'nhl',
@@ -804,7 +823,7 @@ function CategoryIcon({ icon, size = 22, color = NAV_ACCENT_LIGHT }) {
 // filtering behavior as before (onSelect toggles activeCategoryId and
 // scrolls to the results grid) — only the visual treatment changed, to
 // match the new design's category cards.
-function CategoryTiles({ activeCategoryId, onSelect }) {
+function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onToggleTeams }) {
   return (
     <div
       className="cm-category-grid"
@@ -815,14 +834,25 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
         marginBottom: '20px',
       }}>
       {EVENT_CATEGORIES.map((cat) => {
-        const isActive = activeCategoryId === cat.id;
+        // A tile with its own `teams` roster (currently just NBA) doesn't
+        // filter the grid directly on click — it opens the TeamTiles
+        // sub-page below instead, so the visitor picks a specific team
+        // first. isActive reflects that "opened" state for these tiles
+        // instead of activeCategoryId, so the tile still highlights while
+        // its team picker is showing.
+        const hasTeams = Boolean(cat.teams);
+        const isActive = hasTeams ? teamsBrowseCategoryId === cat.id : activeCategoryId === cat.id;
         return (
           <button
             key={cat.id}
             type="button"
             className="cm-navy-card"
             onClick={() => {
-              onSelect(isActive ? null : cat.id);
+              if (hasTeams) {
+                onToggleTeams(isActive ? null : cat.id);
+              } else {
+                onSelect(isActive ? null : cat.id);
+              }
               document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
             }}
             style={{
@@ -870,6 +900,64 @@ function CategoryTiles({ activeCategoryId, onSelect }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// Team picker shown when a category tile with its own `teams` roster (see
+// CategoryTiles above — currently just NBA) is opened. Each team tile runs
+// the team's name through the same search box the visitor could type into
+// themselves (setSearchInput/setActiveSearch), so results, the "N results
+// for '<team>'" line, and the Clear button all work exactly as they
+// already do for a typed search — no separate filtering path to maintain.
+function TeamTiles({ category, onSelectTeam, onClose }) {
+  return (
+    <div
+      className="cm-navy-card"
+      style={{
+        background: NAVY_PANEL,
+        border: `1px solid ${NAVY_BORDER}`,
+        borderRadius: '16px',
+        padding: '18px 20px',
+        marginBottom: '20px',
+      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <span style={{ fontWeight: 800, fontSize: '17px', color: '#fff' }}>
+          {category.label} — Choose a Team
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: NAV_ACCENT_LIGHT, fontWeight: 700, fontSize: '13.5px', padding: 0 }}>
+          Close ✕
+        </button>
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '10px',
+        }}>
+        {category.teams.map((team) => (
+          <button
+            key={team}
+            type="button"
+            onClick={() => onSelectTeam(team)}
+            style={{
+              textAlign: 'left',
+              background: NAVY_PANEL_LIGHT,
+              border: `1px solid ${NAVY_BORDER}`,
+              borderRadius: '10px',
+              padding: '12px 14px',
+              color: '#fff',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}>
+            {team}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1272,6 +1360,9 @@ export default function App() {
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [activeSearch, setActiveSearch] = useState(initialQuery);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
+  // Which category's team picker (see TeamTiles) is currently open — only
+  // set for tiles that have their own `teams` roster (currently just NBA).
+  const [teamsBrowseCategoryId, setTeamsBrowseCategoryId] = useState(null);
   // Accounts (and Favorites, which depends on accounts) aren't built yet —
   // clicking Sign In/Sign Up/Favorites in the nav just lets the visitor
   // know that, rather than pretending those flows exist. One shared
@@ -1643,6 +1734,18 @@ export default function App() {
     setActiveEndDate('');
     setAutocompleteSuggestions([]);
     setShowAutocomplete(false);
+  };
+
+  // Picking a team from TeamTiles (currently just the NBA roster) runs the
+  // team's name as a plain search — same mechanism as typing it into the
+  // search box and hitting Search — so the results grid, count line, and
+  // Clear button all behave exactly as they already do for a search.
+  const handleSelectTeam = (teamName) => {
+    setSearchInput(teamName);
+    setActiveSearch(teamName);
+    setTeamsBrowseCategoryId(null);
+    setShowAutocomplete(false);
+    scrollToFeaturedEvents();
   };
 
   const handleSuggestionClick = (label) => {
@@ -2392,7 +2495,20 @@ export default function App() {
       </form>
       </div>
 
-      <CategoryTiles activeCategoryId={activeCategoryId} onSelect={setActiveCategoryId} />
+      <CategoryTiles
+        activeCategoryId={activeCategoryId}
+        onSelect={setActiveCategoryId}
+        teamsBrowseCategoryId={teamsBrowseCategoryId}
+        onToggleTeams={setTeamsBrowseCategoryId}
+      />
+
+      {teamsBrowseCategoryId && (
+        <TeamTiles
+          category={EVENT_CATEGORIES.find((c) => c.id === teamsBrowseCategoryId)}
+          onSelectTeam={handleSelectTeam}
+          onClose={() => setTeamsBrowseCategoryId(null)}
+        />
+      )}
 
       {/* Popular Events section — same continuous dark-navy background as
           the hero above it (no seam between them, matching the reference
