@@ -714,6 +714,19 @@ const NHL_TEAMS = [
   'Utah Hockey Club', 'Vancouver Canucks', 'Vegas Golden Knights', 'Winnipeg Jets',
 ];
 
+// MLB team roster for the "MLB" category tile's own sub-page — same
+// mechanism as NBA_TEAMS/NFL_TEAMS/NHL_TEAMS above.
+const MLB_TEAMS = [
+  'Arizona Diamondbacks', 'Athletics', 'Atlanta Braves', 'Baltimore Orioles',
+  'Boston Red Sox', 'Chicago Cubs', 'Chicago White Sox', 'Cincinnati Reds',
+  'Cleveland Guardians', 'Colorado Rockies', 'Detroit Tigers', 'Houston Astros',
+  'Kansas City Royals', 'Los Angeles Angels', 'Los Angeles Dodgers', 'Miami Marlins',
+  'Milwaukee Brewers', 'Minnesota Twins', 'New York Mets', 'New York Yankees',
+  'Philadelphia Phillies', 'Pittsburgh Pirates', 'San Diego Padres', 'San Francisco Giants',
+  'Seattle Mariners', 'St. Louis Cardinals', 'Tampa Bay Rays', 'Texas Rangers',
+  'Toronto Blue Jays', 'Washington Nationals',
+];
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -759,6 +772,7 @@ const EVENT_CATEGORIES = [
     tagline: 'Every Pitch. Bigger Stakes.',
     icon: 'sports',
     keywords: ['MLB', 'Baseball'],
+    teams: MLB_TEAMS,
   },
   {
     id: 'mls',
