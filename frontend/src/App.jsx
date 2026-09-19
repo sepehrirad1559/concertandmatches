@@ -2104,7 +2104,7 @@ export default function App() {
                             padding: '16px 18px',
                             textDecoration: 'none',
                             color: 'inherit',
-                            backgroundColor: link.isBest ? '#fffaeb' : 'transparent',
+                            backgroundColor: 'transparent',
                           }}>
                           {/* flexWrap + every child (including the name)
                               pinned to flexShrink: 0 — without this, the
