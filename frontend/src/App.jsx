@@ -789,6 +789,58 @@ const POPULAR_CITIES = [
   { name: 'New Orleans', state: 'LA' },
 ];
 
+// Major-venue roster for the "Venues" category tile's own sub-page — same
+// mechanism as POPULAR_CITIES above (see TeamTiles/handleSelectVenue),
+// except picking a venue runs its name through the location filter
+// (activeLocation, ILIKE against city/state/venue_name on the backend —
+// venue_name is already one of the three columns it matches, so this needs
+// no backend changes) instead of the plain search box, and opens a venue
+// hero banner (see the venues branch next to CityHeroBanner) above the
+// events grid.
+const POPULAR_VENUES = [
+  { name: 'Madison Square Garden', city: 'New York', state: 'NY' },
+  { name: 'Barclays Center', city: 'Brooklyn', state: 'NY' },
+  { name: 'United Center', city: 'Chicago', state: 'IL' },
+  { name: 'Crypto.com Arena', city: 'Los Angeles', state: 'CA' },
+  { name: 'Chase Center', city: 'San Francisco', state: 'CA' },
+  { name: 'TD Garden', city: 'Boston', state: 'MA' },
+  { name: 'Wells Fargo Center', city: 'Philadelphia', state: 'PA' },
+  { name: 'State Farm Arena', city: 'Atlanta', state: 'GA' },
+  { name: 'American Airlines Center', city: 'Dallas', state: 'TX' },
+  { name: 'Toyota Center', city: 'Houston', state: 'TX' },
+  { name: 'Golden 1 Center', city: 'Sacramento', state: 'CA' },
+  { name: 'Ball Arena', city: 'Denver', state: 'CO' },
+  { name: 'T-Mobile Arena', city: 'Las Vegas', state: 'NV' },
+  { name: 'Climate Pledge Arena', city: 'Seattle', state: 'WA' },
+  { name: 'Little Caesars Arena', city: 'Detroit', state: 'MI' },
+  { name: 'Fiserv Forum', city: 'Milwaukee', state: 'WI' },
+  { name: 'Kia Center', city: 'Orlando', state: 'FL' },
+  { name: 'Footprint Center', city: 'Phoenix', state: 'AZ' },
+  { name: 'Moda Center', city: 'Portland', state: 'OR' },
+  { name: 'Bridgestone Arena', city: 'Nashville', state: 'TN' },
+  { name: 'PPG Paints Arena', city: 'Pittsburgh', state: 'PA' },
+  { name: 'Scotiabank Arena', city: 'Toronto', state: 'ON' },
+  { name: 'Bell Centre', city: 'Montreal', state: 'QC' },
+  { name: 'SoFi Stadium', city: 'Inglewood', state: 'CA' },
+  { name: 'MetLife Stadium', city: 'East Rutherford', state: 'NJ' },
+  { name: 'AT&T Stadium', city: 'Arlington', state: 'TX' },
+  { name: 'Lambeau Field', city: 'Green Bay', state: 'WI' },
+  { name: 'Arrowhead Stadium', city: 'Kansas City', state: 'MO' },
+  { name: 'Allegiant Stadium', city: 'Las Vegas', state: 'NV' },
+  { name: 'Mercedes-Benz Stadium', city: 'Atlanta', state: 'GA' },
+  { name: 'Gillette Stadium', city: 'Foxborough', state: 'MA' },
+  { name: 'Levi’s Stadium', city: 'Santa Clara', state: 'CA' },
+  { name: 'Soldier Field', city: 'Chicago', state: 'IL' },
+  { name: 'Red Rocks Amphitheatre', city: 'Morrison', state: 'CO' },
+  { name: 'Hollywood Bowl', city: 'Los Angeles', state: 'CA' },
+  { name: 'Radio City Music Hall', city: 'New York', state: 'NY' },
+  { name: 'The Kia Forum', city: 'Inglewood', state: 'CA' },
+  { name: 'Ryman Auditorium', city: 'Nashville', state: 'TN' },
+  { name: 'Fenway Park', city: 'Boston', state: 'MA' },
+  { name: 'Wrigley Field', city: 'Chicago', state: 'IL' },
+  { name: 'Dodger Stadium', city: 'Los Angeles', state: 'CA' },
+];
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -867,6 +919,13 @@ const EVENT_CATEGORIES = [
     tagline: 'Every City. Bigger Lineup.',
     icon: 'city',
     cities: POPULAR_CITIES,
+  },
+  {
+    id: 'venues',
+    label: 'Venues',
+    tagline: 'Every Venue. Bigger Nights.',
+    icon: 'venue',
+    venues: POPULAR_VENUES,
   },
 ];
 
@@ -986,6 +1045,13 @@ function CategoryIcon({ icon, size = 22, color = NAV_ACCENT_LIGHT }) {
           <path d="M3 20V9l5-3v3l4-2.5V9l4-2.5V20H3zm2-2h2v-2H5v2zm0-4h2v-2H5v2zm4 4h2v-2H9v2zm0-4h2v-2H9v2zm4 4h2v-2h-2v2zm0-4h2v-2h-2v2zm4 4h2v-2h-2v2z" />
         </svg>
       );
+    case 'venue':
+      return (
+        <svg {...common} fill="none" stroke={color} strokeWidth={1.6}>
+          <path d="M4 21V9.5L12 4l8 5.5V21" fill={color} fillOpacity="0.18" />
+          <path d="M4 21V9.5L12 4l8 5.5V21M9 21v-6h6v6" />
+        </svg>
+      );
     case 'comedy':
       return (
         <svg {...common} fill={color}>
@@ -1029,7 +1095,7 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
         // teamsBrowseCategoryId for these tiles (not activeCategoryId
         // directly) only so the tile stays highlighted while browsing
         // teams even though activeCategoryId is also set to the same id.
-        const hasTeams = Boolean(cat.teams || cat.cities);
+        const hasTeams = Boolean(cat.teams || cat.cities || cat.venues);
         const isActive = hasTeams ? teamsBrowseCategoryId === cat.id : activeCategoryId === cat.id;
         return (
           <button
@@ -1115,13 +1181,14 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
 // for '<team>'" line, and the Clear button all work exactly as they
 // already do for a typed search — no separate filtering path to maintain.
 function TeamTiles({ category, onSelectTeam, onClose }) {
-  // The "Cities" tile carries a `cities` roster instead of `teams` — same
-  // sub-page shell, but each tile is a { name, state } object (see
-  // POPULAR_CITIES) rather than a plain team-name string, and picking one
-  // runs through handleSelectCity (location filter + hero banner) instead
-  // of handleSelectTeam (plain search).
-  const isCityPicker = Boolean(category.cities);
-  const items = isCityPicker ? category.cities : category.teams;
+  // The "Cities" and "Venues" tiles carry a `cities`/`venues` roster
+  // instead of `teams` — same sub-page shell, but each tile is an object
+  // (see POPULAR_CITIES/POPULAR_VENUES) rather than a plain team-name
+  // string, and picking one runs through handleSelectCity/handleSelectVenue
+  // (location filter + hero banner) instead of handleSelectTeam (plain
+  // search).
+  const pickerType = category.cities ? 'cities' : category.venues ? 'venues' : 'teams';
+  const items = category.cities || category.venues || category.teams;
   return (
     <div
       id="team-tiles"
@@ -1135,7 +1202,7 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
       }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
         <span style={{ fontWeight: 800, fontSize: '17px', color: '#fff' }}>
-          {category.label} — Choose a {isCityPicker ? 'City' : 'Team'}
+          {category.label} — Choose a {pickerType === 'cities' ? 'City' : pickerType === 'venues' ? 'Venue' : 'Team'}
         </span>
         <button
           type="button"
@@ -1151,8 +1218,12 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
           gap: '10px',
         }}>
         {items.map((item) => {
-          const key = isCityPicker ? `${item.name}-${item.state}` : item;
-          const label = isCityPicker ? `${item.name}, ${item.state}` : item;
+          const key = pickerType === 'cities' ? `${item.name}-${item.state}`
+            : pickerType === 'venues' ? `${item.name}-${item.city}-${item.state}`
+            : item;
+          const label = pickerType === 'cities' ? `${item.name}, ${item.state}`
+            : pickerType === 'venues' ? `${item.name} — ${item.city}, ${item.state}`
+            : item;
           return (
             <button
               key={key}
@@ -1380,29 +1451,203 @@ function BrandLink({ onClick }) {
   );
 }
 
-function Footer() {
-  const linkStyle = { color: 'var(--cm-text-onnavy-muted)', marginRight: '16px', textDecoration: 'none' };
+// Small line-style social icons for the footer's brand column — plain
+// inline SVG, matching the CategoryIcon/CityHero approach elsewhere in the
+// file rather than pulling in an icon-font/library dependency.
+function FooterSocialIcon({ type }) {
+  const common = { width: 16, height: 16, viewBox: '0 0 24 24', 'aria-hidden': true };
+  switch (type) {
+    case 'facebook':
+      return (
+        <svg {...common} fill="#fff">
+          <path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.4c0-.87.24-1.46 1.5-1.46H16.5V4.34C16.2 4.3 15.2 4.2 14 4.2c-2.4 0-4 1.46-4 4.15V10.5H7.5v3H10V21h3.5z" />
+        </svg>
+      );
+    case 'x':
+      return (
+        <svg {...common} fill="#fff">
+          <path d="M4 4l7.3 9.3L4.4 21H7l5.2-5.9L16.6 21H20l-7.7-9.8L19.3 4h-2.6l-4.8 5.5L8 4H4z" />
+        </svg>
+      );
+    case 'instagram':
+      return (
+        <svg {...common} fill="none" stroke="#fff" strokeWidth="1.8">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+          <circle cx="12" cy="12" r="4" />
+          <circle cx="17.2" cy="6.8" r="1" fill="#fff" stroke="none" />
+        </svg>
+      );
+    case 'youtube':
+      return (
+        <svg {...common}>
+          <rect x="2.5" y="6" width="19" height="12" rx="3" fill="none" stroke="#fff" strokeWidth="1.6" />
+          <path d="M10.5 9.5l5 2.5-5 2.5z" fill="#fff" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+// Redesigned 4-column footer (Brand / Quick Links / About / Stay Updated)
+// plus a bottom bar, matching the reference mockup exactly. onGoHome/
+// onSelectCategory/onBrowseSports are supplied by the main App component so
+// Quick Links reuses the exact same filtering the homepage's own category
+// tiles/nav already use, rather than pointing at dead placeholder routes
+// (About's How It Works/FAQ/Contact Us have no page to link to yet, same as
+// this footer's Ticket Price Guides/Artists/Venues/Leagues/Teams did before
+// this redesign — kept as inert placeholders for the same reason).
+function Footer({ onGoHome, onSelectCategory, onBrowseSports }) {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
+
+  const columnHeadingStyle = { fontSize: '14px', fontWeight: 800, color: '#fff', margin: '0 0 14px' };
+  const linkStyle = {
+    display: 'block',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    marginBottom: '10px',
+    color: 'var(--cm-text-onnavy-muted)',
+    textDecoration: 'none',
+    fontSize: '13.5px',
+    cursor: 'pointer',
+    textAlign: 'left',
+    font: 'inherit',
+  };
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    // No newsletter backend exists yet — this just acknowledges the
+    // signup in the UI rather than silently discarding it or pretending
+    // to call an endpoint that isn't there.
+    setNewsletterSubmitted(true);
+    setNewsletterEmail('');
+  };
+
   return (
     <footer id="site-footer" style={{
       marginTop: '48px',
-      padding: '24px 20px',
+      padding: '40px 32px 24px',
       borderTop: `1px solid ${NAVY_BORDER}`,
       backgroundColor: NAVY_PANEL,
       borderRadius: 'var(--cm-radius)',
-      fontSize: '12px',
       color: 'var(--cm-text-onnavy-muted)',
     }}>
-      <p>ConcertAndMatches is an independent event discovery site and is not affiliated with any ticket seller. We may earn a commission when you buy tickets through links on this site.</p>
-      <p style={{ marginTop: '10px' }}>
-        <a href="/guide" className="cm-link-underline" style={linkStyle}>Ticket Price Guides</a>
-        <a href="/artists" className="cm-link-underline" style={linkStyle}>Artists</a>
-        <a href="/cities" className="cm-link-underline" style={linkStyle}>Cities</a>
-        <a href="/venues" className="cm-link-underline" style={linkStyle}>Venues</a>
-        <a href="/leagues" className="cm-link-underline" style={linkStyle}>Leagues</a>
-        <a href="/teams" className="cm-link-underline" style={linkStyle}>Teams</a>
-        <a href="/terms.html" className="cm-link-underline" style={linkStyle}>Terms of Service</a>
-        <a href="/privacy.html" className="cm-link-underline" style={{ color: 'var(--cm-text-onnavy-muted)', textDecoration: 'none' }}>Privacy Policy</a>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '32px' }}>
+        {/* Brand column */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+            <Logo size={30} />
+            <span style={{ fontWeight: 800, fontSize: '17px', color: '#fff' }}>ConcertAndMatches</span>
+          </div>
+          <p style={{ fontSize: '13px', lineHeight: 1.6, margin: '0 0 16px', maxWidth: '260px' }}>
+            We help you find the best tickets for your favorite events by comparing leading marketplaces, so you can buy with confidence.
+          </p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {['facebook', 'x', 'instagram', 'youtube'].map((type) => (
+              <a
+                key={type}
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                aria-label={type}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  backgroundColor: NAVY_PANEL_LIGHT,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <FooterSocialIcon type={type} />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Links */}
+        <div>
+          <div style={columnHeadingStyle}>Quick Links</div>
+          <button type="button" className="cm-link-underline" style={linkStyle} onClick={onGoHome}>Home</button>
+          <button type="button" className="cm-link-underline" style={linkStyle} onClick={() => onSelectCategory('concerts')}>Concerts</button>
+          <button type="button" className="cm-link-underline" style={linkStyle} onClick={onBrowseSports}>Sports</button>
+          <button type="button" className="cm-link-underline" style={linkStyle} onClick={() => onSelectCategory('theater')}>Theater</button>
+          <button type="button" className="cm-link-underline" style={linkStyle} onClick={() => onSelectCategory('theater', 'Comedy')}>Comedy</button>
+        </div>
+
+        {/* About */}
+        <div>
+          <div style={columnHeadingStyle}>About</div>
+          <a href="/how-it-works" className="cm-link-underline" style={linkStyle}>How It Works</a>
+          <a href="/faq" className="cm-link-underline" style={linkStyle}>FAQ</a>
+          <a href="/contact" className="cm-link-underline" style={linkStyle}>Contact Us</a>
+          <a href="/privacy.html" className="cm-link-underline" style={linkStyle}>Privacy Policy</a>
+          <a href="/terms.html" className="cm-link-underline" style={linkStyle}>Terms of Service</a>
+        </div>
+
+        {/* Stay Updated */}
+        <div>
+          <div style={columnHeadingStyle}>Stay Updated</div>
+          <p style={{ fontSize: '13px', margin: '0 0 14px' }}>Get the latest events and deals.</p>
+          {newsletterSubmitted ? (
+            <p style={{ fontSize: '13px', color: NAV_ACCENT_LIGHT, fontWeight: 700, margin: 0 }}>Thanks — you're on the list!</p>
+          ) : (
+            <form onSubmit={handleNewsletterSubmit} style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="email"
+                required
+                placeholder="Enter your email address"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '13px',
+                  color: '#1a0733',
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: NAV_ACCENT_COLOR,
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}>
+                Subscribe
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+
+      <p style={{ fontSize: '11.5px', marginTop: '28px', marginBottom: 0 }}>
+        ConcertAndMatches is an independent event discovery site and is not affiliated with any ticket seller. We may earn a commission when you buy tickets through links on this site.
       </p>
+
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: '10px',
+        marginTop: '20px',
+        paddingTop: '20px',
+        borderTop: `1px solid ${NAVY_BORDER}`,
+        fontSize: '12px',
+      }}>
+        <span>© {new Date().getFullYear()} ConcertAndMatches. All rights reserved.</span>
+        <span>📍 Madison, WI</span>
+      </div>
     </footer>
   );
 }
@@ -1661,6 +1906,10 @@ export default function App() {
   // location.
   const [selectedCity, setSelectedCity] = useState(null);
   const [cityImageUrl, setCityImageUrl] = useState(null);
+  // Same pair as selectedCity/cityImageUrl above, for the Venues tile (see
+  // POPULAR_VENUES/handleSelectVenue).
+  const [selectedVenue, setSelectedVenue] = useState(null);
+  const [venueImageUrl, setVenueImageUrl] = useState(null);
   // Resolved photo URL per EVENT_IMAGE_TOPICS bucket (nba, nfl, theater,
   // concerts, ...) — fetched once for the whole app (see the effect below),
   // then reused by every EventCard whose own event.image_url is missing
@@ -2039,6 +2288,7 @@ export default function App() {
     setAutocompleteSuggestions([]);
     setShowAutocomplete(false);
     setSelectedCity(null);
+    setSelectedVenue(null);
   };
 
   // Picking a team from TeamTiles runs the team's name as a plain search —
@@ -2054,6 +2304,7 @@ export default function App() {
     // visible search box, which the visitor never typed into.
     setActiveSearch(teamName);
     setSelectedCity(null);
+    setSelectedVenue(null);
     setTeamsBrowseCategoryId(null);
     setShowAutocomplete(false);
     scrollToFeaturedEvents();
@@ -2069,6 +2320,19 @@ export default function App() {
   const handleSelectCity = (city) => {
     setActiveLocation(city.name);
     setSelectedCity(city);
+    setSelectedVenue(null);
+    setTeamsBrowseCategoryId(null);
+    setShowAutocomplete(false);
+    scrollToFeaturedEvents();
+  };
+
+  // Same as handleSelectCity above, for the Venues tile — venue_name is
+  // already one of the three columns the location filter matches (city/
+  // state/venue_name), so this needs no backend changes either.
+  const handleSelectVenue = (venue) => {
+    setActiveLocation(venue.name);
+    setSelectedVenue(venue);
+    setSelectedCity(null);
     setTeamsBrowseCategoryId(null);
     setShowAutocomplete(false);
     scrollToFeaturedEvents();
@@ -2100,6 +2364,29 @@ export default function App() {
     return () => { cancelled = true; };
   }, [selectedCity]);
 
+  // Same as the city-photo effect above, for the selected venue — most
+  // major venues in POPULAR_VENUES (arenas, stadiums, amphitheaters,
+  // historic theaters) have their own Wikipedia article under their plain
+  // name, so the same lookup-by-name approach works without a separate
+  // per-venue mapping.
+  useEffect(() => {
+    if (!selectedVenue) {
+      setVenueImageUrl(null);
+      return undefined;
+    }
+    let cancelled = false;
+    setVenueImageUrl(null);
+    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(selectedVenue.name)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const url = data.originalimage?.source || data.thumbnail?.source || null;
+        if (url) setVenueImageUrl(url);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [selectedVenue]);
+
   // Resolves one real photo per EVENT_IMAGE_TOPICS bucket, once, for every
   // event card on the site to fall back to when it has no image_url of its
   // own (see EventCard/pickFallbackImage above) — same Wikipedia REST
@@ -2127,6 +2414,46 @@ export default function App() {
     setActiveSearch(label);
     setShowAutocomplete(false);
     scrollToFeaturedEvents();
+  };
+
+  // Footer Quick Links (see Footer component) reuse the exact same state
+  // the homepage's own search bar/category tiles already drive, rather
+  // than pointing at separate placeholder pages. "Home" clears every
+  // filter and returns to the top of the homepage — same effect as
+  // clicking the logo (BrandLink) plus a scroll-to-top, since the footer
+  // is all the way at the bottom of the page. "Sports" doesn't apply a
+  // filter itself (there's no single "Sports" category tile any more — see
+  // EVENT_CATEGORIES's split into NFL/NBA/NHL/MLB/MLS) — it scrolls up to
+  // the category tiles row so the visitor can pick a specific league.
+  const handleFooterGoHome = () => {
+    handleClearSearch();
+    setActiveCategoryId(null);
+    setTeamsBrowseCategoryId(null);
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleFooterSelectCategory = (categoryId, extraSearch) => {
+    setActiveCategoryId(categoryId);
+    setTeamsBrowseCategoryId(null);
+    setSelectedCity(null);
+    setSelectedVenue(null);
+    setSearchInput('');
+    setActiveSearch(extraSearch || '');
+    setShowAutocomplete(false);
+    navigate('/');
+    setTimeout(() => {
+      document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
+    }, 0);
+  };
+
+  const handleFooterBrowseSports = () => {
+    setActiveCategoryId(null);
+    setTeamsBrowseCategoryId(null);
+    navigate('/');
+    setTimeout(() => {
+      document.getElementById('category-tiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   };
 
   // Debounced fetch of autocomplete suggestions as the customer types.
@@ -2432,7 +2759,11 @@ export default function App() {
         </div>
 
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <Footer />
+          <Footer
+            onGoHome={handleFooterGoHome}
+            onSelectCategory={handleFooterSelectCategory}
+            onBrowseSports={handleFooterBrowseSports}
+          />
         </div>
       </div>
     );
@@ -2476,7 +2807,34 @@ export default function App() {
               style={{ cursor: 'pointer', color: NAV_ACCENT_LIGHT }}>
               Events
             </span>
-            <a href="/venues" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Venues</a>
+            <span
+              role="link"
+              tabIndex={0}
+              className="cm-link-underline"
+              onClick={() => {
+                const next = teamsBrowseCategoryId === 'venues' ? null : 'venues';
+                setTeamsBrowseCategoryId(next);
+                setActiveCategoryId(next);
+                if (next) {
+                  setTimeout(() => {
+                    document.getElementById('team-tiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return;
+                const next = teamsBrowseCategoryId === 'venues' ? null : 'venues';
+                setTeamsBrowseCategoryId(next);
+                setActiveCategoryId(next);
+                if (next) {
+                  setTimeout(() => {
+                    document.getElementById('team-tiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                }
+              }}
+              style={{ cursor: 'pointer', color: '#fff' }}>
+              Venues
+            </span>
             <span
               role="link"
               tabIndex={0}
@@ -2881,17 +3239,23 @@ export default function App() {
       </form>
       </div>
 
+      <div id="category-tiles">
       <CategoryTiles
         activeCategoryId={activeCategoryId}
         onSelect={setActiveCategoryId}
         teamsBrowseCategoryId={teamsBrowseCategoryId}
         onToggleTeams={setTeamsBrowseCategoryId}
       />
+      </div>
 
       {teamsBrowseCategoryId && (
         <TeamTiles
           category={EVENT_CATEGORIES.find((c) => c.id === teamsBrowseCategoryId)}
-          onSelectTeam={teamsBrowseCategoryId === 'cities' ? handleSelectCity : handleSelectTeam}
+          onSelectTeam={
+            teamsBrowseCategoryId === 'cities' ? handleSelectCity
+              : teamsBrowseCategoryId === 'venues' ? handleSelectVenue
+                : handleSelectTeam
+          }
           onClose={() => setTeamsBrowseCategoryId(null)}
         />
       )}
@@ -2929,13 +3293,45 @@ export default function App() {
             </div>
           </div>
         )}
+        {selectedVenue && (
+          <div
+            style={{
+              position: 'relative',
+              borderRadius: '18px',
+              overflow: 'hidden',
+              marginBottom: '20px',
+              minHeight: '220px',
+              display: 'flex',
+              alignItems: 'flex-end',
+              backgroundColor: NAVY_PANEL,
+              backgroundImage: venueImageUrl
+                ? `linear-gradient(180deg, rgba(0,22,52,0.25), rgba(0,22,52,0.9)), url(${venueImageUrl})`
+                : `linear-gradient(135deg, ${NAVY_PANEL_LIGHT}, ${NAVY_BG})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}>
+            <div style={{ padding: '28px' }}>
+              <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: NAV_ACCENT_LIGHT, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Events At
+              </span>
+              <span style={{ display: 'block', fontSize: '32px', fontWeight: 800, color: '#fff', marginTop: '4px' }}>
+                {selectedVenue.name}
+              </span>
+              <span style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: 'rgba(255,255,255,0.75)', marginTop: '4px' }}>
+                {selectedVenue.city}, {selectedVenue.state}
+              </span>
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <h3 style={{ fontSize: '24px', color: '#fff', margin: 0 }}>
             {selectedCity
               ? `Events in ${selectedCity.name}`
-              : activeCategoryId
-                ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
-                : 'Popular Events Near You'}
+              : selectedVenue
+                ? `Events at ${selectedVenue.name}`
+                : activeCategoryId
+                  ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
+                  : 'Popular Events Near You'}
           </h3>
           {(activeSearch || activeCategoryId || activeFilterCount > 0) && (
             <button
@@ -3014,7 +3410,11 @@ export default function App() {
         }}
       />
 
-      <Footer />
+      <Footer
+        onGoHome={handleFooterGoHome}
+        onSelectCategory={handleFooterSelectCategory}
+        onBrowseSports={handleFooterBrowseSports}
+      />
       </div>
     </div>
   );
