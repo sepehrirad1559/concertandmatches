@@ -1895,7 +1895,9 @@ export default function App() {
   // search is layered ON TOP of the league filter rather than replacing
   // it — matching against the team name AND the league's own keywords.
   const handleSelectTeam = (teamName) => {
-    setSearchInput(teamName);
+    // Deliberately does NOT call setSearchInput — the team name drives
+    // filtering (activeSearch) same as before, but stays out of the
+    // visible search box, which the visitor never typed into.
     setActiveSearch(teamName);
     setTeamsBrowseCategoryId(null);
     setShowAutocomplete(false);
