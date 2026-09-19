@@ -739,6 +739,56 @@ const MLS_TEAMS = [
   'San Jose Earthquakes', 'Seattle Sounders FC', 'Sporting Kansas City', 'Vancouver Whitecaps FC',
 ];
 
+// Major-city roster for the "Cities" category tile's own sub-page — same
+// mechanism as the league team rosters above (see TeamTiles/
+// handleSelectCity), except picking a city runs its name through the
+// location filter (activeLocation, ILIKE against city/state/venue_name on
+// the backend) instead of the plain search box, and also opens the city
+// hero banner (see CityHeroBanner) above the events grid.
+const POPULAR_CITIES = [
+  { name: 'New York', state: 'NY' },
+  { name: 'Los Angeles', state: 'CA' },
+  { name: 'Chicago', state: 'IL' },
+  { name: 'Houston', state: 'TX' },
+  { name: 'Phoenix', state: 'AZ' },
+  { name: 'Philadelphia', state: 'PA' },
+  { name: 'San Antonio', state: 'TX' },
+  { name: 'San Diego', state: 'CA' },
+  { name: 'Dallas', state: 'TX' },
+  { name: 'Austin', state: 'TX' },
+  { name: 'San Jose', state: 'CA' },
+  { name: 'Jacksonville', state: 'FL' },
+  { name: 'Fort Worth', state: 'TX' },
+  { name: 'Columbus', state: 'OH' },
+  { name: 'Charlotte', state: 'NC' },
+  { name: 'San Francisco', state: 'CA' },
+  { name: 'Indianapolis', state: 'IN' },
+  { name: 'Seattle', state: 'WA' },
+  { name: 'Denver', state: 'CO' },
+  { name: 'Nashville', state: 'TN' },
+  { name: 'Oklahoma City', state: 'OK' },
+  { name: 'Las Vegas', state: 'NV' },
+  { name: 'Boston', state: 'MA' },
+  { name: 'Portland', state: 'OR' },
+  { name: 'Detroit', state: 'MI' },
+  { name: 'Memphis', state: 'TN' },
+  { name: 'Louisville', state: 'KY' },
+  { name: 'Milwaukee', state: 'WI' },
+  { name: 'Baltimore', state: 'MD' },
+  { name: 'Albuquerque', state: 'NM' },
+  { name: 'Tucson', state: 'AZ' },
+  { name: 'Fresno', state: 'CA' },
+  { name: 'Sacramento', state: 'CA' },
+  { name: 'Kansas City', state: 'MO' },
+  { name: 'Mesa', state: 'AZ' },
+  { name: 'Atlanta', state: 'GA' },
+  { name: 'Omaha', state: 'NE' },
+  { name: 'Miami', state: 'FL' },
+  { name: 'Tulsa', state: 'OK' },
+  { name: 'Minneapolis', state: 'MN' },
+  { name: 'New Orleans', state: 'LA' },
+];
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -811,6 +861,13 @@ const EVENT_CATEGORIES = [
     category: ['Arts & Theatre'],
     keywords: ['Comedy', 'Stand-Up', 'Stand Up'],
   },
+  {
+    id: 'cities',
+    label: 'Cities',
+    tagline: 'Every City. Bigger Lineup.',
+    icon: 'city',
+    cities: POPULAR_CITIES,
+  },
 ];
 
 // Shared accent across the redesigned homepage (nav underline, category
@@ -867,6 +924,12 @@ function CategoryIcon({ icon, size = 22, color = NAV_ACCENT_LIGHT }) {
           <path d="M17.4 12.6c.4.7 1.1 1.2 1.9 1.3" fill="none" stroke={NAVY_BG} strokeWidth="0.7" strokeLinecap="round" />
         </svg>
       );
+    case 'city':
+      return (
+        <svg {...common} fill={color}>
+          <path d="M3 20V9l5-3v3l4-2.5V9l4-2.5V20H3zm2-2h2v-2H5v2zm0-4h2v-2H5v2zm4 4h2v-2H9v2zm0-4h2v-2H9v2zm4 4h2v-2h-2v2zm0-4h2v-2h-2v2zm4 4h2v-2h-2v2z" />
+        </svg>
+      );
     case 'comedy':
       return (
         <svg {...common} fill={color}>
@@ -910,7 +973,7 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
         // teamsBrowseCategoryId for these tiles (not activeCategoryId
         // directly) only so the tile stays highlighted while browsing
         // teams even though activeCategoryId is also set to the same id.
-        const hasTeams = Boolean(cat.teams);
+        const hasTeams = Boolean(cat.teams || cat.cities);
         const isActive = hasTeams ? teamsBrowseCategoryId === cat.id : activeCategoryId === cat.id;
         return (
           <button
@@ -996,6 +1059,13 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
 // for '<team>'" line, and the Clear button all work exactly as they
 // already do for a typed search — no separate filtering path to maintain.
 function TeamTiles({ category, onSelectTeam, onClose }) {
+  // The "Cities" tile carries a `cities` roster instead of `teams` — same
+  // sub-page shell, but each tile is a { name, state } object (see
+  // POPULAR_CITIES) rather than a plain team-name string, and picking one
+  // runs through handleSelectCity (location filter + hero banner) instead
+  // of handleSelectTeam (plain search).
+  const isCityPicker = Boolean(category.cities);
+  const items = isCityPicker ? category.cities : category.teams;
   return (
     <div
       id="team-tiles"
@@ -1009,7 +1079,7 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
       }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
         <span style={{ fontWeight: 800, fontSize: '17px', color: '#fff' }}>
-          {category.label} — Choose a Team
+          {category.label} — Choose a {isCityPicker ? 'City' : 'Team'}
         </span>
         <button
           type="button"
@@ -1024,25 +1094,29 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '10px',
         }}>
-        {category.teams.map((team) => (
-          <button
-            key={team}
-            type="button"
-            onClick={() => onSelectTeam(team)}
-            style={{
-              textAlign: 'left',
-              background: NAVY_PANEL_LIGHT,
-              border: `1px solid ${NAVY_BORDER}`,
-              borderRadius: '10px',
-              padding: '12px 14px',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '14px',
-              cursor: 'pointer',
-            }}>
-            {team}
-          </button>
-        ))}
+        {items.map((item) => {
+          const key = isCityPicker ? `${item.name}-${item.state}` : item;
+          const label = isCityPicker ? `${item.name}, ${item.state}` : item;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onSelectTeam(item)}
+              style={{
+                textAlign: 'left',
+                background: NAVY_PANEL_LIGHT,
+                border: `1px solid ${NAVY_BORDER}`,
+                borderRadius: '10px',
+                padding: '12px 14px',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '14px',
+                cursor: 'pointer',
+              }}>
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {category.otherEvents && category.otherEvents.length > 0 && (
@@ -1514,6 +1588,14 @@ export default function App() {
   // Which category's team picker (see TeamTiles) is currently open — only
   // set for tiles that have their own `teams` roster (currently just NBA).
   const [teamsBrowseCategoryId, setTeamsBrowseCategoryId] = useState(null);
+  // The { name, state } picked from the Cities tile (see POPULAR_CITIES /
+  // handleSelectCity) — drives the city hero banner above the events grid.
+  // Separate from activeLocation (which drives the actual filter) because
+  // activeLocation can also come from the plain Location search field, and
+  // the hero banner should only show for a tile-picked city, not a typed
+  // location.
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [cityImageUrl, setCityImageUrl] = useState(null);
   // Accounts (and Favorites, which depends on accounts) aren't built yet —
   // clicking Sign In/Sign Up/Favorites in the nav just lets the visitor
   // know that, rather than pretending those flows exist. One shared
@@ -1885,6 +1967,7 @@ export default function App() {
     setActiveEndDate('');
     setAutocompleteSuggestions([]);
     setShowAutocomplete(false);
+    setSelectedCity(null);
   };
 
   // Picking a team from TeamTiles runs the team's name as a plain search —
@@ -1899,10 +1982,52 @@ export default function App() {
     // filtering (activeSearch) same as before, but stays out of the
     // visible search box, which the visitor never typed into.
     setActiveSearch(teamName);
+    setSelectedCity(null);
     setTeamsBrowseCategoryId(null);
     setShowAutocomplete(false);
     scrollToFeaturedEvents();
   };
+
+  // Picking a city from TeamTiles runs the city's name through the
+  // location filter (activeLocation — same field the "Location" search box
+  // sets, ILIKE against city/state/venue_name on the backend) rather than
+  // the plain search box, so it narrows results to that city without ever
+  // appearing typed into the visible search field — same rule request K
+  // applied to team names. Also sets selectedCity, which drives the hero
+  // banner (see CityHeroBanner) and the image lookup effect below.
+  const handleSelectCity = (city) => {
+    setActiveLocation(city.name);
+    setSelectedCity(city);
+    setTeamsBrowseCategoryId(null);
+    setShowAutocomplete(false);
+    scrollToFeaturedEvents();
+  };
+
+  // Fetches a real photo of the selected city for the hero banner, from
+  // Wikipedia's public REST summary API (no key required, CORS-enabled,
+  // documented at https://en.wikipedia.org/api/rest_v1/) — looked up by
+  // plain city name, which resolves straight to that city's own article
+  // for every city in POPULAR_CITIES. Best-effort: any failure (network
+  // error, no image on the page, city with no clean article match) just
+  // leaves cityImageUrl null, and the banner below falls back to a plain
+  // gradient rather than showing anything broken.
+  useEffect(() => {
+    if (!selectedCity) {
+      setCityImageUrl(null);
+      return undefined;
+    }
+    let cancelled = false;
+    setCityImageUrl(null);
+    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(selectedCity.name)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const url = data.originalimage?.source || data.thumbnail?.source || null;
+        if (url) setCityImageUrl(url);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [selectedCity]);
 
   const handleSuggestionClick = (label) => {
     setSearchInput(label);
@@ -2259,7 +2384,34 @@ export default function App() {
               Events
             </span>
             <a href="/venues" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Venues</a>
-            <a href="/cities" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Cities</a>
+            <span
+              role="link"
+              tabIndex={0}
+              className="cm-link-underline"
+              onClick={() => {
+                const next = teamsBrowseCategoryId === 'cities' ? null : 'cities';
+                setTeamsBrowseCategoryId(next);
+                setActiveCategoryId(next);
+                if (next) {
+                  setTimeout(() => {
+                    document.getElementById('team-tiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return;
+                const next = teamsBrowseCategoryId === 'cities' ? null : 'cities';
+                setTeamsBrowseCategoryId(next);
+                setActiveCategoryId(next);
+                if (next) {
+                  setTimeout(() => {
+                    document.getElementById('team-tiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                }
+              }}
+              style={{ cursor: 'pointer', color: '#fff' }}>
+              Cities
+            </span>
             <span
               role="link"
               tabIndex={0}
@@ -2645,7 +2797,7 @@ export default function App() {
       {teamsBrowseCategoryId && (
         <TeamTiles
           category={EVENT_CATEGORIES.find((c) => c.id === teamsBrowseCategoryId)}
-          onSelectTeam={handleSelectTeam}
+          onSelectTeam={teamsBrowseCategoryId === 'cities' ? handleSelectCity : handleSelectTeam}
           onClose={() => setTeamsBrowseCategoryId(null)}
         />
       )}
@@ -2656,11 +2808,40 @@ export default function App() {
           rounded "islands"). Event cards keep their own white background
           and are unaffected. */}
       <div id="featured-events" style={{ marginTop: '8px', paddingTop: '12px' }}>
+        {selectedCity && (
+          <div
+            style={{
+              position: 'relative',
+              borderRadius: '18px',
+              overflow: 'hidden',
+              marginBottom: '20px',
+              minHeight: '220px',
+              display: 'flex',
+              alignItems: 'flex-end',
+              backgroundColor: NAVY_PANEL,
+              backgroundImage: cityImageUrl
+                ? `linear-gradient(180deg, rgba(0,22,52,0.25), rgba(0,22,52,0.9)), url(${cityImageUrl})`
+                : `linear-gradient(135deg, ${NAVY_PANEL_LIGHT}, ${NAVY_BG})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}>
+            <div style={{ padding: '28px' }}>
+              <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: NAV_ACCENT_LIGHT, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Events In
+              </span>
+              <span style={{ display: 'block', fontSize: '32px', fontWeight: 800, color: '#fff', marginTop: '4px' }}>
+                {selectedCity.name}, {selectedCity.state}
+              </span>
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <h3 style={{ fontSize: '24px', color: '#fff', margin: 0 }}>
-            {activeCategoryId
-              ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
-              : 'Popular Events Near You'}
+            {selectedCity
+              ? `Events in ${selectedCity.name}`
+              : activeCategoryId
+                ? EVENT_CATEGORIES.find((c) => c.id === activeCategoryId)?.label
+                : 'Popular Events Near You'}
           </h3>
           {(activeSearch || activeCategoryId || activeFilterCount > 0) && (
             <button
