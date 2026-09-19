@@ -2155,7 +2155,7 @@ export default function App() {
                                 padding: '3px 10px',
                                 flexShrink: 0,
                               }}>
-                                ✓ Best price
+                                Best price
                               </span>
                             )}
                           </div>
