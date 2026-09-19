@@ -1220,61 +1220,92 @@ function FeatureStrip() {
   );
 }
 
-// Pelago by Singapore Airlines affiliate promo — joined via Impact.com
-// (2026-09) alongside The Rockefeller Center, but unlike Rockefeller
-// Center's small/stable attraction set, Pelago's catalog (thousands of
-// tours/activities across many cities, no data feed exposed to affiliates —
-// see backend/src/services/curatedAttractions.js) isn't something that can
-// be responsibly hand-curated as individual "events" without it going
-// stale or misrepresenting availability/pricing. So Pelago gets a single
-// outbound promo card instead — same honest pattern as the affiliate
-// disclosure elsewhere on the page, just pointed at Pelago's own site
-// (tracked, so the platform still earns commission on click-throughs).
-const PELAGO_AFFILIATE_LINK = 'https://pelago.pxf.io/AgQDoJ';
+// Outbound-only affiliate promo partners — joined via Impact.com but with
+// no product-catalog data feed exposed to affiliates (confirmed for each:
+// Pelago 2026-09, Hellotickets/Ticketclub 2026-09-19 via GET
+// /admin/diagnostics/impact-catalogs, which lists every catalog visible to
+// this account — neither brand appears in it, same as Pelago). Unlike
+// TicketNetwork's ~210k-item catalog (services/ticketnetwork.js) or
+// Rockefeller Center's small/stable hand-curated set
+// (services/curatedAttractions.js), these three have large, constantly-
+// changing inventories with no feed to sync from — hand-entering individual
+// "events" for them would go stale almost immediately. So each gets a single
+// outbound promo card instead (tracked link, so the platform still earns
+// commission on click-throughs) rather than being represented as platform
+// inventory.
+const PARTNER_PROMOS = [
+  {
+    id: 'pelago',
+    eyebrow: 'Partner Experiences',
+    title: 'Tours & Activities with Pelago by Singapore Airlines',
+    description: 'Book sightseeing tours, attractions, and local experiences in cities worldwide through our partner Pelago.',
+    link: 'https://pelago.pxf.io/AgQDoJ',
+    cta: 'Explore Pelago →',
+  },
+  {
+    id: 'hellotickets',
+    eyebrow: 'Partner Marketplace',
+    title: 'Concerts, Sports & Theater Tickets with Hellotickets',
+    description: 'Browse and buy tickets to live events worldwide through our partner Hellotickets.',
+    link: 'https://hellotickets.sjv.io/B59D91',
+    cta: 'Explore Hellotickets →',
+  },
+  {
+    id: 'ticketclub',
+    eyebrow: 'Partner Marketplace',
+    title: 'Discounted Tickets with Ticketclub',
+    description: 'Ticketclub members get access to discounted tickets across sports, concerts, and theater through our partner Ticketclub.',
+    link: 'https://ticketclub.pxf.io/E0P5PP',
+    cta: 'Explore Ticketclub →',
+  },
+];
 
 function PartnerPromoBanner() {
   return (
-    <div className="cm-navy-card" style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '16px',
-      backgroundColor: NAVY_PANEL,
-      border: `1px solid ${NAVY_BORDER}`,
-      borderRadius: '16px',
-      padding: '22px 26px',
-      margin: '24px 0',
-    }}>
-      <div style={{ maxWidth: '560px' }}>
-        <div style={{ fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: NAV_ACCENT_LIGHT }}>
-          Partner Experiences
-        </div>
-        <h3 style={{ fontSize: '18px', color: '#fff', margin: '4px 0 0' }}>
-          Tours &amp; Activities with Pelago by Singapore Airlines
-        </h3>
-        <p style={{ color: 'var(--cm-text-onnavy-muted)', fontSize: '13.5px', marginTop: '6px' }}>
-          Book sightseeing tours, attractions, and local experiences in cities worldwide through our partner Pelago.
-        </p>
-      </div>
-      <a
-        href={PELAGO_AFFILIATE_LINK}
-        target="_blank"
-        rel="noopener sponsored"
-        className="cm-btn"
-        style={{
-          padding: '12px 22px',
-          borderRadius: '999px',
-          border: 'none',
-          backgroundColor: NAV_ACCENT_COLOR,
-          color: '#fff',
-          fontWeight: 'bold',
-          fontSize: '14px',
-          textDecoration: 'none',
-          whiteSpace: 'nowrap',
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: '24px 0' }}>
+      {PARTNER_PROMOS.map((partner) => (
+        <div key={partner.id} className="cm-navy-card" style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          backgroundColor: NAVY_PANEL,
+          border: `1px solid ${NAVY_BORDER}`,
+          borderRadius: '16px',
+          padding: '22px 26px',
         }}>
-        Explore Pelago →
-      </a>
+          <div style={{ maxWidth: '560px' }}>
+            <div style={{ fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: NAV_ACCENT_LIGHT }}>
+              {partner.eyebrow}
+            </div>
+            <h3 style={{ fontSize: '18px', color: '#fff', margin: '4px 0 0' }}>
+              {partner.title}
+            </h3>
+            <p style={{ color: 'var(--cm-text-onnavy-muted)', fontSize: '13.5px', marginTop: '6px' }}>
+              {partner.description}
+            </p>
+          </div>
+          <a
+            href={partner.link}
+            target="_blank"
+            rel="noopener sponsored"
+            className="cm-btn"
+            style={{
+              padding: '12px 22px',
+              borderRadius: '999px',
+              border: 'none',
+              backgroundColor: NAV_ACCENT_COLOR,
+              color: '#fff',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}>
+            {partner.cta}
+          </a>
+        </div>
+      ))}
     </div>
   );
 }
