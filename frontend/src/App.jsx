@@ -870,6 +870,62 @@ const EVENT_CATEGORIES = [
   },
 ];
 
+// Fallback event-card photo, used whenever a listing has no image_url of
+// its own (common for TicketNetwork catalog rows, which carry no photo at
+// all) — a real, high-quality photo of the right kind of event (concert
+// crowd, basketball game, theater curtain, etc.) instead of a blank gray
+// box. One Wikipedia article title per bucket, chosen for a strong,
+// representative lead photo; the actual image URL is resolved once per
+// bucket at app load (see categoryFallbackImages in the main App
+// component) via the same public, key-free Wikipedia REST summary API
+// already used for the Cities hero banner (api.wikipedia.org/.../summary),
+// then reused for every card in that bucket rather than fetched per event.
+const EVENT_IMAGE_TOPICS = {
+  nba: 'Basketball',
+  nfl: 'American football',
+  nhl: 'Ice hockey',
+  mlb: 'Baseball',
+  mls: 'Association football',
+  boxing: 'Boxing',
+  theater: 'Theatre',
+  comedy: 'Stand-up comedy',
+  sports: 'Stadium',
+  concerts: 'Concert',
+};
+
+// Guesses which EVENT_IMAGE_TOPICS bucket an event belongs to from its
+// title/artist/venue text and its raw `category` column — reusing the same
+// team rosters and league keywords the league tiles already match against
+// (see CategoryTiles/EVENT_CATEGORIES above), so an event that would land
+// under the NBA tile also gets a basketball photo, etc. Falls back to a
+// generic "sports" photo for a sport with no dedicated bucket (tennis,
+// golf, motorsports, wrestling, MMA, ...), then to a concert photo as the
+// last resort for anything else (the most common event type on the site).
+function guessEventImageTopic(event) {
+  const haystack = `${event.title || ''} ${event.artist_name || ''} ${event.venue_name || ''}`.toLowerCase();
+  const categoryStr = (Array.isArray(event.category) ? event.category.join(' ') : (event.category || '')).toLowerCase();
+
+  if (/\bcomedy\b|\bstand-up\b|\bstand up\b/.test(haystack)) return 'comedy';
+  if (/\bnba\b|\bbasketball\b/.test(haystack) || NBA_TEAMS.some((t) => haystack.includes(t.toLowerCase()))) return 'nba';
+  if (/\bnfl\b/.test(haystack) || NFL_TEAMS.some((t) => haystack.includes(t.toLowerCase()))) return 'nfl';
+  if (/\bnhl\b|\bhockey\b/.test(haystack) || NHL_TEAMS.some((t) => haystack.includes(t.toLowerCase()))) return 'nhl';
+  if (/\bmlb\b|\bbaseball\b/.test(haystack) || MLB_TEAMS.some((t) => haystack.includes(t.toLowerCase()))) return 'mlb';
+  if (/\bmls\b|\bsoccer\b/.test(haystack) || MLS_TEAMS.some((t) => haystack.includes(t.toLowerCase()))) return 'mls';
+  if (/\bboxing\b/.test(haystack)) return 'boxing';
+  if (categoryStr.includes('theatre') || categoryStr.includes('theater') || /\btheatre\b|\btheater\b/.test(haystack)) return 'theater';
+  if (categoryStr.includes('sport')) return 'sports';
+  return 'concerts';
+}
+
+// Picks the resolved photo URL for an event's fallback bucket, falling
+// back further to the concert photo if that bucket's own fetch hasn't
+// resolved yet (or ever fails) — so a card never sits with no image at all
+// once any bucket has loaded.
+function pickFallbackImage(event, categoryFallbackImages) {
+  const topic = guessEventImageTopic(event);
+  return categoryFallbackImages[topic] || categoryFallbackImages.concerts || null;
+}
+
 // Shared accent across the redesigned homepage (nav underline, category
 // card icons/hover, search button, event-card arrow button, etc.) — a
 // bright blue against the new dark-navy page background, matching the
@@ -1160,9 +1216,13 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
 // the event-discovery sections below (Popular/Recommended/Trending/by-
 // category) can share the exact same card instead of duplicating this
 // markup seven more times.
-function EventCard({ event, onSelect }) {
+function EventCard({ event, onSelect, fallbackImageUrl }) {
   const priceLabel = (event.min_price != null || event.max_price != null) ? formatPrice(event) : null;
   const fromPrice = event.min_price != null ? event.min_price : event.max_price;
+  // Real event photo (Ticketmaster/SeatGeek) always wins when there is one;
+  // otherwise fall back to the resolved category photo (see
+  // EVENT_IMAGE_TOPICS/pickFallbackImage) rather than showing nothing.
+  const imgSrc = event.image_url || fallbackImageUrl;
   return (
     <div
       className="cm-card"
@@ -1176,14 +1236,19 @@ function EventCard({ event, onSelect }) {
         boxShadow: 'var(--cm-shadow-sm)',
       }}>
       <div style={{ position: 'relative' }}>
-        {event.image_url && (
+        {imgSrc ? (
           <img
-            src={event.image_url}
+            src={imgSrc}
             alt={event.title}
             loading="lazy"
             decoding="async"
             style={{ width: '100%', height: '150px', objectFit: 'cover', display: 'block' }}
           />
+        ) : (
+          // Both the real photo and the category fallback are missing (the
+          // fallback fetch hasn't resolved yet, or every bucket failed) —
+          // a plain gradient placeholder instead of a blank box.
+          <div style={{ width: '100%', height: '150px', background: `linear-gradient(135deg, ${NAVY_PANEL_LIGHT}, ${NAVY_BG})` }} />
         )}
         {priceLabel && (
           <span style={{
@@ -1596,6 +1661,12 @@ export default function App() {
   // location.
   const [selectedCity, setSelectedCity] = useState(null);
   const [cityImageUrl, setCityImageUrl] = useState(null);
+  // Resolved photo URL per EVENT_IMAGE_TOPICS bucket (nba, nfl, theater,
+  // concerts, ...) — fetched once for the whole app (see the effect below),
+  // then reused by every EventCard whose own event.image_url is missing
+  // (see pickFallbackImage). Keyed by bucket, not by event, so this stays
+  // ~9 requests total no matter how many events are on the page.
+  const [categoryFallbackImages, setCategoryFallbackImages] = useState({});
   // Accounts (and Favorites, which depends on accounts) aren't built yet —
   // clicking Sign In/Sign Up/Favorites in the nav just lets the visitor
   // know that, rather than pretending those flows exist. One shared
@@ -2029,6 +2100,28 @@ export default function App() {
     return () => { cancelled = true; };
   }, [selectedCity]);
 
+  // Resolves one real photo per EVENT_IMAGE_TOPICS bucket, once, for every
+  // event card on the site to fall back to when it has no image_url of its
+  // own (see EventCard/pickFallbackImage above) — same Wikipedia REST
+  // summary API as the city hero banner, just fetched once per bucket at
+  // app load instead of once per event. Runs once on mount (empty deps);
+  // any bucket whose fetch fails just stays unset, and pickFallbackImage
+  // already falls further back to the 'concerts' bucket for those.
+  useEffect(() => {
+    let cancelled = false;
+    Object.entries(EVENT_IMAGE_TOPICS).forEach(([bucket, topic]) => {
+      fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled || !data) return;
+          const url = data.originalimage?.source || data.thumbnail?.source || null;
+          if (url) setCategoryFallbackImages((prev) => ({ ...prev, [bucket]: url }));
+        })
+        .catch(() => {});
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const handleSuggestionClick = (label) => {
     setSearchInput(label);
     setActiveSearch(label);
@@ -2145,9 +2238,9 @@ export default function App() {
         </div>
 
         <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid var(--cm-border)', padding: '30px', borderRadius: 'var(--cm-radius)', backgroundColor: '#fff', boxShadow: 'var(--cm-shadow-sm)' }}>
-          {selectedEvent.image_url && (
+          {(selectedEvent.image_url || pickFallbackImage(selectedEvent, categoryFallbackImages)) && (
             <img
-              src={selectedEvent.image_url}
+              src={selectedEvent.image_url || pickFallbackImage(selectedEvent, categoryFallbackImages)}
               alt={selectedEvent.title}
               style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
             />
@@ -2881,7 +2974,12 @@ export default function App() {
 
         <div className="cm-event-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '18px' }}>
           {events.map((event) => (
-            <EventCard key={event.id} event={event} onSelect={handleSelectEvent} />
+            <EventCard
+              key={event.id}
+              event={event}
+              onSelect={handleSelectEvent}
+              fallbackImageUrl={pickFallbackImage(event, categoryFallbackImages)}
+            />
           ))}
         </div>
 
