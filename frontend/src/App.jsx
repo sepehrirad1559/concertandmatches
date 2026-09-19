@@ -687,6 +687,20 @@ const NBA_TEAMS = [
   'Utah Jazz', 'Washington Wizards',
 ];
 
+// NFL team roster for the "NFL" category tile's own sub-page — same
+// mechanism as NBA_TEAMS above (see its comment for how TeamTiles/
+// handleSelectTeam use this).
+const NFL_TEAMS = [
+  'Baltimore Ravens', 'Buffalo Bills', 'Cincinnati Bengals', 'Cleveland Browns',
+  'Denver Broncos', 'Houston Texans', 'Indianapolis Colts', 'Jacksonville Jaguars',
+  'Kansas City Chiefs', 'Las Vegas Raiders', 'Los Angeles Chargers', 'Miami Dolphins',
+  'New England Patriots', 'New York Jets', 'Pittsburgh Steelers', 'Tennessee Titans',
+  'Arizona Cardinals', 'Atlanta Falcons', 'Carolina Panthers', 'Chicago Bears',
+  'Dallas Cowboys', 'Detroit Lions', 'Green Bay Packers', 'Los Angeles Rams',
+  'Minnesota Vikings', 'New Orleans Saints', 'New York Giants', 'Philadelphia Eagles',
+  'San Francisco 49ers', 'Seattle Seahawks', 'Tampa Bay Buccaneers', 'Washington Commanders',
+];
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -701,6 +715,7 @@ const EVENT_CATEGORIES = [
     tagline: 'Every Sunday. Bigger Stakes.',
     icon: 'sports',
     keywords: ['NFL'],
+    teams: NFL_TEAMS,
   },
   {
     id: 'nba',
