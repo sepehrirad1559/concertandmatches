@@ -2392,7 +2392,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          Lowest Total Price Guaranteed.<br /><span style={{ color: NAV_ACCENT_LIGHT, whiteSpace: 'nowrap' }}>No Hidden Fees. No Checkout Surprises.</span>
+          One Search, Multiple Marketplaces.<br /><span style={{ color: NAV_ACCENT_LIGHT }}>Find Where Your Tickets Are Available.</span>
         </h1>
 
         <p style={{
