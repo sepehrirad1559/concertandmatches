@@ -2551,7 +2551,7 @@ export default function App() {
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <BrandLink onClick={() => navigate('/')} />
+          <BrandLink onClick={handleFooterGoHome} />
         </nav>
         <p style={{ textAlign: 'center', marginTop: '60px' }}>Loading event…</p>
       </div>
@@ -2562,7 +2562,7 @@ export default function App() {
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <BrandLink onClick={() => navigate('/')} />
+          <BrandLink onClick={handleFooterGoHome} />
           <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
             ← Back to Events
           </button>
@@ -2594,7 +2594,7 @@ export default function App() {
             boxShadow: 'var(--cm-shadow-sm)',
             border: '1px solid var(--cm-border)',
           }}>
-            <BrandLink onClick={() => navigate('/')} />
+            <BrandLink onClick={handleFooterGoHome} />
             <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
               ← Back to Events
             </button>
@@ -2829,7 +2829,7 @@ export default function App() {
           flexWrap: 'wrap',
           color: '#fff',
         }}>
-          <BrandLink onClick={() => navigate('/')} />
+          <BrandLink onClick={handleFooterGoHome} />
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '26px', alignItems: 'center', fontSize: '14.5px', fontWeight: 600 }}>
             <span
