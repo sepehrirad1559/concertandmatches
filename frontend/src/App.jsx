@@ -2376,7 +2376,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          One Search, Multiple Marketplaces.<br /><span style={{ color: NAV_ACCENT_LIGHT }}>Find Where Your Tickets Are Available.</span>
+          <span style={{ whiteSpace: 'nowrap' }}>One Search, Multiple Marketplaces.</span><br /><span style={{ color: NAV_ACCENT_LIGHT, whiteSpace: 'nowrap' }}>Find Where Your Tickets Are Available.</span>
         </h1>
 
         <p style={{
