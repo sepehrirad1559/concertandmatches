@@ -899,12 +899,17 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
         marginBottom: '20px',
       }}>
       {EVENT_CATEGORIES.map((cat) => {
-        // A tile with its own `teams` roster (currently just NBA) doesn't
-        // filter the grid directly on click — it opens the TeamTiles
-        // sub-page below instead, so the visitor picks a specific team
-        // first. isActive reflects that "opened" state for these tiles
-        // instead of activeCategoryId, so the tile still highlights while
-        // its team picker is showing.
+        // A tile with its own `teams` roster (all five league tiles) opens
+        // the TeamTiles sub-page below AND filters the main grid to that
+        // league's events (closest-first, same distance sort every other
+        // category tile already gets — see fetchEvents's lat/lng handling)
+        // — so a visitor sees NBA games near them immediately, without
+        // having to also pick a specific team first. Picking a team then
+        // narrows further (see handleSelectTeam: it layers a team-name
+        // search on top of this same league filter). isActive tracks
+        // teamsBrowseCategoryId for these tiles (not activeCategoryId
+        // directly) only so the tile stays highlighted while browsing
+        // teams even though activeCategoryId is also set to the same id.
         const hasTeams = Boolean(cat.teams);
         const isActive = hasTeams ? teamsBrowseCategoryId === cat.id : activeCategoryId === cat.id;
         return (
@@ -914,7 +919,9 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
             className="cm-navy-card"
             onClick={() => {
               if (hasTeams) {
-                onToggleTeams(isActive ? null : cat.id);
+                const next = isActive ? null : cat.id;
+                onToggleTeams(next);
+                onSelect(next);
               } else {
                 onSelect(isActive ? null : cat.id);
               }
@@ -1866,10 +1873,13 @@ export default function App() {
     setShowAutocomplete(false);
   };
 
-  // Picking a team from TeamTiles (currently just the NBA roster) runs the
-  // team's name as a plain search — same mechanism as typing it into the
-  // search box and hitting Search — so the results grid, count line, and
-  // Clear button all behave exactly as they already do for a search.
+  // Picking a team from TeamTiles runs the team's name as a plain search —
+  // same mechanism as typing it into the search box and hitting Search —
+  // so the results grid, count line, and Clear button all behave exactly
+  // as they already do for a search. activeCategoryId (the league, set
+  // when the tile was clicked — see CategoryTiles) is left as-is, so the
+  // search is layered ON TOP of the league filter rather than replacing
+  // it — matching against the team name AND the league's own keywords.
   const handleSelectTeam = (teamName) => {
     setSearchInput(teamName);
     setActiveSearch(teamName);
