@@ -727,6 +727,18 @@ const MLB_TEAMS = [
   'Toronto Blue Jays', 'Washington Nationals',
 ];
 
+// MLS team roster for the "MLS" category tile's own sub-page — same
+// mechanism as NBA_TEAMS/NFL_TEAMS/NHL_TEAMS/MLB_TEAMS above.
+const MLS_TEAMS = [
+  'Atlanta United FC', 'Chicago Fire FC', 'FC Cincinnati', 'Columbus Crew SC',
+  'D.C. United', 'Inter Miami CF', 'Montreal Impact', 'Nashville SC',
+  'New England Revolution', 'New York City FC', 'New York Red Bulls', 'Orlando City SC',
+  'Philadelphia Union', 'Toronto FC',
+  'Colorado Rapids', 'FC Dallas', 'Houston Dynamo', 'LA Galaxy',
+  'Los Angeles FC', 'Minnesota United FC', 'Portland Timbers', 'Real Salt Lake',
+  'San Jose Earthquakes', 'Seattle Sounders FC', 'Sporting Kansas City', 'Vancouver Whitecaps FC',
+];
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -780,6 +792,9 @@ const EVENT_CATEGORIES = [
     tagline: 'Every Match. Bigger Rivalries.',
     icon: 'sports',
     keywords: ['MLS', 'Soccer'],
+    teams: MLS_TEAMS,
+    otherEvents: ['MLS All-Star Game', 'MLS Playoffs'],
+    otherEventsLabel: 'Additional Events',
   },
   {
     id: 'boxing',
