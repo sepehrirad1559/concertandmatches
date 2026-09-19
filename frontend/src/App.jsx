@@ -701,6 +701,19 @@ const NFL_TEAMS = [
   'San Francisco 49ers', 'Seattle Seahawks', 'Tampa Bay Buccaneers', 'Washington Commanders',
 ];
 
+// NHL team roster for the "NHL" category tile's own sub-page — same
+// mechanism as NBA_TEAMS/NFL_TEAMS above.
+const NHL_TEAMS = [
+  'Boston Bruins', 'Buffalo Sabres', 'Carolina Hurricanes', 'Columbus Blue Jackets',
+  'Detroit Red Wings', 'Florida Panthers', 'Montreal Canadiens', 'New Jersey Devils',
+  'New York Islanders', 'New York Rangers', 'Ottawa Senators', 'Philadelphia Flyers',
+  'Pittsburgh Penguins', 'Tampa Bay Lightning', 'Toronto Maple Leafs', 'Washington Capitals',
+  'Anaheim Ducks', 'Arizona Coyotes', 'Calgary Flames', 'Chicago Blackhawks',
+  'Colorado Avalanche', 'Dallas Stars', 'Edmonton Oilers', 'Los Angeles Kings',
+  'Minnesota Wild', 'Nashville Predators', 'San Jose Sharks', 'St Louis Blues',
+  'Utah Hockey Club', 'Vancouver Canucks', 'Vegas Golden Knights', 'Winnipeg Jets',
+];
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -736,6 +749,9 @@ const EVENT_CATEGORIES = [
     tagline: 'Every Shift. Bigger Battles.',
     icon: 'sports',
     keywords: ['NHL', 'Hockey'],
+    teams: NHL_TEAMS,
+    otherEvents: ['NHL All-Star Game', 'Winter Classic', 'Stanley Cup Playoffs'],
+    otherEventsLabel: 'Additional Events',
   },
   {
     id: 'mlb',
@@ -982,7 +998,7 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
       {category.otherEvents && category.otherEvents.length > 0 && (
         <>
           <div style={{ fontWeight: 800, fontSize: '14px', color: '#fff', margin: '18px 0 10px' }}>
-            Other Events
+            {category.otherEventsLabel || 'Other Events'}
           </div>
           <div
             style={{
