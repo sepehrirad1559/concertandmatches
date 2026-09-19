@@ -716,6 +716,11 @@ const EVENT_CATEGORIES = [
     icon: 'sports',
     keywords: ['NFL'],
     teams: NFL_TEAMS,
+    // Not a franchise, so not in NFL_TEAMS — these run through the exact
+    // same search-based mechanism (see TeamTiles/handleSelectTeam) since a
+    // plain keyword search already does the right thing for them (e.g.
+    // "Super Bowl" matches any event titled/described with that phrase).
+    otherEvents: ['NFL Playoffs', 'NFL Preseason', 'NFL International Series', 'NFL Pro Bowl', 'Super Bowl'],
   },
   {
     id: 'nba',
@@ -973,6 +978,40 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
           </button>
         ))}
       </div>
+
+      {category.otherEvents && category.otherEvents.length > 0 && (
+        <>
+          <div style={{ fontWeight: 800, fontSize: '14px', color: '#fff', margin: '18px 0 10px' }}>
+            Other Events
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '10px',
+            }}>
+            {category.otherEvents.map((label) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => onSelectTeam(label)}
+                style={{
+                  textAlign: 'left',
+                  background: NAVY_PANEL_LIGHT,
+                  border: `1px solid ${NAVY_BORDER}`,
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  color: '#fff',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
