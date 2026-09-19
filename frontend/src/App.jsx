@@ -922,6 +922,19 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
                 const next = isActive ? null : cat.id;
                 onToggleTeams(next);
                 onSelect(next);
+                if (next) {
+                  // Opening the team picker: scroll to IT, not the events
+                  // grid further down — that's the whole point of clicking
+                  // a league tile ("directed to the team list"). The panel
+                  // doesn't exist in the DOM yet on this same synchronous
+                  // click (React hasn't re-rendered), so this is deferred
+                  // one tick; closing (next === null) has nothing new to
+                  // reveal above the grid, so it keeps scrolling there.
+                  setTimeout(() => {
+                    document.getElementById('team-tiles')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                  return;
+                }
               } else {
                 onSelect(isActive ? null : cat.id);
               }
@@ -985,6 +998,7 @@ function CategoryTiles({ activeCategoryId, onSelect, teamsBrowseCategoryId, onTo
 function TeamTiles({ category, onSelectTeam, onClose }) {
   return (
     <div
+      id="team-tiles"
       className="cm-navy-card"
       style={{
         background: NAVY_PANEL,
