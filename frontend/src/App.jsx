@@ -2552,6 +2552,9 @@ export default function App() {
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
           <BrandLink onClick={handleFooterGoHome} />
+          <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            Home
+          </button>
         </nav>
         <p style={{ textAlign: 'center', marginTop: '60px' }}>Loading event…</p>
       </div>
@@ -2563,6 +2566,9 @@ export default function App() {
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
           <BrandLink onClick={handleFooterGoHome} />
+          <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            Home
+          </button>
           <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
             ← Back to Events
           </button>
@@ -2595,6 +2601,9 @@ export default function App() {
             border: '1px solid var(--cm-border)',
           }}>
             <BrandLink onClick={handleFooterGoHome} />
+            <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+              Home
+            </button>
             <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
               ← Back to Events
             </button>
@@ -2832,6 +2841,15 @@ export default function App() {
           <BrandLink onClick={handleFooterGoHome} />
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '26px', alignItems: 'center', fontSize: '14.5px', fontWeight: 600 }}>
+            <span
+              role="link"
+              tabIndex={0}
+              className="cm-link-underline"
+              onClick={handleFooterGoHome}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleFooterGoHome(); }}
+              style={{ cursor: 'pointer', color: '#fff' }}>
+              Home
+            </span>
             <span
               role="link"
               tabIndex={0}
