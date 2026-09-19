@@ -2142,22 +2142,6 @@ export default function App() {
                               {isOfficialLink ? `Visit ${link.name}` : link.name}
                             </span>
                             <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
-                            {link.isBest && (
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                                color: '#7a5b00',
-                                backgroundColor: '#ffd54f',
-                                borderRadius: '999px',
-                                padding: '3px 10px',
-                                flexShrink: 0,
-                              }}>
-                                Best price
-                              </span>
-                            )}
                           </div>
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
                             {priceLabel ? (
