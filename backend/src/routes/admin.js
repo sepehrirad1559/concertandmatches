@@ -1636,6 +1636,43 @@ router.get('/diagnostics/providers', requireAdminAccess, async (req, res) => {
   res.json({ success: true, results });
 });
 
+// Read-only diagnostic: lists EVERY product catalog visible to this Impact.com
+// publisher (media partner) account — not scoped to one brand/catalog id like
+// the ticketnetwork block above. Reuses the same TICKETNETWORK_ACCOUNT_SID/
+// TICKETNETWORK_AUTH_TOKEN credentials on purpose: those are the publisher
+// account's own Impact.com SID/AuthToken (same auth used for
+// /Mediapartners/{sid}/... calls generally), not something specific to the
+// TicketNetwork brand — the env var names are just a historical leftover
+// from when TicketNetwork was the first (and only) catalog integration.
+// Built to answer, for any newly-approved brand (e.g. Hellotickets,
+// Ticketclub), the same question already answered for TicketNetwork by hand
+// in Impact's UI: does this brand have a Product Catalog at all, and if so
+// what's its numeric id (needed to build a services/<brand>.js the same way
+// services/ticketnetwork.js was built). GET /Mediapartners/{sid}/Catalogs
+// returns metadata only (id, name, item counts) — no per-item data — so this
+// is cheap and safe to call anytime.
+router.get('/diagnostics/impact-catalogs', requireAdminAccess, async (req, res) => {
+  const sid = process.env.TICKETNETWORK_ACCOUNT_SID;
+  const token = process.env.TICKETNETWORK_AUTH_TOKEN;
+  if (!sid || !token) {
+    return res.status(503).json({ success: false, error: 'TICKETNETWORK_ACCOUNT_SID/TICKETNETWORK_AUTH_TOKEN not configured (these are the Impact.com publisher account credentials, reused here for a general catalog listing)' });
+  }
+  try {
+    const auth = 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64');
+    const r = await axios.get(`https://api.impact.com/Mediapartners/${sid}/Catalogs`, {
+      headers: { Authorization: auth, Accept: 'application/json' },
+      timeout: 30000,
+    });
+    res.json({ success: true, status: r.status, data: r.data });
+  } catch (error) {
+    res.status(error.response?.status || 500).json({
+      success: false,
+      status: error.response?.status ?? null,
+      error: error.response?.data ?? error.message,
+    });
+  }
+});
+
 // Read-only diagnostic: how many Ticketmaster events are the SAME real-world
 // event as one already listed by TicketNetwork — i.e. how many canonical
 // (merged/deduped) events carry offers from both sources. This reads the
