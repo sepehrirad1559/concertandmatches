@@ -1552,28 +1552,19 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
   );
 }
 
-// Platform logo: a gradient ticket badge with a white ticket glyph — a
-// perforated stub with a small star accent. Recolored to the new design's
-// blue palette (was a purple → pink → orange gradient) so it matches the
-// dark-navy homepage; works for both concerts and sporting-event tickets,
-// which is the whole point of the site.
+// Platform logo: the official CM emblem artwork (bundled as a static asset
+// under public/brand so it's just a plain URL Vite copies through as-is),
+// cropped tight to the icon with its own square-ish aspect ratio — callers
+// pass a height in `size` and let width follow naturally rather than
+// forcing a 1:1 box like the old inline SVG badge did.
 function Logo({ size = 36 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="cmLogoGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#008efe" />
-          <stop offset="1" stopColor="#4fb8ff" />
-        </linearGradient>
-      </defs>
-      <rect width="48" height="48" rx="12" fill="url(#cmLogoGrad)" />
-      <path
-        d="M10 18a3 3 0 0 1 3-3h22a3 3 0 0 1 3 3v2a3 3 0 0 0 0 6v2a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3v-2a3 3 0 0 0 0-6v-2z"
-        fill="white"
-      />
-      <line x1="24" y1="16" x2="24" y2="32" stroke="#001633" strokeWidth="2" strokeDasharray="3 3" />
-      <path d="M31 20.5l1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.1-2.1 1.1.4-2.4-1.8-1.7 2.4-.3z" fill="#008efe" />
-    </svg>
+    <img
+      src="/brand/logo-icon.jpg"
+      alt=""
+      aria-hidden="true"
+      style={{ height: `${size}px`, width: 'auto', display: 'block', borderRadius: '6px' }}
+    />
   );
 }
 
