@@ -32,6 +32,20 @@ import { syncAllEvents as syncTicketmasterEvents } from './services/ticketmaster
 import { syncSeatGeekEvents } from './services/seatgeek.js';
 import { rebuildCanonicalEvents } from './services/canonicalize.js';
 
+// TicketNetwork catalog sync (Impact.com affiliate feed) — services/
+// ticketnetwork.js already exported a scheduleTicketNetworkSync() meant to
+// run this automatically every 24h, but nothing ever called it: it wasn't
+// imported here or anywhere else, so the only way this ever ran was a
+// human manually POSTing to /admin/sync/ticketnetwork. That's why the
+// provider health table showed no TicketNetwork discovery run for ~6
+// days — the last one was the last manual trigger. Folded into
+// runScheduledEventSync below (rather than calling the dead
+// scheduleTicketNetworkSync, which has its own separate setInterval and
+// doesn't write to provider_sync_logs) so it gets the same 24h cadence,
+// staggering, and dashboard-visible logging as Ticketmaster/SeatGeek/
+// curated already have.
+import { syncTicketNetworkEvents } from './services/ticketnetwork.js';
+
 // Curated attractions (e.g. Rockefeller Center) — see
 // services/curatedAttractions.js. Not an external API sync: this just
 // re-stamps a fixed, hand-maintained list's `date` column forward so the
@@ -336,6 +350,26 @@ await logProviderSync({
 } catch (err) {
 console.error('SeatGeek sync failed:', err);
 await logProviderSync({ providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Running scheduled TicketNetwork sync...');
+startedAt = new Date();
+try {
+// No maxPages — a full pass over the ~210k-item catalog, same as a
+// manual POST /admin/sync/ticketnetwork with no ?maxPages given. Runs as
+// part of this already-backgrounded 24h job, so there's no proxy-timeout
+// concern the way there is for the HTTP-triggered admin route.
+const tnResult = await syncTicketNetworkEvents({});
+console.log('TicketNetwork sync result:', tnResult);
+await logProviderSync({
+  providerName: 'ticketnetwork', syncType: 'discovery', startedAt, finishedAt: new Date(),
+  recordsReceived: tnResult.totalEvents ?? null,
+  status: tnResult.success ? 'success' : 'error',
+  errorMessage: tnResult.error ?? (tnResult.apiErrorCount > 0 ? `${tnResult.apiErrorCount} API error(s): ${JSON.stringify(tnResult.sampleApiErrors)}` : null),
+});
+} catch (err) {
+console.error('TicketNetwork sync failed:', err);
+await logProviderSync({ providerName: 'ticketnetwork', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
 
 console.log('🔄 Refreshing curated attractions (Rockefeller Center)...');

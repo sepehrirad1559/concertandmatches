@@ -294,9 +294,17 @@ export const syncTicketNetworkEvents = async ({ maxPages = null, pageSize = 1000
   };
 };
 
-// Run automatically every 24 hours, same cadence as the other two syncs.
-// The catalog's own DateLastUpdated (confirmed ~daily during investigation)
-// makes a daily re-sync the right cadence here too.
+// UNUSED — kept for reference only. This was meant to make TicketNetwork
+// sync automatically every 24 hours, but nothing ever called it (not
+// imported in index.js or anywhere else), so the only way a TicketNetwork
+// sync ever ran was a human manually POSTing to /admin/sync/ticketnetwork —
+// which is exactly why discovery went ~6 days without running before this
+// was found. index.js's runScheduledEventSync now calls
+// syncTicketNetworkEvents directly instead (same 24h cadence, but also
+// logs to provider_sync_logs the way Ticketmaster/SeatGeek/curated already
+// do, which this standalone setInterval never did). Do not wire this back
+// up alongside that — it would double-run the sync on two independent
+// timers.
 export const scheduleTicketNetworkSync = (intervalMs = 24 * 60 * 60 * 1000) => {
   console.log('⏰ Scheduling automatic TicketNetwork sync every 24 hours');
   setInterval(() => {
