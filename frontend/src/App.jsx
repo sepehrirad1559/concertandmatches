@@ -878,6 +878,93 @@ const POPULAR_VENUES = [
   { name: 'Dodger Stadium', city: 'Los Angeles', state: 'CA' },
 ];
 
+// Full state/province names for the two-letter codes used in POPULAR_CITIES —
+// used to build a "{City}, {State}" query for Wikipedia, which resolves
+// correctly for cities whose bare name is ambiguous or shared with other
+// places (Columbia, Charleston, Springfield, Bloomington, Portland, etc.)
+// instead of landing on a disambiguation page or the wrong city's article.
+const US_STATE_NAMES = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
+  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri',
+  MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio',
+  OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
+  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+  DC: 'District of Columbia', ON: 'Ontario', QC: 'Quebec',
+};
+
+// A handful of POPULAR_CITIES entries whose real Wikipedia article title
+// doesn't follow the plain "{City}, {State}" pattern the helper above
+// builds — keyed by "{name}|{state}" so a same-named city in a different
+// state (there are none in POPULAR_CITIES today, but this keeps it safe)
+// isn't accidentally matched.
+const CITY_WIKIPEDIA_TITLE_OVERRIDES = {
+  'Washington|DC': 'Washington, D.C.',
+  'New York|NY': 'New York City',
+};
+
+function cityWikipediaTitle(city) {
+  const override = CITY_WIKIPEDIA_TITLE_OVERRIDES[`${city.name}|${city.state}`];
+  if (override) return override;
+  const stateName = US_STATE_NAMES[city.state];
+  return stateName ? `${city.name}, ${stateName}` : city.name;
+}
+
+// A few POPULAR_VENUES entries whose Wikipedia article title differs from
+// the venue's common/marketing name.
+const VENUE_WIKIPEDIA_TITLE_OVERRIDES = {
+  'The Kia Forum': 'Kia Forum',
+};
+
+// Shared photo-lookup helper for the city/venue hero banners and the
+// per-category fallback images, backed by Wikipedia's public, key-free,
+// CORS-enabled REST API. Tries the direct page-summary endpoint first
+// (fast path — works whenever `query` is already the exact article title);
+// if that 404s, lands on a disambiguation page, or has no image, falls back
+// to MediaWiki's public search API to resolve the best-matching real
+// article title and re-queries the summary endpoint with that title. This
+// is what makes lookups reliable for ambiguous city names and venue names
+// that don't exactly match their Wikipedia title. Best-effort throughout —
+// any failure just resolves to null, and callers fall back to a plain
+// gradient background rather than showing anything broken.
+async function fetchWikipediaImage(query) {
+  const summaryUrl = (title) =>
+    `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+
+  try {
+    const directRes = await fetch(summaryUrl(query));
+    if (directRes.ok) {
+      const data = await directRes.json();
+      if (data && data.type !== 'disambiguation') {
+        const url = data.originalimage?.source || data.thumbnail?.source || null;
+        if (url) return url;
+      }
+    }
+  } catch {
+    // network error on the direct lookup — fall through to the search fallback
+  }
+
+  try {
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=1`;
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) return null;
+    const searchData = await searchRes.json();
+    const bestTitle = searchData?.query?.search?.[0]?.title;
+    if (!bestTitle) return null;
+    const fallbackRes = await fetch(summaryUrl(bestTitle));
+    if (!fallbackRes.ok) return null;
+    const fallbackData = await fallbackRes.json();
+    if (!fallbackData || fallbackData.type === 'disambiguation') return null;
+    return fallbackData.originalimage?.source || fallbackData.thumbnail?.source || null;
+  } catch {
+    return null;
+  }
+}
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -2412,14 +2499,15 @@ export default function App() {
     scrollToFeaturedEvents();
   };
 
-  // Fetches a real photo of the selected city for the hero banner, from
-  // Wikipedia's public REST summary API (no key required, CORS-enabled,
-  // documented at https://en.wikipedia.org/api/rest_v1/) — looked up by
-  // plain city name, which resolves straight to that city's own article
-  // for every city in POPULAR_CITIES. Best-effort: any failure (network
-  // error, no image on the page, city with no clean article match) just
-  // leaves cityImageUrl null, and the banner below falls back to a plain
-  // gradient rather than showing anything broken.
+  // Fetches a real photo of the selected city for the hero banner, via the
+  // shared fetchWikipediaImage helper (see above) — queried by
+  // "{City}, {State}" (with a couple of hand-picked title overrides) rather
+  // than the bare city name, so ambiguous names like Columbia, Charleston,
+  // Springfield, Bloomington, and Portland resolve to the right city's own
+  // article instead of a disambiguation page or the wrong article; the
+  // helper's search-API fallback catches anything that still misses.
+  // Best-effort: any failure just leaves cityImageUrl null, and the banner
+  // below falls back to a plain gradient rather than showing anything broken.
   useEffect(() => {
     if (!selectedCity) {
       setCityImageUrl(null);
@@ -2427,22 +2515,16 @@ export default function App() {
     }
     let cancelled = false;
     setCityImageUrl(null);
-    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(selectedCity.name)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return;
-        const url = data.originalimage?.source || data.thumbnail?.source || null;
-        if (url) setCityImageUrl(url);
-      })
-      .catch(() => {});
+    fetchWikipediaImage(cityWikipediaTitle(selectedCity)).then((url) => {
+      if (!cancelled && url) setCityImageUrl(url);
+    });
     return () => { cancelled = true; };
   }, [selectedCity]);
 
-  // Same as the city-photo effect above, for the selected venue — most
-  // major venues in POPULAR_VENUES (arenas, stadiums, amphitheaters,
-  // historic theaters) have their own Wikipedia article under their plain
-  // name, so the same lookup-by-name approach works without a separate
-  // per-venue mapping.
+  // Same as the city-photo effect above, for the selected venue — uses the
+  // shared helper's search-API fallback to resolve venues whose Wikipedia
+  // article title doesn't exactly match the name in POPULAR_VENUES (plus a
+  // couple of explicit overrides for known mismatches, e.g. "The Kia Forum").
   useEffect(() => {
     if (!selectedVenue) {
       setVenueImageUrl(null);
@@ -2450,35 +2532,26 @@ export default function App() {
     }
     let cancelled = false;
     setVenueImageUrl(null);
-    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(selectedVenue.name)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return;
-        const url = data.originalimage?.source || data.thumbnail?.source || null;
-        if (url) setVenueImageUrl(url);
-      })
-      .catch(() => {});
+    const query = VENUE_WIKIPEDIA_TITLE_OVERRIDES[selectedVenue.name] || selectedVenue.name;
+    fetchWikipediaImage(query).then((url) => {
+      if (!cancelled && url) setVenueImageUrl(url);
+    });
     return () => { cancelled = true; };
   }, [selectedVenue]);
 
   // Resolves one real photo per EVENT_IMAGE_TOPICS bucket, once, for every
   // event card on the site to fall back to when it has no image_url of its
-  // own (see EventCard/pickFallbackImage above) — same Wikipedia REST
-  // summary API as the city hero banner, just fetched once per bucket at
-  // app load instead of once per event. Runs once on mount (empty deps);
-  // any bucket whose fetch fails just stays unset, and pickFallbackImage
-  // already falls further back to the 'concerts' bucket for those.
+  // own (see EventCard/pickFallbackImage above) — same shared helper as the
+  // city/venue hero banners, just fetched once per bucket at app load
+  // instead of once per event. Runs once on mount (empty deps); any bucket
+  // whose fetch fails just stays unset, and pickFallbackImage already falls
+  // further back to the 'concerts' bucket for those.
   useEffect(() => {
     let cancelled = false;
     Object.entries(EVENT_IMAGE_TOPICS).forEach(([bucket, topic]) => {
-      fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (cancelled || !data) return;
-          const url = data.originalimage?.source || data.thumbnail?.source || null;
-          if (url) setCategoryFallbackImages((prev) => ({ ...prev, [bucket]: url }));
-        })
-        .catch(() => {});
+      fetchWikipediaImage(topic).then((url) => {
+        if (!cancelled && url) setCategoryFallbackImages((prev) => ({ ...prev, [bucket]: url }));
+      });
     });
     return () => { cancelled = true; };
   }, []);
