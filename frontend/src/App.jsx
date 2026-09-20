@@ -3083,30 +3083,18 @@ export default function App() {
           inset: 0,
           background: `linear-gradient(90deg, ${NAVY_BG} 0%, ${NAVY_BG} 38%, rgba(0,22,51,0.55) 60%, rgba(0,22,51,0.15) 80%, rgba(0,22,51,0) 100%)`,
         }} />
-        <p style={{
-          position: 'relative',
-          textAlign: 'left',
-          fontSize: 'clamp(20px, 2.6vw, 28px)',
-          fontWeight: 800,
-          letterSpacing: '-0.01em',
-          color: '#fff',
-          margin: '0 0 6px',
-        }}>
-          ConcertAndMatches
-        </p>
-
         <h1 style={{
           position: 'relative',
           textAlign: 'left',
-          fontSize: 'clamp(24px, 3.4vw, 34px)',
+          fontSize: 'clamp(26px, 3.6vw, 38px)',
           fontWeight: 800,
           letterSpacing: '-0.01em',
-          lineHeight: 1.2,
-          margin: '0 0 12px',
+          lineHeight: 1.15,
+          margin: '4px 0 8px',
           color: '#fff',
-          maxWidth: '640px',
+          maxWidth: '620px',
         }}>
-          Be The First To Buy Tickets for <span style={{ color: NAV_ACCENT_LIGHT }}>Concerts, Sports &amp; Theater.</span>
+          <span style={{ whiteSpace: 'nowrap' }}>One Search, Multiple Marketplaces.</span><br /><span style={{ color: NAV_ACCENT_LIGHT, whiteSpace: 'nowrap' }}>Find Where Your Tickets Are Available.</span>
         </h1>
 
         <p style={{
@@ -3114,12 +3102,11 @@ export default function App() {
           textAlign: 'left',
           fontSize: 'clamp(13px, 1.6vw, 15px)',
           fontWeight: 600,
-          letterSpacing: '0.01em',
+          letterSpacing: '0.02em',
           color: 'var(--cm-text-onnavy-muted)',
           margin: 0,
-          maxWidth: '560px',
         }}>
-          We compare leading ticket marketplaces so you find the best available tickets.<br />More choice. Better prices. All in one place.
+          Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;&amp;&nbsp;Comedy
         </p>
 
         <span style={{
@@ -3164,8 +3151,93 @@ export default function App() {
             // instead by rounding the Search button's own right corners
             // below, since it's the only segment with its own background.
           }}>
-          {/* SEARCH segment — first in the pill, matching the reference's
-              Artist/Team/Event/Venue field leading the row. */}
+          {/* LOCATION segment — icon + small uppercase label above the
+              value, matching the reference three-field layout (Location /
+              Dates / Search, each labeled). */}
+          <div className="cm-search-seg cm-search-seg-location" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flex: '1',
+            minWidth: '150px',
+            padding: '0 20px',
+          }}>
+            <span style={{ fontSize: '20px', color: NAV_ACCENT_COLOR, flexShrink: 0 }} aria-hidden="true">📍</span>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5c6b85' }}>
+                Location
+              </span>
+              <input
+                id="cm-search-location"
+                type="text"
+                placeholder="City or Zip Code"
+                value={draftLocation}
+                onChange={(e) => setDraftLocation(e.target.value)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  padding: '1px 0 0',
+                  fontSize: '15px',
+                  width: '100%',
+                  minWidth: 0,
+                  color: '#1a0733',
+                }}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          {/* Hairline divider, matching the reference */}
+          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '30px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
+
+          {/* DATES segment */}
+          <div ref={datesSegmentRef} className="cm-search-seg cm-search-seg-dates" style={{ position: 'relative', display: 'flex', alignItems: 'stretch', flex: '1', minWidth: '150px' }}>
+            <button
+              type="button"
+              onClick={() => setShowDatesPicker((v) => !v)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                padding: '0 20px',
+                width: '100%',
+                textAlign: 'left',
+              }}
+              aria-label="Choose dates">
+              <span style={{ fontSize: '20px', color: NAV_ACCENT_COLOR, flexShrink: 0 }} aria-hidden="true">📅</span>
+              <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5c6b85' }}>
+                  Dates
+                </span>
+                <span style={{ fontSize: '15px', color: '#1a0733', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {draftStartDate ? `${formatShortDate(draftStartDate)}${draftEndDate ? ` – ${formatShortDate(draftEndDate)}` : ''}` : 'All Dates'}
+                </span>
+              </span>
+              <span style={{ fontSize: '13px', color: '#5c6b85', flexShrink: 0, display: 'inline-block', transform: showDatesPicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} aria-hidden="true">⌄</span>
+            </button>
+            {showDatesPicker && (
+              <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 20 }}>
+                <DatesPicker
+                  startDate={draftStartDate}
+                  endDate={draftEndDate}
+                  onCancel={() => setShowDatesPicker(false)}
+                  onApply={(start, end) => {
+                    setDraftStartDate(start);
+                    setDraftEndDate(end);
+                    setShowDatesPicker(false);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Hairline divider, matching the reference */}
+          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '30px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
+
+          {/* SEARCH segment */}
           <div className="cm-search-seg cm-search-seg-search" style={{
             position: 'relative',
             display: 'flex',
@@ -3176,25 +3248,30 @@ export default function App() {
             padding: '0 20px',
           }}>
             <span style={{ fontSize: '20px', color: NAV_ACCENT_COLOR, flexShrink: 0 }} aria-hidden="true">🔍</span>
-            <input
-              id="cm-search-query"
-              type="text"
-              placeholder="Artist / Team / Event / Venue"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
-              onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
-              style={{
-                border: 'none',
-                outline: 'none',
-                padding: 0,
-                fontSize: '15px',
-                width: '100%',
-                minWidth: 0,
-                color: '#1a0733',
-              }}
-              autoComplete="off"
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5c6b85' }}>
+                Search
+              </span>
+              <input
+                id="cm-search-query"
+                type="text"
+                placeholder="Artist, Event or Venue"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => { if (autocompleteSuggestions.length > 0) setShowAutocomplete(true); }}
+                onBlur={() => setTimeout(() => setShowAutocomplete(false), 150)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  padding: '1px 0 0',
+                  fontSize: '15px',
+                  width: '100%',
+                  minWidth: 0,
+                  color: '#1a0733',
+                }}
+                autoComplete="off"
+              />
+            </div>
             {showAutocomplete && autocompleteSuggestions.length > 0 && (
               <ul
                 style={{
@@ -3233,84 +3310,6 @@ export default function App() {
               </ul>
             )}
           </div>
-
-          {/* Hairline divider, matching the reference */}
-          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '30px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
-
-          {/* LOCATION segment */}
-          <div className="cm-search-seg cm-search-seg-location" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            flex: '1',
-            minWidth: '150px',
-            padding: '0 20px',
-          }}>
-            <span style={{ fontSize: '20px', color: NAV_ACCENT_COLOR, flexShrink: 0 }} aria-hidden="true">📍</span>
-            <input
-              id="cm-search-location"
-              type="text"
-              placeholder="Any Location"
-              value={draftLocation}
-              onChange={(e) => setDraftLocation(e.target.value)}
-              style={{
-                border: 'none',
-                outline: 'none',
-                padding: 0,
-                fontSize: '15px',
-                width: '100%',
-                minWidth: 0,
-                color: '#1a0733',
-              }}
-              autoComplete="off"
-            />
-            <span style={{ fontSize: '13px', color: '#5c6b85', flexShrink: 0 }} aria-hidden="true">⌄</span>
-          </div>
-
-          {/* Hairline divider, matching the reference */}
-          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '30px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
-
-          {/* DATES segment */}
-          <div ref={datesSegmentRef} className="cm-search-seg cm-search-seg-dates" style={{ position: 'relative', display: 'flex', alignItems: 'stretch', flex: '1', minWidth: '150px' }}>
-            <button
-              type="button"
-              onClick={() => setShowDatesPicker((v) => !v)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                padding: '0 20px',
-                width: '100%',
-                textAlign: 'left',
-              }}
-              aria-label="Choose dates">
-              <span style={{ fontSize: '20px', color: NAV_ACCENT_COLOR, flexShrink: 0 }} aria-hidden="true">📅</span>
-              <span style={{ fontSize: '15px', color: '#1a0733', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {draftStartDate ? `${formatShortDate(draftStartDate)}${draftEndDate ? ` – ${formatShortDate(draftEndDate)}` : ''}` : 'Any Date'}
-              </span>
-              <span style={{ fontSize: '13px', color: '#5c6b85', flexShrink: 0, display: 'inline-block', transform: showDatesPicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} aria-hidden="true">⌄</span>
-            </button>
-            {showDatesPicker && (
-              <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 20 }}>
-                <DatesPicker
-                  startDate={draftStartDate}
-                  endDate={draftEndDate}
-                  onCancel={() => setShowDatesPicker(false)}
-                  onApply={(start, end) => {
-                    setDraftStartDate(start);
-                    setDraftEndDate(end);
-                    setShowDatesPicker(false);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Hairline divider, matching the reference */}
-          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '30px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
 
           <button
             type="submit"
