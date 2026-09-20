@@ -2493,6 +2493,29 @@ export default function App() {
     }, 0);
   };
 
+  // BUG FIX: clicking a category tile (see CategoryTiles) only ever set
+  // activeCategoryId — it never touched activeSearch/activeLocation/
+  // selectedCity/selectedVenue. Those linger from whatever was picked
+  // before (a team name via handleSelectTeam, a city/venue via
+  // handleSelectCity/handleSelectVenue), so e.g. picking "Los Angeles
+  // Kings" under NHL and then clicking the Concerts tile left
+  // activeSearch = "Los Angeles Kings" ANDed with the Concerts category on
+  // the backend — a combination that can never match anything, so the
+  // grid always showed "0 results" no matter which category was clicked
+  // next. A category tile click is a fresh top-level navigation, so it
+  // should always start from a clean slate rather than inheriting
+  // whatever search/location was layered on top of the previous category.
+  const handleSelectCategoryTile = (categoryId) => {
+    setActiveCategoryId(categoryId);
+    setActiveSearch('');
+    setSearchInput('');
+    setActiveLocation('');
+    setDraftLocation('');
+    setSelectedCity(null);
+    setSelectedVenue(null);
+    setShowAutocomplete(false);
+  };
+
   // Debounced fetch of autocomplete suggestions as the customer types.
   useEffect(() => {
     const query = searchInput.trim();
@@ -3297,7 +3320,7 @@ export default function App() {
       <div id="category-tiles">
       <CategoryTiles
         activeCategoryId={activeCategoryId}
-        onSelect={setActiveCategoryId}
+        onSelect={handleSelectCategoryTile}
         teamsBrowseCategoryId={teamsBrowseCategoryId}
         onToggleTeams={setTeamsBrowseCategoryId}
       />
