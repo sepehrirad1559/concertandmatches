@@ -989,6 +989,32 @@ const EVENT_IMAGE_TOPICS = {
   concerts: 'Concert',
 };
 
+// Bundled, hand-picked photos (frontend/public/event-fallback-images/) for
+// the buckets the user supplied a reference image for — served locally
+// instead of fetched from Wikipedia, so these five buckets always show
+// exactly that photo rather than whatever REST API resolves. Concerts and
+// Theater get more than one variant (matching the reference mockup, which
+// used two different photos per bucket) so a page full of concert or
+// theater cards isn't the same photo repeated; pickFallbackImage below
+// picks one deterministically per event so a given event's card doesn't
+// change photo on every re-render. Buckets not listed here (nhl, mlb, mls,
+// boxing, sports) keep using the Wikipedia-resolved categoryFallbackImages
+// — no reference photo was supplied for those.
+const LOCAL_FALLBACK_IMAGES = {
+  concerts: [
+    '/event-fallback-images/concert-1.jpg',
+    '/event-fallback-images/concert-2.jpg',
+    '/event-fallback-images/concert-3.jpg',
+  ],
+  nba: ['/event-fallback-images/basketball.jpg'],
+  nfl: ['/event-fallback-images/football.jpg'],
+  theater: [
+    '/event-fallback-images/theater-1.jpg',
+    '/event-fallback-images/theater-2.jpg',
+  ],
+  comedy: ['/event-fallback-images/comedy.jpg'],
+};
+
 // Guesses which EVENT_IMAGE_TOPICS bucket an event belongs to from its
 // title/artist/venue text and its raw `category` column — reusing the same
 // team rosters and league keywords the league tiles already match against
@@ -1013,12 +1039,23 @@ function guessEventImageTopic(event) {
   return 'concerts';
 }
 
-// Picks the resolved photo URL for an event's fallback bucket, falling
-// back further to the concert photo if that bucket's own fetch hasn't
-// resolved yet (or ever fails) — so a card never sits with no image at all
-// once any bucket has loaded.
+// Picks the fallback photo for an event: a bundled local photo when its
+// bucket has one (see LOCAL_FALLBACK_IMAGES), chosen deterministically from
+// that bucket's variants by hashing the event's own id/title (so the same
+// event always gets the same photo, but different events in the bucket
+// don't all show the identical picture); otherwise the Wikipedia-resolved
+// photo for that bucket, falling back further to the concert photo if that
+// bucket's own fetch hasn't resolved yet (or ever fails) — so a card never
+// sits with no image at all once any bucket has loaded.
 function pickFallbackImage(event, categoryFallbackImages) {
   const topic = guessEventImageTopic(event);
+  const localVariants = LOCAL_FALLBACK_IMAGES[topic];
+  if (localVariants && localVariants.length > 0) {
+    const seed = String(event.id ?? event.title ?? '');
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    return localVariants[hash % localVariants.length];
+  }
   return categoryFallbackImages[topic] || categoryFallbackImages.concerts || null;
 }
 
