@@ -3165,10 +3165,11 @@ export default function App() {
         <p style={{
           position: 'relative',
           textAlign: 'left',
-          fontSize: 'clamp(13px, 1.6vw, 15px)',
-          fontWeight: 600,
-          letterSpacing: '0.02em',
-          color: 'var(--cm-text-onnavy-muted)',
+          fontSize: 'clamp(26px, 3.6vw, 38px)',
+          fontWeight: 800,
+          letterSpacing: '-0.01em',
+          lineHeight: 1.15,
+          color: NAV_ACCENT_LIGHT,
           margin: 0,
           whiteSpace: 'nowrap',
         }}>
