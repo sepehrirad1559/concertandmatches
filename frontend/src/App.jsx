@@ -1157,6 +1157,10 @@ function pickFallbackImage(event, categoryFallbackImages) {
 // every color" request.
 const NAV_ACCENT_COLOR = '#008efe';
 const NAV_ACCENT_LIGHT = '#4fb8ff';
+// Exact background color of the CM logo artwork (public/brand/logo-icon.jpg),
+// sampled pixel-by-pixel from a corner of the source image — reused for the
+// event card's "Find Your Ticket" button per the reference request.
+const LOGO_BG_COLOR = '#d1f903';
 // Exact reference-palette values sampled from the supplied homepage image.
 const NAVY_BG = '#001634';
 const NAVY_PANEL = '#01214a';
@@ -1524,27 +1528,28 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
             {formatOffersComparison(event)}
           </p>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '12px' }}>
+        <div style={{ marginTop: '12px' }}>
           <button
             type="button"
             className="cm-btn"
             aria-label={`Find tickets for ${event.title}`}
             onClick={(e) => { e.stopPropagation(); onSelect(event); }}
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
+              width: '100%',
+              padding: '11px 16px',
+              borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               border: 'none',
-              backgroundColor: NAV_ACCENT_COLOR,
-              color: 'white',
-              fontSize: '17px',
-              fontWeight: 'bold',
+              backgroundColor: LOGO_BG_COLOR,
+              color: '#141b2d',
+              fontSize: '14px',
+              fontWeight: 800,
+              letterSpacing: '0.01em',
             }}>
-            →
+            Find Your Ticket
           </button>
         </div>
       </div>
