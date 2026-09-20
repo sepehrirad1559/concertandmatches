@@ -3158,7 +3158,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          <span style={{ whiteSpace: 'nowrap' }}>Be The First To Find Your Ticket.</span><br /><span style={{ color: NAV_ACCENT_LIGHT, whiteSpace: 'nowrap' }}>No Checkout Surprises.</span>
+          <span style={{ whiteSpace: 'nowrap' }}>Be The First To Find Your Ticket.</span>
         </h1>
 
         <p style={{
@@ -3169,8 +3169,9 @@ export default function App() {
           letterSpacing: '0.02em',
           color: 'var(--cm-text-onnavy-muted)',
           margin: 0,
+          whiteSpace: 'nowrap',
         }}>
-          No Extra Fees
+          No Extra Fees. No Checkout Surprises.
         </p>
 
         <span style={{
