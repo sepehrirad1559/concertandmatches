@@ -1,19 +1,13 @@
-// TEMPORARY site-wide visibility toggle. Originally set 2026-09-12 to hide
-// both SeatGeek and Ticketmaster, showing only TicketNetwork; later the same
-// day Ticketmaster was brought back; now SeatGeek is brought back too, so
-// this fully reverts to showing all three sources. Note: the separate,
-// PERMANENT price filter (config/priceVisibility.js) still hides any event
-// with no price at all, and as of this change essentially every SeatGeek
-// event has no price (its affiliate pricing is still blocked on a pending
-// account approval, and its free-tier Platform API stats are frequently
-// empty even for events that are for sale) — so un-hiding SeatGeek here is
-// necessary but likely not sufficient on its own for SeatGeek events to
-// actually become visible; that's a data problem, not this toggle.
+// TEMPORARY site-wide visibility toggle. Re-enabled 2026-09-20 at the
+// user's request to hide Ticketmaster and SeatGeek events "for now" —
+// showing only TicketNetwork and the small hand-curated set (Rockefeller
+// Center etc., source='curated'). Every call site below already treats
+// this as "only list/count/sitemap events whose source is in this list",
+// so setting it is the whole change; no other file needs touching.
 //
-// Left as a no-op (null) rather than deleted: flip back to an array (e.g.
-// ['ticketnetwork', 'ticketmaster']) if a source ever needs hiding again —
-// every call site below already treats null as "no restriction".
-export const ACTIVE_SOURCES = null;
+// To fully revert back to showing all sources again, set this back to null
+// — every call site already treats null as "no restriction".
+export const ACTIVE_SOURCES = ['ticketnetwork', 'curated'];
 
 // Appends a `source = ANY(...)` condition to an existing WHERE clause
 // string, pushing ACTIVE_SOURCES onto `params` and returning the next free
