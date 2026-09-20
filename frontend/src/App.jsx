@@ -1599,10 +1599,7 @@ function BrandLink({ onClick }) {
       }}>
       <Logo size={38} />
       <span>
-        <span style={{ display: 'block', fontWeight: 800, fontSize: '19px', lineHeight: 1.15 }}>ConcertAndMatches.com</span>
-        <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', opacity: 0.65, marginTop: '2px' }}>
-          EVENT TICKETS. A BRIGHTER EXPERIENCE.
-        </span>
+        <span style={{ display: 'block', fontWeight: 800, fontSize: '25px', lineHeight: 1.15 }}>ConcertAndMatches.com</span>
       </span>
     </button>
   );
