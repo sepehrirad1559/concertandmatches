@@ -3158,7 +3158,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          <span style={{ whiteSpace: 'nowrap' }}>One Search, Multiple Marketplaces.</span><br /><span style={{ color: NAV_ACCENT_LIGHT, whiteSpace: 'nowrap' }}>Find Where Your Tickets Are Available.</span>
+          <span style={{ whiteSpace: 'nowrap' }}>Be The First To Find Your Ticket.</span><br /><span style={{ color: NAV_ACCENT_LIGHT, whiteSpace: 'nowrap' }}>No Checkout Surprises.</span>
         </h1>
 
         <p style={{
@@ -3170,7 +3170,7 @@ export default function App() {
           color: 'var(--cm-text-onnavy-muted)',
           margin: 0,
         }}>
-          Concerts &nbsp;•&nbsp; Sports &nbsp;•&nbsp; Theater &nbsp;&amp;&nbsp;Comedy
+          No Extra Fees
         </p>
 
         <span style={{
