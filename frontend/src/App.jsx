@@ -2723,6 +2723,7 @@ export default function App() {
             borderRadius: '16px',
             boxShadow: 'var(--cm-shadow-sm)',
             border: '1px solid var(--cm-border)',
+            color: '#141b2d',
           }}>
             <BrandLink onClick={handleFooterGoHome} />
             <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
