@@ -2742,7 +2742,7 @@ export default function App() {
               style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
             />
           )}
-          <h1>{selectedEvent.title}</h1>
+          <h1 style={{ color: '#141b2d' }}>{selectedEvent.title}</h1>
           {selectedEvent.artist_name && (
             <p style={{ fontSize: '18px', color: '#666' }}>{selectedEvent.artist_name}</p>
           )}
