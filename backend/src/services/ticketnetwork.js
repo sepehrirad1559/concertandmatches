@@ -232,11 +232,17 @@ export const syncTicketNetworkEvents = async ({ maxPages = null, pageSize = 1000
     return { success: false, error: 'TICKETNETWORK_ACCOUNT_SID/TICKETNETWORK_AUTH_TOKEN not configured' };
   }
 
+  // Captured before the first page is fetched so the stale-listing sweep
+  // below (which compares against this) can never mistake a row this very
+  // run just touched for one it didn't — see that sweep's comment for why
+  // it exists.
+  const syncStartedAt = new Date();
   let nextPageUri = null;
   let pagesFetched = 0;
   let totalStored = 0;
   let totalSeen = 0;
   let apiTotal = null;
+  let stoppedEarlyForMaxPages = false;
 
   console.log('🎟️ Starting TicketNetwork (Impact.com catalog) sync...');
 
@@ -273,6 +279,7 @@ export const syncTicketNetworkEvents = async ({ maxPages = null, pageSize = 1000
     if (!nextPageUri || items.length === 0) break;
     if (maxPages && pagesFetched >= maxPages) {
       console.log(`⏸️ TicketNetwork sync stopped early — reached maxPages=${maxPages} (partial run)`);
+      stoppedEarlyForMaxPages = true;
       break;
     }
 
@@ -282,6 +289,42 @@ export const syncTicketNetworkEvents = async ({ maxPages = null, pageSize = 1000
 
   console.log(`✅ TicketNetwork sync complete! ${totalStored}/${totalSeen} events stored across ${pagesFetched} pages (catalog total reported: ${apiTotal ?? 'unknown'}).`);
 
+  // Stale-listing sweep: a full pass over the whole catalog (never limited
+  // by maxPages) just touched (INSERT or UPDATE, both stamp updated_at)
+  // every item TicketNetwork is CURRENTLY offering. Any 'ticketnetwork' row
+  // in our own table that this run did NOT touch is therefore no longer in
+  // their feed — sold out, pulled, or expired — yet storeEvent's own
+  // COALESCE($price, min_price) update logic (see above) never clears a
+  // price once set, so without this sweep that row would sit there forever
+  // showing its last-known price even though the event this exact bug
+  // report was about had already stopped being purchasable there. Nulling
+  // min_price/max_price reuses the existing PERMANENT public-listing price
+  // filter (config/priceVisibility.js already hides any unpriced event)
+  // rather than adding a new column/flag — if the listing ever reappears in
+  // a later sync, storeEvent's normal update path restores its price and
+  // it becomes visible again automatically.
+  //
+  // Skipped for a maxPages-limited partial run: that only ever samples a
+  // few thousand of the ~210k items, so "not touched this run" would mean
+  // nothing and this would incorrectly null out most of the catalog.
+  let staleListingsCleared = 0;
+  if (!stoppedEarlyForMaxPages && totalStored > 0) {
+    try {
+      const staleResult = await pool.query(
+        `UPDATE events SET min_price = NULL, max_price = NULL, updated_at = NOW()
+         WHERE source = 'ticketnetwork' AND updated_at < $1
+         AND (min_price IS NOT NULL OR max_price IS NOT NULL)`,
+        [syncStartedAt]
+      );
+      staleListingsCleared = staleResult.rowCount ?? 0;
+      if (staleListingsCleared > 0) {
+        console.log(`🧹 Cleared price on ${staleListingsCleared} TicketNetwork listing(s) no longer present in this sync (now hidden from public listings as unpriced).`);
+      }
+    } catch (err) {
+      console.error('TicketNetwork stale-listing sweep failed:', err);
+    }
+  }
+
   return {
     success: true,
     pagesFetched,
@@ -289,6 +332,7 @@ export const syncTicketNetworkEvents = async ({ maxPages = null, pageSize = 1000
     totalStored,
     totalEvents: totalStored,
     catalogTotal: apiTotal,
+    staleListingsCleared,
     apiErrorCount: recentApiErrors.length,
     sampleApiErrors: recentApiErrors.length > 0 ? recentApiErrors.slice(0, 5) : undefined,
   };
