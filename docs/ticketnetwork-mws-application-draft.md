@@ -25,7 +25,7 @@ real TicketNetwork listings onto event pages (rather than today's blind
 - Company name: `[legal business name, or "Masoud [last name], sole proprietor" if unincorporated]`
 - Website: https://concertandmatches.com
 - Contact name: Masoud
-- Contact email: sepehrirad15@gmail.com
+- Contact email: service@concertandmatches.com
 - Company address: `[business address]`
 - Phone: `[phone number]`
 

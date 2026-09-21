@@ -3054,7 +3054,7 @@ export default function App() {
               style={{ cursor: 'pointer', color: '#fff' }}>
               About
             </span>
-            <a href="mailto:sepehrirad15@gmail.com" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Help</a>
+            <a href="mailto:service@concertandmatches.com" className="cm-link-underline" style={{ color: '#fff', textDecoration: 'none' }}>Help</a>
           </div>
 
           <div style={{ display: 'flex', gap: '18px', alignItems: 'center', fontSize: '14px', fontWeight: 600 }}>
