@@ -1050,14 +1050,15 @@ router.post('/cleanup/official-source-data', async (req, res) => {
   }
 });
 
-// One-time reset, requested by the user to start Ticketmaster's data over
-// from scratch rather than keep chasing whatever produced the current
-// priced/unpriced split: deletes every raw events row with source =
-// 'ticketmaster'. Leaves SeatGeek/TicketNetwork/official rows untouched.
-// Safe to call even if already empty (zero-row DELETE). Run
-// POST /admin/canonicalize/rebuild afterward so canonical_events/
-// ticket_offers stop referencing the deleted rows, then
-// POST /admin/sync/ticketmaster to repopulate fresh from the Discovery API.
+// One-time purge: deletes every raw events row with source = 'ticketmaster'.
+// Originally added 2026-09-13 to reset Ticketmaster's data and re-sync it
+// fresh; repurposed 2026-09-21 as part of dropping Ticketmaster as a data
+// source entirely (see backend/src/index.js's import comment and
+// /cleanup/seatgeek-data just below) — do NOT re-sync afterward. Leaves
+// SeatGeek/TicketNetwork/curated rows untouched. Safe to call even if
+// already empty (zero-row DELETE). Run POST /admin/canonicalize/rebuild
+// afterward so canonical_events/ticket_offers stop referencing the deleted
+// rows.
 //
 // Runs in the background rather than awaiting the DELETE synchronously —
 // the first live run of this route (2026-09-13, events table at ~340k rows
@@ -1077,7 +1078,7 @@ router.post('/cleanup/ticketmaster-data', async (req, res) => {
   const startedAt = new Date();
   res.json({
     success: true,
-    message: 'Deleting all ticketmaster events in the background. Check GET /admin/health or Railway logs for completion, then run POST /admin/canonicalize/rebuild followed by POST /admin/sync/ticketmaster.',
+    message: 'Deleting all ticketmaster events in the background. Check GET /admin/health or Railway logs for completion, then run POST /admin/canonicalize/rebuild.',
   });
 
   pool.query(`DELETE FROM events WHERE source = 'ticketmaster'`)
@@ -1089,6 +1090,48 @@ router.post('/cleanup/ticketmaster-data', async (req, res) => {
       console.error('Background ticketmaster cleanup delete failed:', error);
       return logProviderSync({
         providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
+    });
+});
+
+// Same one-time reset as /cleanup/ticketmaster-data above, for SeatGeek —
+// both added together 2026-09-21 at the user's request to stop using
+// Ticketmaster and SeatGeek as data sources entirely ("we no longer need
+// data from seatgeek and ticketmaster, remove their data from our
+// platform"). The scheduled discovery/backfill jobs for both were removed
+// from backend/src/index.js in the same change, so this is a one-time
+// purge, not something that needs to run again — nothing will re-add
+// source='seatgeek' rows afterward. Leaves Ticketmaster/TicketNetwork/
+// curated rows untouched. Safe to call even if already empty. Run
+// POST /admin/canonicalize/rebuild afterward so canonical_events/
+// ticket_offers stop referencing the deleted rows.
+//
+// Same background-response pattern as /cleanup/ticketmaster-data — a
+// single-statement DELETE against a table this size can outlast Railway's
+// proxy timeout even though Postgres keeps executing it server-side.
+router.post('/cleanup/seatgeek-data', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey || !providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  const startedAt = new Date();
+  res.json({
+    success: true,
+    message: 'Deleting all seatgeek events in the background. Check GET /admin/health or Railway logs for completion, then run POST /admin/canonicalize/rebuild.',
+  });
+
+  pool.query(`DELETE FROM events WHERE source = 'seatgeek'`)
+    .then((deleted) => logProviderSync({
+      providerName: 'seatgeek', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
+      recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success', errorMessage: null,
+    }))
+    .catch((error) => {
+      console.error('Background seatgeek cleanup delete failed:', error);
+      return logProviderSync({
+        providerName: 'seatgeek', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
         recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
       });
     });

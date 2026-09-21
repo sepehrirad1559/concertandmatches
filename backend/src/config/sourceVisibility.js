@@ -1,13 +1,14 @@
-// TEMPORARY site-wide visibility toggle. Re-enabled 2026-09-20 at the
-// user's request to hide Ticketmaster and SeatGeek events "for now" —
-// showing only TicketNetwork and the small hand-curated set (Rockefeller
-// Center etc., source='curated'). Every call site below already treats
-// this as "only list/count/sitemap events whose source is in this list",
-// so setting it is the whole change; no other file needs touching.
-//
-// To fully revert back to showing all sources again, set this back to null
-// — every call site already treats null as "no restriction".
-export const ACTIVE_SOURCES = ['ticketnetwork', 'curated'];
+// Site-wide visibility toggle. Was ['ticketnetwork', 'curated'] (set
+// 2026-09-20) to temporarily hide Ticketmaster/SeatGeek events while they
+// were still in the database. As of 2026-09-21, Ticketmaster and SeatGeek
+// are no longer synced AND their existing rows have been purged from the
+// events table (see backend/src/index.js's import comment and
+// routes/admin.js's /cleanup/ticketmaster-data + /cleanup/seatgeek-data) —
+// so there's nothing left for this list to hide, and it's set back to null
+// (no restriction). Every call site below already treats null as "no
+// restriction", so this is safe to leave in place going forward and only
+// needs to be set again if a source needs hiding without deleting its data.
+export const ACTIVE_SOURCES = null;
 
 // Appends a `source = ANY(...)` condition to an existing WHERE clause
 // string, pushing ACTIVE_SOURCES onto `params` and returning the next free
