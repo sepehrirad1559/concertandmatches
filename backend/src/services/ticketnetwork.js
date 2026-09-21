@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { pool } from '../index.js';
 import { normalizeState } from '../utils/states.js';
+import { geocodeCityState } from './geocode.js';
 
 // TicketNetwork's real ticket inventory, accessed through the Impact.com
 // affiliate Partner API — NOT the Mercury Web Services (MWS) integration
@@ -171,6 +172,16 @@ export const storeEvent = async (item) => {
 
     const { minPrice, maxPrice } = parsePriceRange(item.Text1);
 
+    // TicketNetwork's feed gives no coordinates (see the module-level
+    // comment below) — resolve approximate city-center coordinates so this
+    // event can still be distance-sorted/shown "X mi away", instead of
+    // permanently sorting last behind every event that does have them.
+    // geocodeCityState caches aggressively (see services/geocode.js), so
+    // this is a no-op network call for any city already resolved.
+    const coords = await geocodeCityState(city, state, country);
+    const latitude = coords ? coords.lat : null;
+    const longitude = coords ? coords.lng : null;
+
     const existingEvent = await pool.query(
       'SELECT id FROM events WHERE external_id = $1',
       [externalId]
@@ -182,26 +193,32 @@ export const storeEvent = async (item) => {
       // repeating that bug: only overwrite price when THIS sync actually
       // has a value for it, so a re-sync that (rarely) comes back without
       // Text1 pricing can't silently wipe out a price a previous sync found.
+      // latitude/longitude use the same COALESCE-only-fill pattern: never
+      // clobber real coordinates (e.g. merged in from a Ticketmaster/
+      // SeatGeek match) with our own approximate city-center geocode.
       await pool.query(
         `UPDATE events SET
          title = $1, category = $2, date = $3, country = $4, state = $5, city = $6,
          venue_name = $7, venue_address = $8, image_url = $9, source_url = $10,
          min_price = COALESCE($11, min_price), max_price = COALESCE($12, max_price),
+         latitude = COALESCE(latitude, $13), longitude = COALESCE(longitude, $14),
          updated_at = NOW()
-         WHERE external_id = $13`,
+         WHERE external_id = $15`,
         [title, category, date, country, state, city, venueName, venueAddress,
-         imageUrl, sourceUrl, minPrice, maxPrice, externalId]
+         imageUrl, sourceUrl, minPrice, maxPrice, latitude, longitude, externalId]
       );
       return existingEvent.rows[0].id;
     } else {
       const result = await pool.query(
         `INSERT INTO events (
           external_id, title, description, category, date, country, state, city,
-          venue_name, venue_address, image_url, source, source_url, min_price, max_price
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          venue_name, venue_address, image_url, source, source_url, min_price, max_price,
+          latitude, longitude
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING id`,
         [externalId, title, '', category, date, country, state, city,
-         venueName, venueAddress, imageUrl, 'ticketnetwork', sourceUrl, minPrice, maxPrice]
+         venueName, venueAddress, imageUrl, 'ticketnetwork', sourceUrl, minPrice, maxPrice,
+         latitude, longitude]
       );
       return result.rows[0].id;
     }
@@ -216,15 +233,14 @@ export const storeEvent = async (item) => {
 // safety cap for a partial/test run (e.g. from an admin query param); left
 // unset, it pages until Impact reports no further @nextpageuri.
 //
-// No latitude/longitude: the catalog gives city/state/country only, not
-// coordinates — unlike Ticketmaster/SeatGeek, which return venue lat/lng
-// directly. routes/events.js already handles NULL latitude/longitude
-// gracefully (falls back to date-sort, no distance shown — see its
-// `hasCoords` / `CASE WHEN latitude IS NULL...` handling), so this ships
-// without geocoding rather than blocking on it; geocoding ~a few thousand
-// unique city/state venues (not all 210k rows) would be a reasonable
-// follow-up if distance-sorting TicketNetwork events specifically turns out
-// to matter.
+// No latitude/longitude in the catalog itself — city/state/country only,
+// unlike Ticketmaster/SeatGeek, which return venue lat/lng directly.
+// storeEvent backfills approximate city-center coordinates via
+// services/geocode.js (added 2026-09-21 after this being unimplemented
+// turned into a real bug: with Ticketmaster/SeatGeek hidden via
+// ACTIVE_SOURCES, TicketNetwork's un-geocoded events were sorting last in
+// every distance-based view and effectively disappearing from "Popular
+// Events Near You" and similar sections).
 export const syncTicketNetworkEvents = async ({ maxPages = null, pageSize = 1000 } = {}) => {
   recentApiErrors = [];
   const auth = getAuthHeader();
