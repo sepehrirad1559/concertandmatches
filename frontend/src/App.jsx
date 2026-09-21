@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminPage from './AdminPage.jsx';
+import { initMetaPixel, trackMetaPageView, trackMetaTicketClick } from './lib/metaPixel.js';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:30001/api';
@@ -2025,6 +2026,19 @@ export default function App() {
   const location = useLocation();
   const eventIdFromUrl = parseEventIdFromPath(location.pathname);
 
+  // Meta Pixel (see lib/metaPixel.js) — a no-op until VITE_META_PIXEL_ID is
+  // set, so this is safe to ship ahead of actually having a Pixel ID.
+  // Initializes once, then reports a PageView on every client-side route
+  // change (this is a single-page app — the browser never does a real
+  // navigation between pages, so without this every page would look like
+  // one pageview to Meta).
+  useEffect(() => {
+    initMetaPixel();
+  }, []);
+  useEffect(() => {
+    trackMetaPageView();
+  }, [location.pathname]);
+
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
@@ -2813,6 +2827,17 @@ export default function App() {
                             // through (so the link above is the raw seller
                             // URL) — otherwise this would double-count.
                             if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
+                            // Meta Pixel "Lead" event — unlike the backend
+                            // click log above, this always fires here
+                            // regardless of eventRowId; it's a separate,
+                            // ads-only signal with its own de-dupe (Meta's
+                            // pixel script), not the site's own click count.
+                            trackMetaTicketClick({
+                              source: link.source,
+                              title: selectedEvent?.title,
+                              city: selectedEvent?.city,
+                              state: selectedEvent?.state,
+                            });
                           }}
                           style={{
                             display: 'flex',
