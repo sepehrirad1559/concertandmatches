@@ -410,8 +410,65 @@ await logProviderSync({ providerName: 'canonicalize', syncType: 'rebuild', start
 }
 }
 
+// Concurrency guard — found 2026-09-21 while diagnosing why the provider
+// health table showed TicketNetwork/curated/canonicalize stuck a full day
+// behind Ticketmaster: every git push triggers a Railway redeploy, which
+// restarts this Node process, which re-arms the "20 minutes after boot"
+// timer below with NO check for whether a cycle already ran recently. A
+// full cycle (Ticketmaster -> SeatGeek -> TicketNetwork's ~210k-item catalog
+// -> curated -> canonicalize) easily takes over 20 minutes — especially
+// now that TicketNetwork's step geocodes every not-yet-seen city (see
+// services/geocode.js), which can add real time on a run that hits many
+// new cities. Two (or more) deploys in the same day means a second boot
+// fires a second full cycle before the first one reaches its later steps,
+// and the process restarting again for the NEXT deploy kills that cycle
+// mid-run — which is exactly why TicketNetwork/curated/canonicalize sat
+// on yesterday's timestamps while Ticketmaster (the first, fastest step)
+// kept getting fresh ones: every redeploy re-started the sequence from the
+// top without ever reaching the end.
+let isEventSyncRunning = false;
+async function runScheduledEventSyncGuarded() {
+  if (isEventSyncRunning) {
+    console.log('⏭️  Skipping scheduled event sync — a run is already in progress (likely from a recent redeploy re-arming the boot timer while the prior cycle is still going).');
+    return;
+  }
+  isEventSyncRunning = true;
+  try {
+    await runScheduledEventSync();
+  } finally {
+    isEventSyncRunning = false;
+  }
+}
+
+// Only the BOOT-triggered run needs the "did a cycle already finish
+// recently?" check — a redeploy shouldn't restart today's cycle just
+// because the process happened to restart. The recurring setInterval below
+// still fires every EVENT_SYNC_INTERVAL_MS regardless, which is the normal
+// once-a-day cadence this is supposed to have.
+async function maybeRunEventSyncOnBoot() {
+  try {
+    const { rows } = await pool.query(
+      `SELECT started_at FROM provider_sync_logs
+       WHERE provider_name = 'canonicalize' AND sync_type = 'rebuild' AND status = 'success'
+       ORDER BY started_at DESC LIMIT 1`
+    );
+    const lastRun = rows[0]?.started_at ? new Date(rows[0].started_at) : null;
+    const hoursSinceLastRun = lastRun ? (Date.now() - lastRun.getTime()) / (60 * 60 * 1000) : Infinity;
+    // 20h, not 24h: leaves room for the boot run to still happen a bit
+    // early on a genuinely new day, without re-triggering off a same-day
+    // redeploy shortly after a cycle actually completed.
+    if (hoursSinceLastRun < 20) {
+      console.log(`⏭️  Skipping boot-triggered event sync — the last full cycle completed ${hoursSinceLastRun.toFixed(1)}h ago, within the 20h guard window. (A redeploy restarted this process, but today's sync already ran.)`);
+      return;
+    }
+  } catch (err) {
+    console.error('Could not check last event sync time — proceeding with boot-triggered sync anyway:', err.message);
+  }
+  await runScheduledEventSyncGuarded();
+}
+
 // Staggered 20 minutes after boot (after the price-backfill job's 5-minute
 // slot — this is the heavier of the two jobs, so it goes last), then every
 // EVENT_SYNC_INTERVAL_MS after that.
-setTimeout(runScheduledEventSync, 20 * 60 * 1000);
-setInterval(runScheduledEventSync, EVENT_SYNC_INTERVAL_MS);
+setTimeout(maybeRunEventSyncOnBoot, 20 * 60 * 1000);
+setInterval(runScheduledEventSyncGuarded, EVENT_SYNC_INTERVAL_MS);
