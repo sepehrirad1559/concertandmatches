@@ -2931,13 +2931,11 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <Footer
-            onGoHome={handleFooterGoHome}
-            onSelectCategory={handleFooterSelectCategory}
-            onBrowseSports={handleFooterBrowseSports}
-          />
-        </div>
+        <Footer
+          onGoHome={handleFooterGoHome}
+          onSelectCategory={handleFooterSelectCategory}
+          onBrowseSports={handleFooterBrowseSports}
+        />
       </div>
     );
   }
