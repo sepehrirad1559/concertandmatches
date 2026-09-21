@@ -1522,7 +1522,7 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
       <div style={{ padding: '14px 16px 16px' }}>
         <h4 style={{ fontSize: '16px', lineHeight: 1.3, marginBottom: '6px', color: '#141b2d' }}>{event.title}</h4>
         <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📅 {formatDate(event.date)}</p>
-        <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📍 {event.city}{event.state ? `, ${event.state}` : ''}</p>
+        <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📍 {event.venue_name ? `${event.venue_name}, ` : ''}{event.city}{event.state ? `, ${event.state}` : ''}</p>
         {formatOffersComparison(event) && (
           <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 10px' }}>
             {formatOffersComparison(event)}

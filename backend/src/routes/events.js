@@ -223,10 +223,15 @@ function mergeEventsAcrossSources(rows) {
 function compareEvents(a, b, effectiveSort) {
   if (effectiveSort === 'distance') {
     const da = a.distance_km, db = b.distance_km;
-    if (da == null && db == null) return 0;
+    if (da == null && db == null) return new Date(a.date) - new Date(b.date);
     if (da == null) return 1;
     if (db == null) return -1;
-    return da - db;
+    // Distance is the primary key, but ties (very common — multiple events
+    // at the same venue/city compute the exact same distance_km) fall
+    // through to soonest-date-first, so a tie doesn't leave the group in
+    // arbitrary/incidental order.
+    if (da !== db) return da - db;
+    return new Date(a.date) - new Date(b.date);
   }
   if (effectiveSort === 'price-low' || effectiveSort === 'price-high') {
     const pa = a.best_price, pb = b.best_price;
@@ -684,6 +689,10 @@ async function listEventsFromCanonicalLayer(req, res) {
     orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
   } else if (effectiveSort === 'distance' && hasLocation) {
     orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
+    // Distance is the primary key; soonest-date-first is the tiebreaker for
+    // events at (or effectively at) the same distance — see compareEvents'
+    // matching logic in the raw-table fallback path above for why.
+    orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
   } else if (effectiveSort === 'price-low') {
     orderSpecs.push(['sort_best_price ASC NULLS LAST', 'page.sort_best_price ASC NULLS LAST']);
   } else if (effectiveSort === 'price-high') {
