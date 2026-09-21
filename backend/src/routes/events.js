@@ -544,10 +544,23 @@ async function listEventsFromCanonicalLayer(req, res) {
 
   // Free-text "Location" filter box — partial, case-insensitive, across
   // city/state/venue, exactly as on the raw path.
+  //
+  // The frontend sends this as "City, ST" (e.g. "Madison, WI"), but city and
+  // state are stored in separate columns ("Madison" / "WI") — no single
+  // column ever contains the literal substring "Madison, WI", so a single
+  // ILIKE against the whole string always matched zero rows for any
+  // multi-part location. Fixed by splitting on commas/whitespace into
+  // tokens ("Madison", "WI") and requiring each token to match city OR
+  // state OR venue_name — so "Madison, WI" now needs a row where some field
+  // contains "Madison" AND some field contains "WI", which is what the
+  // filter box was always meant to do.
   if (location) {
-    whereClause += ` AND (ce.city ILIKE $${paramCount} OR ce.state ILIKE $${paramCount} OR ce.venue_name ILIKE $${paramCount})`;
-    params.push(`%${location}%`);
-    paramCount++;
+    const locationTokens = location.split(/[,\s]+/).map((t) => t.trim()).filter(Boolean);
+    for (const token of locationTokens) {
+      whereClause += ` AND (ce.city ILIKE $${paramCount} OR ce.state ILIKE $${paramCount} OR ce.venue_name ILIKE $${paramCount})`;
+      params.push(`%${token}%`);
+      paramCount++;
+    }
   }
 
   // category / keywords keep the raw path's exact structure, including the
@@ -918,10 +931,19 @@ async function listEventsFromRawEventsTable(req, res) {
     // the exact-match `city`/`state` params above (used by structured
     // lookups), this is meant for a customer typing into a "Location" filter
     // box, so it's a partial, case-insensitive match across all three.
+    //
+    // Split into tokens (comma/whitespace separated) so a combined
+    // "City, ST" value — where city and state live in separate columns —
+    // still matches: each token must hit city OR state OR venue_name. See
+    // the matching comment on the canonical-layer path above for why this
+    // was needed (a bare ILIKE against "Madison, WI" never matched anything).
     if (location) {
-      whereClause += ` AND (city ILIKE $${paramCount} OR state ILIKE $${paramCount} OR venue_name ILIKE $${paramCount})`;
-      params.push(`%${location}%`);
-      paramCount++;
+      const locationTokens = location.split(/[,\s]+/).map((t) => t.trim()).filter(Boolean);
+      for (const token of locationTokens) {
+        whereClause += ` AND (city ILIKE $${paramCount} OR state ILIKE $${paramCount} OR venue_name ILIKE $${paramCount})`;
+        params.push(`%${token}%`);
+        paramCount++;
+      }
     }
 
     // category supports a comma-separated list (e.g. "Music,Concert") so a
