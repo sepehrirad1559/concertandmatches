@@ -472,21 +472,6 @@ function getTicketPriceTiers(event) {
     });
 }
 
-// Compact "Ticketmaster from $45 · SeatGeek from $52" line for the event
-// card grid, cheapest first — the at-a-glance comparison. Returns null
-// when there's nothing to compare (a single offer, or no priced offers).
-const OFFER_SOURCE_NAMES = { ticketmaster: 'Ticketmaster', seatgeek: 'SeatGeek' };
-
-function formatOffersComparison(event) {
-  const offers = Array.isArray(event.offers) ? event.offers : [];
-  if (offers.length < 2) return null;
-  const parts = offers
-    .filter((o) => o.min_price != null)
-    .sort((a, b) => Number(a.min_price) - Number(b.min_price))
-    .map((o) => `${OFFER_SOURCE_NAMES[o.source] || o.source} from $${Number(o.min_price).toFixed(0)}`);
-  return parts.length > 0 ? parts.join(' · ') : null;
-}
-
 function formatPrice(event) {
   if (event.min_price == null && event.max_price == null) return 'Price TBA';
   if (event.min_price != null && event.max_price != null && event.min_price !== event.max_price) {
@@ -1500,23 +1485,6 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
           // a plain gradient placeholder instead of a blank box.
           <div style={{ width: '100%', height: '150px', background: `linear-gradient(135deg, ${NAVY_PANEL_LIGHT}, ${NAVY_BG})` }} />
         )}
-        {priceLabel && (
-          <span style={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            backgroundColor: 'rgba(26,7,51,0.82)',
-            color: 'white',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            letterSpacing: '0.02em',
-            padding: '5px 10px',
-            borderRadius: '999px',
-            backdropFilter: 'blur(2px)',
-          }}>
-            FROM ${Number(fromPrice).toFixed(0)}
-          </span>
-        )}
         {formatDistance(event.distance_km) && (
           <span style={{
             position: 'absolute',
@@ -1537,11 +1505,6 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
         <h4 style={{ fontSize: '16px', lineHeight: 1.3, marginBottom: '6px', color: '#141b2d' }}>{event.title}</h4>
         <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📅 {formatDate(event.date)}</p>
         <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📍 {event.venue_name ? `${event.venue_name}, ` : ''}{event.city}{event.state ? `, ${event.state}` : ''}</p>
-        {formatOffersComparison(event) && (
-          <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 10px' }}>
-            {formatOffersComparison(event)}
-          </p>
-        )}
         {/* marginTop: 'auto' (not a fixed 12px) is what pins the button to
             the bottom of the now-flex content column — see the flex
             comment on the card's outer div above. */}
