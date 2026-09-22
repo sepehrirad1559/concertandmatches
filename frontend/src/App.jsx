@@ -1546,6 +1546,11 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
             the bottom of the now-flex content column — see the flex
             comment on the card's outer div above. */}
         <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
+          {priceLabel && (
+            <div style={{ fontSize: '13px', fontWeight: 700, color: NAV_ACCENT_COLOR, marginBottom: '6px' }}>
+              From ${Number(fromPrice).toFixed(0)}
+            </div>
+          )}
           <button
             type="button"
             className="cm-btn"
