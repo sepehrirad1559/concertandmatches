@@ -1471,6 +1471,19 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
         cursor: 'pointer',
         backgroundColor: '#fff',
         boxShadow: 'var(--cm-shadow-sm)',
+        // Grid rows stretch every card in a row to the same overall height
+        // (CSS Grid's default align-items: stretch), but a card whose title
+        // or venue/address text wraps onto an extra line was still pushing
+        // its own "Find Your Ticket" button down that extra line's worth —
+        // the button just followed the text block, and the freed-up space
+        // in shorter cards sat as blank padding below the button instead.
+        // Result: buttons in the same row landed at different heights
+        // depending on each card's own text length. display: flex here (+
+        // flex: 1 / marginTop: 'auto' below) anchors the button flush to
+        // the bottom of every card instead, so it lines up horizontally
+        // across a row regardless of how much text sits above it.
+        display: 'flex',
+        flexDirection: 'column',
       }}>
       <div style={{ position: 'relative' }}>
         {imgSrc ? (
@@ -1520,7 +1533,7 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
           </span>
         )}
       </div>
-      <div style={{ padding: '14px 16px 16px' }}>
+      <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', flex: '1' }}>
         <h4 style={{ fontSize: '16px', lineHeight: 1.3, marginBottom: '6px', color: '#141b2d' }}>{event.title}</h4>
         <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📅 {formatDate(event.date)}</p>
         <p style={{ fontSize: '13px', color: '#666', margin: '2px 0' }}>📍 {event.venue_name ? `${event.venue_name}, ` : ''}{event.city}{event.state ? `, ${event.state}` : ''}</p>
@@ -1529,7 +1542,10 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
             {formatOffersComparison(event)}
           </p>
         )}
-        <div style={{ marginTop: '12px' }}>
+        {/* marginTop: 'auto' (not a fixed 12px) is what pins the button to
+            the bottom of the now-flex content column — see the flex
+            comment on the card's outer div above. */}
+        <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
           <button
             type="button"
             className="cm-btn"
