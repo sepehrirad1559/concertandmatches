@@ -1058,15 +1058,52 @@ router.post('/cleanup/official-source-data', async (req, res) => {
 // direct-marketplace/Stripe-checkout build (see /areas/concertandmatches-
 // deployment.md: "Backend Stripe payment endpoints were left in place... no
 // longer reachable from the UI"), never cleaned up, and its event_id column
-// has no ON DELETE behavior, so deleting a referenced events row hard-fails
-// instead of just being ignored. Rather than hardcoding "clear orders
-// first" (there could be other similarly-dead FK-referencing tables, e.g.
-// tickets/refund_requests from that same old scaffold), this discovers
-// every table with a foreign key into events.id via information_schema and
-// clears the rows for the doomed source first, so the events DELETE itself
-// never hits a surprise constraint again regardless of what other legacy
-// tables exist.
+// has no ON DELETE behavior. A first fix that only cleared tables with a
+// DIRECT foreign key into events.id (e.g. tickets.event_id) wasn't enough
+// either — it still failed one level further out: deleting a tickets row
+// hit "violates foreign key constraint orders_ticket_id_fkey", because that
+// same dead `orders` table ALSO references tickets.id, a second hop away
+// from events. Rather than special-casing each hop, this walks the actual
+// foreign-key graph recursively (events -> tickets -> orders -> ...,
+// whatever chain exists) via information_schema, deleting the deepest
+// dependents first and working back up, so any chain of dead legacy tables
+// gets cleared regardless of how many hops deep it goes.
+async function deleteRowsReferencing(client, tableName, columnName, targetIds) {
+  if (!targetIds || targetIds.length === 0) return [];
+  const cleared = [];
+  const { rows: matchRows } = await client.query(
+    `SELECT id FROM "${tableName}" WHERE "${columnName}" = ANY($1::int[])`,
+    [targetIds]
+  );
+  const matchIds = matchRows.map((r) => r.id);
+  if (matchIds.length > 0) {
+    const { rows: childFks } = await client.query(`
+      SELECT tc.table_name, kcu.column_name
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+      JOIN information_schema.constraint_column_usage ccu
+        ON tc.constraint_name = ccu.constraint_name AND tc.table_schema = ccu.table_schema
+      WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = $1 AND ccu.column_name = 'id'
+    `, [tableName]);
+    for (const { table_name: childTable, column_name: childColumn } of childFks) {
+      const childCleared = await deleteRowsReferencing(client, childTable, childColumn, matchIds);
+      cleared.push(...childCleared);
+    }
+  }
+  const result = await client.query(
+    `DELETE FROM "${tableName}" WHERE "${columnName}" = ANY($1::int[])`,
+    [targetIds]
+  );
+  if (result.rowCount > 0) cleared.push(`${result.rowCount} row(s) from ${tableName}.${columnName}`);
+  return cleared;
+}
+
 async function clearLegacyReferencesToEvents(client, source) {
+  const { rows: eventRows } = await client.query('SELECT id FROM events WHERE source = $1', [source]);
+  const eventIds = eventRows.map((r) => r.id);
+  if (eventIds.length === 0) return [];
+
   const { rows: fks } = await client.query(`
     SELECT tc.table_name, kcu.column_name
     FROM information_schema.table_constraints tc
@@ -1078,11 +1115,8 @@ async function clearLegacyReferencesToEvents(client, source) {
   `);
   const cleared = [];
   for (const { table_name, column_name } of fks) {
-    const result = await client.query(
-      `DELETE FROM "${table_name}" WHERE "${column_name}" IN (SELECT id FROM events WHERE source = $1)`,
-      [source]
-    );
-    if (result.rowCount > 0) cleared.push(`${result.rowCount} row(s) from ${table_name}.${column_name}`);
+    const childCleared = await deleteRowsReferencing(client, table_name, column_name, eventIds);
+    cleared.push(...childCleared);
   }
   return cleared;
 }
@@ -1119,20 +1153,32 @@ router.post('/cleanup/ticketmaster-data', async (req, res) => {
   });
 
   (async () => {
+    // Wrapped in an explicit transaction (unlike the plain pool.query used
+    // elsewhere in this file) because this now does several dependent
+    // DELETEs across a legacy FK chain (see deleteRowsReferencing above) —
+    // without one, a failure partway through (as happened twice live while
+    // building this) leaves some legacy rows deleted and others not, rather
+    // than cleanly retryable from a known state.
+    const client = await pool.connect();
     try {
-      const cleared = await clearLegacyReferencesToEvents(pool, 'ticketmaster');
-      const deleted = await pool.query(`DELETE FROM events WHERE source = 'ticketmaster'`);
+      await client.query('BEGIN');
+      const cleared = await clearLegacyReferencesToEvents(client, 'ticketmaster');
+      const deleted = await client.query(`DELETE FROM events WHERE source = 'ticketmaster'`);
+      await client.query('COMMIT');
       await logProviderSync({
         providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
         recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success',
         errorMessage: cleared.length ? `Also cleared legacy references: ${cleared.join('; ')}` : null,
       });
     } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
       console.error('Background ticketmaster cleanup delete failed:', error);
       await logProviderSync({
         providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
         recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
       });
+    } finally {
+      client.release();
     }
   })();
 });
@@ -1166,20 +1212,28 @@ router.post('/cleanup/seatgeek-data', async (req, res) => {
   });
 
   (async () => {
+    // See the ticketmaster route's matching comment above for why this is
+    // wrapped in an explicit transaction.
+    const client = await pool.connect();
     try {
-      const cleared = await clearLegacyReferencesToEvents(pool, 'seatgeek');
-      const deleted = await pool.query(`DELETE FROM events WHERE source = 'seatgeek'`);
+      await client.query('BEGIN');
+      const cleared = await clearLegacyReferencesToEvents(client, 'seatgeek');
+      const deleted = await client.query(`DELETE FROM events WHERE source = 'seatgeek'`);
+      await client.query('COMMIT');
       await logProviderSync({
         providerName: 'seatgeek', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
         recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success',
         errorMessage: cleared.length ? `Also cleared legacy references: ${cleared.join('; ')}` : null,
       });
     } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
       console.error('Background seatgeek cleanup delete failed:', error);
       await logProviderSync({
         providerName: 'seatgeek', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
         recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
       });
+    } finally {
+      client.release();
     }
   })();
 });
