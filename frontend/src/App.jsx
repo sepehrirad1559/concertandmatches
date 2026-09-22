@@ -2742,7 +2742,6 @@ export default function App() {
   // EVENT DETAIL PAGE
   if (selectedEvent) {
     const findTicketsLinks = buildFindTicketsLinks(selectedEvent);
-    const priceTiers = getTicketPriceTiers(selectedEvent);
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         {/* Same dark-navy band treatment as the redesigned homepage hero, so
@@ -2794,185 +2793,81 @@ export default function App() {
           </div>
 
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '14px', color: '#222' }}>
-            <h3 style={{ marginTop: 0 }}>Find Tickets</h3>
             {findTicketsLinks.length === 0 ? (
               <p style={{ fontSize: '14px', color: '#666' }}>
                 We don't have a confirmed ticket seller link for this event yet. Check back later,
                 or search for it directly on your preferred ticket site.
               </p>
             ) : (
-              <>
-                {findTicketsLinks.length > 1 && (
-                  <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
-                    ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — click through below to buy:
-                  </p>
-                )}
-                {/* Redesigned as a scannable comparison list (colored dot +
-                    seller name on the left, price + "STARTING AT" on the
-                    right, a highlighted row + "Best price" badge for the
-                    cheapest confirmed offer) rather than a stack of big
-                    colored buttons — modeled on a reference price-comparison
-                    list the user provided. The whole row is the click
-                    target (an <a>), same affiliate-link/click-logging
-                    behavior as before, just restyled. */}
-                <div style={{ border: '1px solid #eee', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#fff' }}>
-                  {findTicketsLinks.map((link, i) => {
-                    // The full tier breakdown (e.g. Standard vs. VIP) only
-                    // makes sense to show when there's a single seller —
-                    // once there's more than one offer, a plain per-seller
-                    // price is what actually helps someone compare. It's
-                    // also skipped when the only "tier" is the generic
-                    // fallback ("Price", no real named tier from the
-                    // source) with nothing else alongside it — that row
-                    // would just repeat the price already shown on the
-                    // seller row above it.
-                    const showTierBreakdown = findTicketsLinks.length === 1 && priceTiers.length > 0
-                      && !(priceTiers.length === 1 && priceTiers[0].label === 'Price');
-                    const linkPrices = [...new Set(
-                      [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
-                    )].sort((a, b) => a - b);
-                    const priceLabel = linkPrices.length > 0
-                      ? linkPrices.map((p) => `$${p.toFixed(0)}`).join(', ')
-                      : null;
-                    const isOfficialLink = link.source === 'official';
-                    return (
-                      <div key={link.source} style={{ borderTop: i === 0 ? 'none' : '1px solid #eee' }}>
-                        <a
-                          href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
-                          target="_blank"
-                          rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
-                          onClick={() => {
-                            // The /go/event/:id redirect above logs the click
-                            // server-side. Only fall back to the client-side
-                            // beacon when we don't have a row id to redirect
-                            // through (so the link above is the raw seller
-                            // URL) — otherwise this would double-count.
-                            if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
-                            // Meta Pixel "Lead" event — unlike the backend
-                            // click log above, this always fires here
-                            // regardless of eventRowId; it's a separate,
-                            // ads-only signal with its own de-dupe (Meta's
-                            // pixel script), not the site's own click count.
-                            trackMetaTicketClick({
-                              source: link.source,
-                              title: selectedEvent?.title,
-                              city: selectedEvent?.city,
-                              state: selectedEvent?.state,
-                            });
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '12px',
-                            padding: '16px 18px',
-                            textDecoration: 'none',
-                            color: 'inherit',
-                            backgroundColor: 'transparent',
-                          }}>
-                          {/* flexWrap + every child (including the name)
-                              pinned to flexShrink: 0 — without this, the
-                              name span (the only child with overflow:hidden
-                              on it) was the one thing the flexbox algorithm
-                              would shrink to make room for the dot/logo/
-                              arrow/badge, and at narrow widths that meant
-                              shrinking it all the way to 0 — the seller name
-                              disappearing completely (confirmed live: the
-                              "Ticketmaster" label vanished on the one row
-                              that also carried the Best price badge, while
-                              still being present in the DOM/page text).
-                              Wrapping instead of shrinking means the badge
-                              drops to its own line on a tight width rather
-                              than erasing the name. */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', rowGap: '4px', flexWrap: 'wrap', minWidth: 0 }}>
-                            <span
-                              aria-hidden="true"
-                              style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor, flexShrink: 0 }}
-                            />
-                            {link.logoUrl && (
-                              <img
-                                src={link.logoUrl}
-                                alt=""
-                                width={16}
-                                height={16}
-                                style={{ borderRadius: '3px', flexShrink: 0 }}
-                                // A favicon that fails to load (blocked, retailer
-                                // changed domains, etc.) should just disappear
-                                // rather than show a broken-image icon.
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                              />
-                            )}
-                            <span style={{ fontWeight: 'bold', fontSize: '15px', flexShrink: 0 }}>
-                              {isOfficialLink ? `Visit ${link.name}` : link.name}
-                            </span>
-                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            {priceLabel ? (
-                              <>
-                                <div style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</div>
-                                {!showTierBreakdown && (
-                                  <div style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</div>
-                                )}
-                              </>
-                            ) : !isOfficialLink && (
-                              <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#999' }}>Price not listed</span>
-                            )}
-                          </div>
-                        </a>
-                        {showTierBreakdown && (
-                          <div style={{ margin: '0 18px 14px', padding: '10px 12px', border: '1px solid #eee', borderRadius: '10px', backgroundColor: '#fafafa' }}>
-                            {priceTiers.map((tier, ti) => {
-                              const tierValues = [...new Set([tier.min, tier.max].filter((p) => p != null))].sort((a, b) => a - b);
-                              // The generic fallback tier (no real named tier
-                              // from the source, e.g. Ticketmaster's
-                              // "Standard"/"VIP") is labeled "Price" — but
-                              // with two distinct numbers that reads as one
-                              // price rather than what it actually is, a
-                              // range between two real endpoints. A real
-                              // named tier keeps its own name either way.
-                              const label = tier.label === 'Price' && tierValues.length > 1 ? 'Price range' : tier.label;
-                              // A "Price range" row (two endpoints on one
-                              // generic tier) only makes sense as a spread
-                              // to compare against other sellers. With just
-                              // one seller there's nothing to compare, so
-                              // the row is dropped even when a real named
-                              // tier (VIP, etc.) is shown alongside it —
-                              // the plain single-tier case (nothing else to
-                              // show it next to) is handled a level up, by
-                              // showTierBreakdown itself.
-                              if (label === 'Price range' && findTicketsLinks.length === 1) return null;
-                              return (
-                                <div
-                                  key={`${tier.label}-${ti}`}
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    fontSize: '14px',
-                                    color: '#333',
-                                    fontWeight: 'bold',
-                                    padding: '3px 2px',
-                                  }}>
-                                  <span>{label}</span>
-                                  <span>{tierValues.map((p) => `$${p.toFixed(0)}`).join(', ')}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {(priceTiers.length > 0 || findTicketsLinks.some((l) => l.minPrice != null)) && (
-                  <p style={{ fontSize: '12px', color: '#888', marginTop: '14px' }}>
-                    Prices shown are as last reported by each ticket seller and may change — confirm the final price on their site before buying.
-                  </p>
-                )}
-              </>
+              // Simplified from a per-seller price-comparison list down to a
+              // single "Buy Ticket" box — with Ticketmaster/SeatGeek data
+              // purged (see config/sourceVisibility.js), TicketNetwork is
+              // effectively the only confirmed seller left for most events,
+              // so a seller-by-seller comparison list no longer earns its
+              // keep. Uses the same cheapest-first link buildFindTicketsLinks
+              // already produces (findTicketsLinks[0]), and deliberately
+              // shows only the price — no seller name — per product request.
+              (() => {
+                const link = findTicketsLinks[0];
+                const linkPrices = [...new Set(
+                  [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
+                )].sort((a, b) => a - b);
+                const priceLabel = linkPrices.length > 0
+                  ? linkPrices.map((p) => `$${p.toFixed(0)}`).join(', ')
+                  : null;
+                return (
+                  <a
+                    href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}` : link.url}
+                    target="_blank"
+                    rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
+                    onClick={() => {
+                      // The /go/event/:id redirect above logs the click
+                      // server-side. Only fall back to the client-side
+                      // beacon when we don't have a row id to redirect
+                      // through (so the link above is the raw seller
+                      // URL) — otherwise this would double-count.
+                      if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
+                      // Meta Pixel "Lead" event — unlike the backend
+                      // click log above, this always fires here
+                      // regardless of eventRowId; it's a separate,
+                      // ads-only signal with its own de-dupe (Meta's
+                      // pixel script), not the site's own click count.
+                      trackMetaTicketClick({
+                        source: link.source,
+                        title: selectedEvent?.title,
+                        city: selectedEvent?.city,
+                        state: selectedEvent?.state,
+                      });
+                    }}
+                    className="cm-btn"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      width: '100%',
+                      padding: '16px 18px',
+                      borderRadius: '10px',
+                      textDecoration: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      // Exact same background color as the event card's
+                      // "Find Your Ticket" button (see EventCard above).
+                      backgroundColor: LOGO_BG_COLOR,
+                      color: '#141b2d',
+                    }}>
+                    {priceLabel && (
+                      <span style={{ fontSize: '13px', fontWeight: 700 }}>From {priceLabel}</span>
+                    )}
+                    <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '0.01em' }}>Buy Ticket</span>
+                  </a>
+                );
+              })()
             )}
+          </div>
 
+          <div style={{ marginTop: '20px' }}>
             <AffiliateDisclosure />
           </div>
         </div>
