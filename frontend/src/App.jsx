@@ -2805,25 +2805,29 @@ export default function App() {
                     className="cm-btn"
                     style={{
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
+                      flexDirection: 'row',
+                      flexWrap: 'nowrap',
+                      alignItems: 'baseline',
                       justifyContent: 'center',
-                      gap: '4px',
+                      gap: '8px',
                       width: '100%',
                       padding: '16px 18px',
                       borderRadius: '10px',
                       textDecoration: 'none',
                       border: 'none',
                       cursor: 'pointer',
+                      overflowX: 'auto',
                       // Exact same background color as the event card's
                       // "Find Your Ticket" button (see EventCard above).
                       backgroundColor: LOGO_BG_COLOR,
                       color: '#141b2d',
                     }}>
+                    <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
+                      Buy Your Ticket On {link.name}
+                    </span>
                     {priceLabel && (
-                      <span style={{ fontSize: '13px', fontWeight: 700 }}>From {priceLabel}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>From {priceLabel}</span>
                     )}
-                    <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '0.01em' }}>Buy Ticket</span>
                   </a>
                 );
               })()
