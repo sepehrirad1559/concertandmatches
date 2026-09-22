@@ -1050,6 +1050,43 @@ router.post('/cleanup/official-source-data', async (req, res) => {
   }
 });
 
+// Shared by both /cleanup/ticketmaster-data and /cleanup/seatgeek-data below.
+// The first live run of /cleanup/ticketmaster-data (2026-09-22, dropping
+// Ticketmaster as a data source) failed with "update or delete on table
+// events violates foreign key constraint orders_event_id_fkey on table
+// orders" — the `orders` table is dead leftover schema from the original
+// direct-marketplace/Stripe-checkout build (see /areas/concertandmatches-
+// deployment.md: "Backend Stripe payment endpoints were left in place... no
+// longer reachable from the UI"), never cleaned up, and its event_id column
+// has no ON DELETE behavior, so deleting a referenced events row hard-fails
+// instead of just being ignored. Rather than hardcoding "clear orders
+// first" (there could be other similarly-dead FK-referencing tables, e.g.
+// tickets/refund_requests from that same old scaffold), this discovers
+// every table with a foreign key into events.id via information_schema and
+// clears the rows for the doomed source first, so the events DELETE itself
+// never hits a surprise constraint again regardless of what other legacy
+// tables exist.
+async function clearLegacyReferencesToEvents(client, source) {
+  const { rows: fks } = await client.query(`
+    SELECT tc.table_name, kcu.column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+    JOIN information_schema.constraint_column_usage ccu
+      ON tc.constraint_name = ccu.constraint_name AND tc.table_schema = ccu.table_schema
+    WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = 'events' AND ccu.column_name = 'id'
+  `);
+  const cleared = [];
+  for (const { table_name, column_name } of fks) {
+    const result = await client.query(
+      `DELETE FROM "${table_name}" WHERE "${column_name}" IN (SELECT id FROM events WHERE source = $1)`,
+      [source]
+    );
+    if (result.rowCount > 0) cleared.push(`${result.rowCount} row(s) from ${table_name}.${column_name}`);
+  }
+  return cleared;
+}
+
 // One-time purge: deletes every raw events row with source = 'ticketmaster'.
 // Originally added 2026-09-13 to reset Ticketmaster's data and re-sync it
 // fresh; repurposed 2026-09-21 as part of dropping Ticketmaster as a data
@@ -1081,18 +1118,23 @@ router.post('/cleanup/ticketmaster-data', async (req, res) => {
     message: 'Deleting all ticketmaster events in the background. Check GET /admin/health or Railway logs for completion, then run POST /admin/canonicalize/rebuild.',
   });
 
-  pool.query(`DELETE FROM events WHERE source = 'ticketmaster'`)
-    .then((deleted) => logProviderSync({
-      providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
-      recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success', errorMessage: null,
-    }))
-    .catch((error) => {
+  (async () => {
+    try {
+      const cleared = await clearLegacyReferencesToEvents(pool, 'ticketmaster');
+      const deleted = await pool.query(`DELETE FROM events WHERE source = 'ticketmaster'`);
+      await logProviderSync({
+        providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success',
+        errorMessage: cleared.length ? `Also cleared legacy references: ${cleared.join('; ')}` : null,
+      });
+    } catch (error) {
       console.error('Background ticketmaster cleanup delete failed:', error);
-      return logProviderSync({
+      await logProviderSync({
         providerName: 'ticketmaster', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
         recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
       });
-    });
+    }
+  })();
 });
 
 // Same one-time reset as /cleanup/ticketmaster-data above, for SeatGeek —
@@ -1123,18 +1165,23 @@ router.post('/cleanup/seatgeek-data', async (req, res) => {
     message: 'Deleting all seatgeek events in the background. Check GET /admin/health or Railway logs for completion, then run POST /admin/canonicalize/rebuild.',
   });
 
-  pool.query(`DELETE FROM events WHERE source = 'seatgeek'`)
-    .then((deleted) => logProviderSync({
-      providerName: 'seatgeek', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
-      recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success', errorMessage: null,
-    }))
-    .catch((error) => {
+  (async () => {
+    try {
+      const cleared = await clearLegacyReferencesToEvents(pool, 'seatgeek');
+      const deleted = await pool.query(`DELETE FROM events WHERE source = 'seatgeek'`);
+      await logProviderSync({
+        providerName: 'seatgeek', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: deleted.rowCount, status: 'success',
+        errorMessage: cleared.length ? `Also cleared legacy references: ${cleared.join('; ')}` : null,
+      });
+    } catch (error) {
       console.error('Background seatgeek cleanup delete failed:', error);
-      return logProviderSync({
+      await logProviderSync({
         providerName: 'seatgeek', syncType: 'cleanup_delete', startedAt, finishedAt: new Date(),
         recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
       });
-    });
+    }
+  })();
 });
 
 // Backfill missing prices for events that were stored with no price (see

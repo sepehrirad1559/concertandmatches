@@ -3268,7 +3268,12 @@ export default function App() {
             gap: '10px',
             flex: '1',
             minWidth: '150px',
-            padding: '0 20px',
+            // Vertical padding (was 0, horizontal-only) is what makes the
+            // whole pill thicker — alignItems:'stretch' on the row above
+            // means every segment (and the Search button) grows to match
+            // whichever one is tallest, so adding it here alone raises the
+            // entire bar to match the taller reference design.
+            padding: '18px 20px',
           }}>
             <span style={{ fontSize: '20px', color: NAV_ACCENT_COLOR, flexShrink: 0 }} aria-hidden="true">📍</span>
             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
@@ -3296,7 +3301,7 @@ export default function App() {
           </div>
 
           {/* Hairline divider, matching the reference */}
-          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '30px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
+          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '40px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
 
           {/* DATES segment */}
           <div ref={datesSegmentRef} className="cm-search-seg cm-search-seg-dates" style={{ position: 'relative', display: 'flex', alignItems: 'stretch', flex: '1', minWidth: '150px' }}>
@@ -3310,7 +3315,7 @@ export default function App() {
                 border: 'none',
                 background: 'none',
                 cursor: 'pointer',
-                padding: '0 20px',
+                padding: '18px 20px',
                 width: '100%',
                 textAlign: 'left',
               }}
@@ -3343,7 +3348,7 @@ export default function App() {
           </div>
 
           {/* Hairline divider, matching the reference */}
-          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '30px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
+          <div className="cm-search-divider" style={{ width: '1px', alignSelf: 'center', height: '40px', backgroundColor: '#d7dceb', flexShrink: 0 }} />
 
           {/* SEARCH segment */}
           <div className="cm-search-seg cm-search-seg-search" style={{
@@ -3353,7 +3358,7 @@ export default function App() {
             gap: '10px',
             flex: '2',
             minWidth: '170px',
-            padding: '0 20px',
+            padding: '18px 20px',
           }}>
             <span style={{ fontSize: '20px', color: NAV_ACCENT_COLOR, flexShrink: 0 }} aria-hidden="true">🔍</span>
             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
@@ -3431,6 +3436,14 @@ export default function App() {
               fontWeight: 'bold',
               fontSize: '15px',
               flexShrink: 0,
+              // The button relies on alignItems:'stretch' on the pill row to
+              // match the now-taller segments' height (see their padding
+              // comment) but a plain <button> doesn't reliably center text
+              // vertically once it's stretched taller than its own content —
+              // flex it internally too so "Search" stays centered.
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               // Matches the pill's own 999px radius on the right side only,
               // now that the pill no longer clips its children to that
               // shape via overflow:hidden (see the pill's style comment).
