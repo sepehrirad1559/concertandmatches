@@ -1238,6 +1238,85 @@ router.post('/cleanup/seatgeek-data', async (req, res) => {
   })();
 });
 
+// Chunked, synchronous alternative to the two fire-and-forget routes above.
+// Live use (2026-09-23) showed the background job can die silently mid-run
+// (most likely a Railway container restart) with nothing ever reaching
+// logProviderSync — no error, no partial row-count change, nothing — so
+// there was no way to tell it had failed short of re-checking GET
+// /admin/stats minutes later and seeing the count hadn't moved at all, even
+// after two full re-runs. This route instead deletes one bounded batch of
+// events (and their legacy FK dependents, via the same recursive walk) per
+// call, AWAITS it, and reports exactly how many it removed and how many are
+// left. Safe to call repeatedly — e.g. in a loop — until remainingCount is
+// 0; each call is its own transaction, so a restart between calls only
+// loses the one batch in flight, not the whole purge, and progress is
+// visible after every single call instead of only at the very end.
+router.post('/cleanup/purge-source-chunk', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey || !providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+  const source = req.query.source;
+  if (!['ticketmaster', 'seatgeek'].includes(source)) {
+    return res.status(400).json({ error: "source must be 'ticketmaster' or 'seatgeek'" });
+  }
+  // Capped at 5000 — comfortably clear of the proxy-timeout ceiling that
+  // originally forced the whole-table version of this delete into the
+  // background in the first place (see that route's comment above), while
+  // still finishing in well under a second of DB time per call.
+  const limit = Math.min(Number(req.query.limit) || 1000, 5000);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: idRows } = await client.query(
+      `SELECT id FROM events WHERE source = $1 ORDER BY id LIMIT $2`,
+      [source, limit]
+    );
+    const ids = idRows.map((r) => r.id);
+    const cleared = [];
+    if (ids.length > 0) {
+      const { rows: fks } = await client.query(`
+        SELECT tc.table_name, kcu.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage ccu
+          ON tc.constraint_name = ccu.constraint_name AND tc.table_schema = ccu.table_schema
+        WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = 'events' AND ccu.column_name = 'id'
+      `);
+      for (const { table_name, column_name } of fks) {
+        const childCleared = await deleteRowsReferencing(client, table_name, column_name, ids);
+        cleared.push(...childCleared);
+      }
+      await client.query(`DELETE FROM events WHERE id = ANY($1::int[])`, [ids]);
+    }
+    await client.query('COMMIT');
+    const { rows: remainingRows } = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM events WHERE source = $1`,
+      [source]
+    );
+    const remainingCount = remainingRows[0].count;
+    await logProviderSync({
+      providerName: source, syncType: 'cleanup_delete_chunk', startedAt: new Date(), finishedAt: new Date(),
+      recordsReceived: null, recordsUpdated: ids.length, status: 'success',
+      errorMessage: `remaining=${remainingCount}${cleared.length ? `; also cleared: ${cleared.join('; ')}` : ''}`,
+    });
+    res.json({ success: true, source, deletedThisChunk: ids.length, remainingCount, clearedLegacy: cleared });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Chunked cleanup delete failed:', error);
+    await logProviderSync({
+      providerName: source, syncType: 'cleanup_delete_chunk', startedAt: new Date(), finishedAt: new Date(),
+      recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+    });
+    res.status(500).json({ success: false, error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Backfill missing prices for events that were stored with no price (see
 // backfillMissingPrices in each service for why this happens — mostly
 // bulk-listing endpoints under-reporting pricing compared to an event's
