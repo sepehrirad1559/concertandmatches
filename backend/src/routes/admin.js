@@ -1533,6 +1533,41 @@ router.get('/stats', requireAdminAccess, async (req, res) => {
   }
 });
 
+// Diagnostic for the "TicketNetwork only shows USA/Canada" question
+// (2026-09-24): ticketnetwork.js's storeEvent/countryFromRaw have no
+// country filter at all — every item the Impact.com catalog page returns
+// gets stored with whatever country string it carries (see countryFromRaw:
+// only "united states"/"canada" get normalized, everything else is stored
+// as-is). So if this comes back 100% USA/Canada, that's the real,
+// unfiltered shape of TicketNetwork's own catalog feed, not a bug in this
+// codebase — there's nothing to "turn on" for other countries because
+// nothing here is turning them off. If it comes back with real non-US/CA
+// rows already present, the gap is downstream (display/filtering), not
+// ingestion, and this narrows exactly where to look next.
+router.get('/diagnostics/ticketnetwork-countries', requireAdminAccess, async (req, res) => {
+  try {
+    const [byCountry, samples] = await Promise.all([
+      pool.query(`
+        SELECT country, COUNT(*)::int AS count
+        FROM events
+        WHERE source = 'ticketnetwork'
+        GROUP BY country
+        ORDER BY count DESC
+      `),
+      pool.query(`
+        SELECT country, city, state, title
+        FROM events
+        WHERE source = 'ticketnetwork' AND country NOT IN ('USA', 'Canada')
+        ORDER BY updated_at DESC
+        LIMIT 20
+      `),
+    ]);
+    res.json({ success: true, byCountry: byCountry.rows, nonUsCanadaSamples: samples.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Click analytics for the admin dashboard (spec §15, §35): totals, a
 // breakdown by provider/source, clicks over the last 14 days, and the
 // most-clicked events. Read-only. Falls back gracefully if click_events
