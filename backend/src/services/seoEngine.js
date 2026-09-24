@@ -181,21 +181,42 @@ function daysUntil(dateStr) {
 // ---- Artists ---------------------------------------------------------
 
 // Every distinct artist with at least one upcoming event, across every
-// source (not just SeatGeek, which is the only provider that reliably
-// populates artist_name — see services/ticketmaster.js's storeEvent
-// comment). Scored and tiered so /artists lists only real opportunities.
+// source. Ticketmaster/SeatGeek (while they were active sources) populated
+// a structured `artist_name` from their own attraction/performer data.
+// TicketNetwork's feed has no equivalent field at all — its Impact.com
+// catalog only ever gives a single "Name" value, which this platform
+// stores as `title` (see ticketnetwork.js's field-mapping comment: "Name
+// -> event/show name", nothing else). With Ticketmaster/SeatGeek dropped
+// as sources (2026-09), `artist_name` is null on every remaining row —
+// discovered live when this dropped the entire /artists index to 0 pages
+// despite 223K+ real TicketNetwork events still in the table. Fix: fall
+// back to `title` whenever `artist_name` is empty — for a concert/
+// theater/comedy listing the show's title IS effectively the performer
+// name (that's literally what TicketNetwork's "Name" field represents).
+// Sports rows are excluded from the fallback entirely: their title is a
+// "Team A vs Team B" matchup, not a performer name, and those are already
+// handled properly by discoverTeams() below via its own matchup-parsing —
+// falling back on them here would create junk "artist" pages out of two
+// glued-together team names. Scored and tiered so /artists lists only
+// real opportunities.
+const SPORTS_TITLE_OR_CATEGORY = `(category ~* '\\mSports\\M' OR title ~* '\\m(NFL|NBA|NCAA)\\M' OR title ~* '\\s+(?:at|vs\\.?|@)\\s+')`;
+
 export async function discoverArtists({ limit = 500 } = {}) {
   const rows = await pool.query(`
     SELECT
-      artist_name,
+      COALESCE(NULLIF(artist_name, ''), title) AS artist_name,
       COUNT(*)::int AS event_count,
       COUNT(DISTINCT source)::int AS source_count,
       COUNT(DISTINCT city)::int AS city_count,
       COUNT(*) FILTER (WHERE min_price IS NOT NULL)::int AS priced_count,
       MIN(date) AS nearest_date
     FROM events
-    WHERE date >= NOW() AND artist_name IS NOT NULL AND artist_name != '' AND source != 'official'
-    GROUP BY artist_name
+    WHERE date >= NOW()
+      AND source != 'official'
+      AND COALESCE(NULLIF(artist_name, ''), title) IS NOT NULL
+      AND COALESCE(NULLIF(artist_name, ''), title) != ''
+      AND NOT ${SPORTS_TITLE_OR_CATEGORY}
+    GROUP BY COALESCE(NULLIF(artist_name, ''), title)
     ORDER BY event_count DESC
     LIMIT $1
   `, [limit]);
@@ -204,11 +225,11 @@ export async function discoverArtists({ limit = 500 } = {}) {
 
   const artistNames = rows.rows.map((r) => r.artist_name);
   const clickRows = await pool.query(`
-    SELECT e.artist_name, COUNT(c.*)::int AS click_count
+    SELECT COALESCE(NULLIF(e.artist_name, ''), e.title) AS artist_name, COUNT(c.*)::int AS click_count
     FROM click_events c
     JOIN events e ON e.id = c.event_row_id
-    WHERE e.artist_name = ANY($1::text[])
-    GROUP BY e.artist_name
+    WHERE COALESCE(NULLIF(e.artist_name, ''), e.title) = ANY($1::text[])
+    GROUP BY COALESCE(NULLIF(e.artist_name, ''), e.title)
   `, [artistNames]).catch(() => ({ rows: [] })); // click_events may not exist in a fresh env
   const clicksByArtist = new Map(clickRows.rows.map((r) => [r.artist_name, r.click_count]));
 
@@ -243,8 +264,11 @@ export async function getArtistPage(slug) {
   const match = artists.find((a) => a.slug === slug);
   if (!match) return null;
 
+  // Match on the same COALESCE(artist_name, title) expression discoverArtists
+  // grouped by — match.artistName may be a title-derived fallback value that
+  // doesn't exist verbatim in the artist_name column.
   const result = await pool.query(
-    `SELECT * FROM events WHERE date >= NOW() AND artist_name = $1 ORDER BY date ASC LIMIT 300`,
+    `SELECT * FROM events WHERE date >= NOW() AND COALESCE(NULLIF(artist_name, ''), title) = $1 ORDER BY date ASC LIMIT 300`,
     [match.artistName]
   );
   const events = mergeEventsAcrossSources(result.rows);
