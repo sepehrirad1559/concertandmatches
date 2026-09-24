@@ -80,11 +80,29 @@ export async function geocodeCityState(city, state, country = 'USA') {
 
   try {
     await throttle();
+    // BUG FIXED 2026-09-24: this used to hardcode `country` to either
+    // 'Canada' or 'United States' no matter what was actually passed in —
+    // so every non-US/Canada city (real TicketNetwork inventory does
+    // include them; countryFromRaw in ticketnetwork.js stores whatever
+    // country string the catalog gives) got geocoded AGAINST THE WRONG
+    // COUNTRY. Nominatim's `country` param constrains the search, so this
+    // almost always returned zero results for a foreign city (silently
+    // stored as null coordinates) or, worse, occasionally matched a
+    // same-named US/Canadian place instead of the real one. Combined with
+    // routes/events.js's `distance_km ASC NULLS LAST` sort (see the
+    // module comment above), null/wrong coordinates on every non-US/CA
+    // event meant they were real rows in the database that never
+    // surfaced in any distance-sorted view — reported live as "only
+    // USA/Canada events are showing" even though ingestion itself was
+    // never filtering by country (see ticketnetwork.js's storeEvent/
+    // countryFromRaw — no country filter there at all). Passing the
+    // event's own country through here is the actual fix; `country`
+    // already defaults to 'USA' for any caller that doesn't know theirs.
     const params = new URLSearchParams({
       format: 'json',
       limit: '1',
       city,
-      country: country === 'Canada' ? 'Canada' : 'United States',
+      country: country && country !== 'Unknown' ? country : 'United States',
     });
     if (state && state !== 'Unknown') params.set('state', state);
 
