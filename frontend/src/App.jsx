@@ -3067,7 +3067,7 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          <span style={{ whiteSpace: 'nowrap' }}>Be The First To Find Your Ticket.</span>
+          Be The First To Find Your Ticket.
         </h1>
 
         <p style={{
@@ -3078,10 +3078,23 @@ export default function App() {
           letterSpacing: '-0.01em',
           lineHeight: 1.15,
           color: NAV_ACCENT_LIGHT,
-          margin: 0,
-          whiteSpace: 'nowrap',
+          margin: '0 0 10px',
+          maxWidth: '620px',
         }}>
-          No Extra Fees. No Checkout Surprises.
+          Unbeatable Prices. No Checkout Surprises.
+        </p>
+
+        <p style={{
+          position: 'relative',
+          textAlign: 'left',
+          fontSize: 'clamp(14px, 1.4vw, 16px)',
+          fontWeight: 500,
+          lineHeight: 1.4,
+          color: 'rgba(255,255,255,0.82)',
+          margin: 0,
+          maxWidth: '460px',
+        }}>
+          Enjoy verified tickets at the internet's best rates with absolutely zero hidden service fees.
         </p>
 
         <span style={{
