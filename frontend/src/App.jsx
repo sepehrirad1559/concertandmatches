@@ -3079,7 +3079,7 @@ export default function App() {
           lineHeight: 1.15,
           color: NAV_ACCENT_LIGHT,
           margin: '0 0 10px',
-          maxWidth: '620px',
+          whiteSpace: 'nowrap',
         }}>
           Unbeatable Prices. No Checkout Surprises.
         </p>
@@ -3087,12 +3087,12 @@ export default function App() {
         <p style={{
           position: 'relative',
           textAlign: 'left',
-          fontSize: 'clamp(14px, 1.4vw, 16px)',
+          fontSize: 'clamp(12px, 1.4vw, 16px)',
           fontWeight: 500,
           lineHeight: 1.4,
           color: 'rgba(255,255,255,0.82)',
           margin: 0,
-          maxWidth: '460px',
+          whiteSpace: 'nowrap',
         }}>
           Enjoy verified tickets at the internet's best rates with absolutely zero hidden service fees.
         </p>
