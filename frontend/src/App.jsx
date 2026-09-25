@@ -976,6 +976,20 @@ function resolveEntityImage(query) {
   return promise;
 }
 
+// TicketNetwork's `image_url` (see storeEvent in backend/src/services/
+// ticketnetwork.js) is NOT an artist/event photo — it's a seating-chart map
+// image (venue diagrams like "Balcony"/"Main Floor"/"Stage"), stored under
+// the same column as every other source's real photo because that's the
+// only image field TicketNetwork's feed provides. Ticketmaster and SeatGeek
+// (when active) put real promotional photos in this column, so this treats
+// image_url as trustworthy only when it didn't come from TicketNetwork —
+// otherwise the per-entity/category photo lookups below are skipped for
+// virtually every event on the site (TicketNetwork is currently the only
+// active source), which is exactly the bug that prompted adding them.
+function hasRealEventPhoto(event) {
+  return Boolean(event.image_url) && event.source !== 'ticketnetwork' && event.best_source !== 'ticketnetwork';
+}
+
 // Determines the specific real-world subject of an event — an artist name
 // for concerts/theater/comedy, or a specific team name for sports — so the
 // per-event photo lookup below can fetch an actual, recognizable photo
@@ -1531,11 +1545,12 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
   // photo. Falls back to the per-category photo, then the caller-supplied
   // fallbackImageUrl, if no specific match was found.
   const entityImageUrl = useEntityImage(event);
-  // Real event photo (Ticketmaster/SeatGeek) always wins when there is one;
-  // then the specific artist/team photo; otherwise the resolved category
-  // photo (see EVENT_IMAGE_TOPICS/pickFallbackImage) rather than showing
-  // nothing.
-  const imgSrc = event.image_url || entityImageUrl || fallbackImageUrl;
+  // Real event photo (Ticketmaster/SeatGeek — see hasRealEventPhoto above,
+  // this deliberately excludes TicketNetwork's seating-chart image_url)
+  // always wins when there is one; then the specific artist/team photo;
+  // otherwise the resolved category photo (see EVENT_IMAGE_TOPICS/
+  // pickFallbackImage) rather than showing nothing.
+  const imgSrc = (hasRealEventPhoto(event) ? event.image_url : null) || entityImageUrl || fallbackImageUrl;
   return (
     <div
       className="cm-card"
@@ -2396,7 +2411,7 @@ export default function App() {
         name: selectedEvent.title,
         startDate: selectedEvent.date,
         eventStatus: 'https://schema.org/EventScheduled',
-        ...((selectedEvent.image_url || selectedEventEntityImage) ? { image: [selectedEvent.image_url || selectedEventEntityImage] } : {}),
+        ...(((hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage) ? { image: [(hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage] } : {}),
         location: {
           '@type': 'Place',
           name: selectedEvent.venue_name || undefined,
@@ -2850,9 +2865,9 @@ export default function App() {
         </div>
 
         <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid var(--cm-border)', padding: '30px', borderRadius: 'var(--cm-radius)', backgroundColor: '#fff', boxShadow: 'var(--cm-shadow-sm)' }}>
-          {(selectedEvent.image_url || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)) && (
+          {((hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)) && (
             <img
-              src={selectedEvent.image_url || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)}
+              src={(hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)}
               alt={selectedEvent.title}
               style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
             />
