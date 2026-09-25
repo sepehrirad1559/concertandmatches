@@ -951,6 +951,90 @@ async function fetchWikipediaImage(query) {
   }
 }
 
+// Module-level (not per-component-instance) cache for the per-entity photo
+// lookups below — shared by every EventCard on the page and by the event
+// detail modal, and kept for the lifetime of the browser tab, not just one
+// render. Without this, scrolling a 24-card page of results past and back
+// again would re-fetch Wikipedia for the same artist/team every time.
+// entityImageCache: query string -> resolved URL, or null if the lookup
+// completed but found nothing. entityImageInFlight: query string -> the
+// in-progress Promise, so two cards for the same artist (e.g. two Taylor
+// Swift tour dates on one page) share a single network request instead of
+// firing one each.
+const entityImageCache = new Map();
+const entityImageInFlight = new Map();
+
+function resolveEntityImage(query) {
+  if (entityImageCache.has(query)) return Promise.resolve(entityImageCache.get(query));
+  if (entityImageInFlight.has(query)) return entityImageInFlight.get(query);
+  const promise = fetchWikipediaImage(query).then((url) => {
+    entityImageCache.set(query, url);
+    entityImageInFlight.delete(query);
+    return url;
+  });
+  entityImageInFlight.set(query, promise);
+  return promise;
+}
+
+// Determines the specific real-world subject of an event — an artist name
+// for concerts/theater/comedy, or a specific team name for sports — so the
+// per-event photo lookup below can fetch an actual, recognizable photo
+// (the real Taylor Swift, the real Manchester United) instead of the
+// generic per-category stock photo in EVENT_IMAGE_TOPICS. Returns null when
+// nothing specific enough can be identified, in which case callers fall
+// straight back to the category photo exactly as before this existed.
+function getEventEntityQuery(event) {
+  const artist = (event.artist_name || '').trim();
+  // A populated, non-placeholder artist_name is the most reliable, most
+  // specific signal available — it's exactly what a ticket listing calls
+  // the headliner/performer.
+  if (artist && !/^(various|tba|multiple|n\/a)$/i.test(artist)) return artist;
+
+  // No artist_name (common for TicketNetwork sports listings): look for a
+  // recognizable franchise name inside the title text, reusing the same
+  // team rosters the league tiles already match against (NBA_TEAMS etc.,
+  // defined above). The first team found in the title becomes the query —
+  // a specific team photo beats a generic "Basketball"/"Stadium" photo.
+  const title = event.title || '';
+  const haystack = title.toLowerCase();
+  const teamLists = [NBA_TEAMS, NFL_TEAMS, NHL_TEAMS, MLB_TEAMS, MLS_TEAMS];
+  for (const teamList of teamLists) {
+    const match = teamList.find((t) => haystack.includes(t.toLowerCase()));
+    if (match) return match;
+  }
+
+  return null;
+}
+
+// React hook: resolves the specific per-event photo (see getEventEntityQuery
+// above) for one event, backed by the shared module-level cache so repeat
+// renders/mounts of the same event never re-fetch. Returns null while
+// unresolved or when nothing specific was found — callers then fall back to
+// the existing per-category photo (pickFallbackImage), so this only ever
+// upgrades a card's photo, never removes one.
+function useEntityImage(event) {
+  const query = getEventEntityQuery(event);
+  const [url, setUrl] = useState(() => (query ? (entityImageCache.get(query) ?? null) : null));
+
+  useEffect(() => {
+    if (!query) {
+      setUrl(null);
+      return undefined;
+    }
+    if (entityImageCache.has(query)) {
+      setUrl(entityImageCache.get(query));
+      return undefined;
+    }
+    let cancelled = false;
+    resolveEntityImage(query).then((resolved) => {
+      if (!cancelled) setUrl(resolved);
+    });
+    return () => { cancelled = true; };
+  }, [query]);
+
+  return url;
+}
+
 const EVENT_CATEGORIES = [
   {
     id: 'concerts',
@@ -1441,10 +1525,17 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
 function EventCard({ event, onSelect, fallbackImageUrl }) {
   const priceLabel = (event.min_price != null || event.max_price != null) ? formatPrice(event) : null;
   const fromPrice = event.min_price != null ? event.min_price : event.max_price;
+  // Real, specific photo of this event's actual artist/team (see
+  // getEventEntityQuery/useEntityImage above) — a real Taylor Swift or
+  // Manchester United photo rather than a generic concert/basketball stock
+  // photo. Falls back to the per-category photo, then the caller-supplied
+  // fallbackImageUrl, if no specific match was found.
+  const entityImageUrl = useEntityImage(event);
   // Real event photo (Ticketmaster/SeatGeek) always wins when there is one;
-  // otherwise fall back to the resolved category photo (see
-  // EVENT_IMAGE_TOPICS/pickFallbackImage) rather than showing nothing.
-  const imgSrc = event.image_url || fallbackImageUrl;
+  // then the specific artist/team photo; otherwise the resolved category
+  // photo (see EVENT_IMAGE_TOPICS/pickFallbackImage) rather than showing
+  // nothing.
+  const imgSrc = event.image_url || entityImageUrl || fallbackImageUrl;
   return (
     <div
       className="cm-card"
@@ -2242,6 +2333,30 @@ export default function App() {
     return () => { cancelled = true; };
   }, [eventIdFromUrl]);
 
+  // Same specific artist/team photo lookup EventCard uses (see
+  // getEventEntityQuery/useEntityImage above), for the event detail modal
+  // and the JSON-LD below. Can't use the useEntityImage hook directly in
+  // the modal's own JSX — it sits inside a conditional early return
+  // (`if (selectedEvent) {...}`), so a hook call there would violate the
+  // rules of hooks. This effect lives up here instead, unconditionally,
+  // same pattern as the city/venue photo effects above, and shares the
+  // same module-level cache so it's instant whenever the card that was
+  // clicked already resolved this same query.
+  const [selectedEventEntityImage, setSelectedEventEntityImage] = useState(null);
+  useEffect(() => {
+    const query = selectedEvent ? getEventEntityQuery(selectedEvent) : null;
+    if (!query) {
+      setSelectedEventEntityImage(null);
+      return undefined;
+    }
+    setSelectedEventEntityImage(entityImageCache.get(query) ?? null);
+    let cancelled = false;
+    resolveEntityImage(query).then((url) => {
+      if (!cancelled) setSelectedEventEntityImage(url);
+    });
+    return () => { cancelled = true; };
+  }, [selectedEvent]);
+
   // SEO: page title, meta description, canonical URL, and Event structured
   // data (JSON-LD, spec §21) for whichever event is currently shown —
   // restored to the site defaults when leaving the detail view. This is a
@@ -2281,7 +2396,7 @@ export default function App() {
         name: selectedEvent.title,
         startDate: selectedEvent.date,
         eventStatus: 'https://schema.org/EventScheduled',
-        ...(selectedEvent.image_url ? { image: [selectedEvent.image_url] } : {}),
+        ...((selectedEvent.image_url || selectedEventEntityImage) ? { image: [selectedEvent.image_url || selectedEventEntityImage] } : {}),
         location: {
           '@type': 'Place',
           name: selectedEvent.venue_name || undefined,
@@ -2309,7 +2424,7 @@ export default function App() {
       if (canonicalEl) canonicalEl.setAttribute('href', 'https://www.concertandmatches.com/');
       if (jsonLdEl) jsonLdEl.remove();
     }
-  }, [selectedEvent]);
+  }, [selectedEvent, selectedEventEntityImage]);
 
   const fetchEvents = async (offset, search, categoryId, filters) => {
     const params = new URLSearchParams({ limit: String(EVENTS_PAGE_SIZE), offset: String(offset) });
@@ -2735,9 +2850,9 @@ export default function App() {
         </div>
 
         <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid var(--cm-border)', padding: '30px', borderRadius: 'var(--cm-radius)', backgroundColor: '#fff', boxShadow: 'var(--cm-shadow-sm)' }}>
-          {(selectedEvent.image_url || pickFallbackImage(selectedEvent, categoryFallbackImages)) && (
+          {(selectedEvent.image_url || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)) && (
             <img
-              src={selectedEvent.image_url || pickFallbackImage(selectedEvent, categoryFallbackImages)}
+              src={selectedEvent.image_url || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)}
               alt={selectedEvent.title}
               style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
             />
