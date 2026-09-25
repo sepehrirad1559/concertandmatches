@@ -2395,6 +2395,14 @@ export default function App() {
       if (descriptionEl) descriptionEl.setAttribute('content', description);
       if (canonicalEl) canonicalEl.setAttribute('href', url);
 
+      // Offer.validFrom — see the matching comment in backend/src/routes/
+      // prerender.js (the server-rendered version of this same JSON-LD,
+      // served to non-JS crawlers): no source captures a real on-sale
+      // date, so the event's own updated_at (last sync time) is the
+      // closest honest proxy.
+      const validFromIso = selectedEvent.updated_at
+        ? new Date(selectedEvent.updated_at).toISOString()
+        : new Date().toISOString();
       const offersForLd = (Array.isArray(selectedEvent.offers) ? selectedEvent.offers : [])
         .filter((o) => o.min_price != null)
         .map((o) => ({
@@ -2402,14 +2410,23 @@ export default function App() {
           price: Number(o.min_price).toFixed(2),
           priceCurrency: o.currency || 'USD',
           availability: 'https://schema.org/InStock',
+          validFrom: validFromIso,
           url,
         }));
+
+      // Approximate end time — see the matching comment in prerender.js.
+      const startDateObj = new Date(selectedEvent.date);
+      const endDateIso = Number.isNaN(startDateObj.getTime())
+        ? undefined
+        : new Date(startDateObj.getTime() + 3 * 60 * 60 * 1000).toISOString();
 
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Event',
         name: selectedEvent.title,
+        description,
         startDate: selectedEvent.date,
+        ...(endDateIso ? { endDate: endDateIso } : {}),
         eventStatus: 'https://schema.org/EventScheduled',
         ...(((hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage) ? { image: [(hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage] } : {}),
         location: {
@@ -2422,7 +2439,14 @@ export default function App() {
             addressCountry: selectedEvent.country === 'Canada' ? 'CA' : 'US',
           },
         },
-        ...(selectedEvent.artist_name ? { performer: { '@type': 'PerformingGroup', name: selectedEvent.artist_name } } : {}),
+        // performer: see the matching comment in prerender.js — falls back
+        // to the event title when no separate artist_name was captured,
+        // rather than omitting a field Google flags as missing.
+        performer: { '@type': 'PerformingGroup', name: selectedEvent.artist_name || selectedEvent.title },
+        // organizer: see the matching comment in prerender.js.
+        organizer: selectedEvent.venue_name
+          ? { '@type': 'Organization', name: selectedEvent.venue_name }
+          : { '@type': 'Organization', name: 'ConcertAndMatches', url: 'https://www.concertandmatches.com/' },
         ...(offersForLd.length > 0 ? { offers: offersForLd } : {}),
       };
 

@@ -74,11 +74,33 @@ router.get('/event/:pathParam', async (req, res) => {
         url,
       }));
 
+    // Approximate end time — none of the active sources (TicketNetwork
+    // above all) carry a real end time, and Google's Event structured-data
+    // check flags a missing endDate. Three hours is a reasonable default
+    // for a single concert/game/show; guarded so an invalid/missing
+    // event.date can't produce an "Invalid Date" string in the output.
+    const startDateObj = new Date(event.date);
+    const endDateIso = Number.isNaN(startDateObj.getTime())
+      ? undefined
+      : new Date(startDateObj.getTime() + 3 * 60 * 60 * 1000).toISOString();
+
+    // Offer.validFrom — when this listing became available to buy. No
+    // source captures a real on-sale date, so the row's own updated_at
+    // (when it was last synced) is the closest honest proxy: a real
+    // timestamp rather than a fabricated one, and satisfies the field
+    // Google flags as missing.
+    const validFromIso = event.updated_at
+      ? new Date(event.updated_at).toISOString()
+      : new Date().toISOString();
+    const offersForLdWithValidFrom = offersForLd.map((o) => ({ ...o, validFrom: validFromIso }));
+
     const jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Event',
       name: event.title,
+      description,
       startDate: event.date,
+      ...(endDateIso ? { endDate: endDateIso } : {}),
       eventStatus: 'https://schema.org/EventScheduled',
       ...(event.image_url ? { image: [event.image_url] } : {}),
       location: {
@@ -91,8 +113,19 @@ router.get('/event/:pathParam', async (req, res) => {
           addressCountry: event.country === 'Canada' ? 'CA' : 'US',
         },
       },
-      ...(event.artist_name ? { performer: { '@type': 'PerformingGroup', name: event.artist_name } } : {}),
-      ...(offersForLd.length > 0 ? { offers: offersForLd } : {}),
+      // performer: artist_name when a source gave us one; otherwise the
+      // event's own title is the closest honest stand-in (common for
+      // TicketNetwork sports/theater listings with no separate artist
+      // field) — better than omitting the field Google flags as missing.
+      performer: { '@type': 'PerformingGroup', name: event.artist_name || event.title },
+      // organizer: no source captures a real promoter/organizer, so the
+      // venue (which does host/organize the event in the broad sense) is
+      // used as a reasonable stand-in, falling back to the site itself
+      // only when even a venue name is missing.
+      organizer: event.venue_name
+        ? { '@type': 'Organization', name: event.venue_name }
+        : { '@type': 'Organization', name: 'ConcertAndMatches', url: 'https://www.concertandmatches.com/' },
+      ...(offersForLdWithValidFrom.length > 0 ? { offers: offersForLdWithValidFrom } : {}),
     };
 
     const offersHtml = offers.length > 0
