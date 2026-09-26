@@ -976,6 +976,30 @@ function resolveEntityImage(query) {
   return promise;
 }
 
+// Maps this codebase's stored `country` value (a full name like 'USA'/
+// 'Canada'/'United Kingdom', or occasionally a bare ISO code) to the ISO
+// 3166-1 alpha-2 code schema.org's addressCountry expects — see the
+// matching comment/map in backend/src/routes/prerender.js (the
+// server-rendered version of this same JSON-LD). Was previously hardcoded
+// to `=== 'Canada' ? 'CA' : 'US'`, which silently mislabeled every non-US/
+// Canadian event as US once worldwide Ticketmaster sync was added
+// (2026-09-26).
+const COUNTRY_NAME_TO_ISO = {
+  'USA': 'US', 'United States': 'US', 'United States of America': 'US',
+  'Canada': 'CA', 'Mexico': 'MX', 'United Kingdom': 'GB', 'Ireland': 'IE',
+  'Australia': 'AU', 'New Zealand': 'NZ', 'Germany': 'DE', 'Netherlands': 'NL',
+  'Belgium': 'BE', 'Sweden': 'SE', 'Poland': 'PL', 'Austria': 'AT',
+  'Spain': 'ES', 'France': 'FR', 'Italy': 'IT', 'Singapore': 'SG',
+  'Japan': 'JP', 'South Africa': 'ZA', 'Switzerland': 'CH', 'Denmark': 'DK',
+  'Norway': 'NO', 'Finland': 'FI', 'Portugal': 'PT',
+};
+function toIsoCountryCode(country) {
+  if (!country) return undefined;
+  if (COUNTRY_NAME_TO_ISO[country]) return COUNTRY_NAME_TO_ISO[country];
+  if (/^[A-Za-z]{2}$/.test(country)) return country.toUpperCase();
+  return undefined;
+}
+
 // TicketNetwork's `image_url` (see storeEvent in backend/src/services/
 // ticketnetwork.js) is NOT an artist/event photo — it's a seating-chart map
 // image (venue diagrams like "Balcony"/"Main Floor"/"Stage"), stored under
@@ -2436,7 +2460,7 @@ export default function App() {
             '@type': 'PostalAddress',
             addressLocality: selectedEvent.city || undefined,
             addressRegion: selectedEvent.state || undefined,
-            addressCountry: selectedEvent.country === 'Canada' ? 'CA' : 'US',
+            ...(toIsoCountryCode(selectedEvent.country) ? { addressCountry: toIsoCountryCode(selectedEvent.country) } : {}),
           },
         },
         // performer: see the matching comment in prerender.js — falls back

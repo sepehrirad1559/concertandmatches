@@ -37,6 +37,32 @@ function slugify(text) {
     .slice(0, 80) || 'event';
 }
 
+// Maps this codebase's stored `country` value (a full name like 'USA'/
+// 'Canada'/'United Kingdom', or occasionally a bare ISO code when
+// Ticketmaster didn't supply a country name — see storeEvent in
+// services/ticketmaster.js) to the ISO 3166-1 alpha-2 code schema.org's
+// addressCountry expects. Was previously hardcoded to `=== 'Canada' ? 'CA'
+// : 'US'`, which silently mislabeled every non-US/Canadian event as US once
+// worldwide sync was added (2026-09-26). Not exhaustive — covers the
+// markets Ticketmaster's Discovery API actually serves — but falls back to
+// a 2-letter value already looking like a code, or omits the field
+// entirely, rather than ever guessing wrong.
+const COUNTRY_NAME_TO_ISO = {
+  'USA': 'US', 'United States': 'US', 'United States of America': 'US',
+  'Canada': 'CA', 'Mexico': 'MX', 'United Kingdom': 'GB', 'Ireland': 'IE',
+  'Australia': 'AU', 'New Zealand': 'NZ', 'Germany': 'DE', 'Netherlands': 'NL',
+  'Belgium': 'BE', 'Sweden': 'SE', 'Poland': 'PL', 'Austria': 'AT',
+  'Spain': 'ES', 'France': 'FR', 'Italy': 'IT', 'Singapore': 'SG',
+  'Japan': 'JP', 'South Africa': 'ZA', 'Switzerland': 'CH', 'Denmark': 'DK',
+  'Norway': 'NO', 'Finland': 'FI', 'Portugal': 'PT',
+};
+function toIsoCountryCode(country) {
+  if (!country) return undefined;
+  if (COUNTRY_NAME_TO_ISO[country]) return COUNTRY_NAME_TO_ISO[country];
+  if (/^[A-Za-z]{2}$/.test(country)) return country.toUpperCase();
+  return undefined;
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
@@ -110,7 +136,7 @@ router.get('/event/:pathParam', async (req, res) => {
           '@type': 'PostalAddress',
           addressLocality: event.city || undefined,
           addressRegion: event.state || undefined,
-          addressCountry: event.country === 'Canada' ? 'CA' : 'US',
+          ...(toIsoCountryCode(event.country) ? { addressCountry: toIsoCountryCode(event.country) } : {}),
         },
       },
       // performer: artist_name when a source gave us one; otherwise the

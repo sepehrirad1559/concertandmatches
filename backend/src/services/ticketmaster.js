@@ -289,10 +289,10 @@ export const fetchAllTicketmasterEventsNationwide = async (monthsAhead = 9) => {
       for (let m = 0; m < monthsAhead; m++) {
         const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + m, 1, 0, 0, 0));
         const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + m + 1, 0, 23, 59, 59));
-        console.log(`🌎 Fetching nationwide ${segment} events (${countryCode}, ${toTicketmasterDateTime(start).slice(0, 7)})...`);
+        console.log(`🌎 Fetching worldwide ${segment} events (${countryCode || 'ALL COUNTRIES'}, ${toTicketmasterDateTime(start).slice(0, 7)})...`);
         const monthEvents = await fetchTicketmasterEventsPaged({
           classificationName: segment,
-          countryCode,
+          ...(countryCode ? { countryCode } : {}),
           startDateTime: toTicketmasterDateTime(start),
           endDateTime: toTicketmasterDateTime(end),
         });
@@ -301,7 +301,7 @@ export const fetchAllTicketmasterEventsNationwide = async (monthsAhead = 9) => {
     }
   }
 
-  console.log(`✅ Total nationwide events fetched (all segments): ${events.length}`);
+  console.log(`✅ Total worldwide events fetched (all segments): ${events.length}`);
   return events;
 };
 
@@ -314,8 +314,10 @@ export const fetchAllTicketmasterEventsNationwide = async (monthsAhead = 9) => {
 // Those games were structurally invisible to the per-market fetch above no
 // matter how the classification/size params were tuned, since the market
 // filter itself excludes the venue before classification is even applied.
-// This queries Ticketmaster by country (US/CA) instead of market, which has
-// no such metro-only restriction, so a game in any town gets found.
+// This queries Ticketmaster with NO country/market restriction at all
+// (see the WORLDWIDE note below), which has no such metro-only
+// restriction, so a game in any town — in any country the API key can
+// see — gets found.
 //
 // classificationName='Football'/'Basketball' (not 'Sports') so this stays
 // scoped to the two sports actually asked for (NFL/NBA/NCAA Football),
@@ -330,7 +332,19 @@ export const fetchAllTicketmasterEventsNationwide = async (monthsAhead = 9) => {
 // nationwide, unbounded-date query for something as broad as "Basketball"
 // could exceed that during peak season and silently truncate.
 const NATIONWIDE_SPORTS_CLASSIFICATIONS = ['Football', 'Basketball'];
-const NATIONWIDE_SPORTS_COUNTRIES = ['US', 'CA'];
+
+// WORLDWIDE COVERAGE (2026-09-26, user request: "add all kind of the events
+// from all countries"). Every fetch below used to loop over a hardcoded
+// ['US', 'CA'] country list — that was a deliberate historical scope
+// limit, not something Ticketmaster's API itself imposes. The Discovery API
+// accepts requests with NO countryCode/marketId at all, which returns
+// events across every market this account's API key has access to, rather
+// than requiring a maintained (and inevitably incomplete/guessed) list of
+// country codes. This constant is kept (as a single-item array containing
+// `undefined`) so the existing `for (const countryCode of ...)` loop shape
+// below still works unchanged — one iteration, with countryCode simply
+// omitted from the request params instead of set to a specific country.
+const NATIONWIDE_SPORTS_COUNTRIES = [undefined];
 
 async function fetchTicketmasterEventsByClassificationAndMonth(classificationName, countryCode, startDateTime, endDateTime) {
   try {
@@ -338,7 +352,7 @@ async function fetchTicketmasterEventsByClassificationAndMonth(classificationNam
       params: {
         apikey: TICKETMASTER_API_KEY,
         classificationName,
-        countryCode,
+        ...(countryCode ? { countryCode } : {}),
         startDateTime,
         endDateTime,
         size: 200,
@@ -347,7 +361,7 @@ async function fetchTicketmasterEventsByClassificationAndMonth(classificationNam
     });
     return response.data?._embedded?.events || [];
   } catch (error) {
-    console.error(`Ticketmaster nationwide Sports API error (classificationName=${classificationName}, country=${countryCode}, month=${startDateTime.slice(0, 7)}):`, error.message);
+    console.error(`Ticketmaster nationwide Sports API error (classificationName=${classificationName}, country=${countryCode || 'ALL'}, month=${startDateTime.slice(0, 7)}):`, error.message);
     trackApiError('fetchTicketmasterEventsByClassificationAndMonth', error);
     return [];
   }
@@ -375,7 +389,7 @@ export const fetchTicketmasterSportsEventsNationwide = async (monthsAhead = 8) =
         const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + m + 1, 0, 23, 59, 59));
         const startDateTime = toTicketmasterDateTime(start);
         const endDateTime = toTicketmasterDateTime(end);
-        console.log(`🏟️  Fetching nationwide ${classificationName} events (${countryCode}, ${startDateTime.slice(0, 7)})...`);
+        console.log(`🏟️  Fetching worldwide ${classificationName} events (${countryCode || 'ALL COUNTRIES'}, ${startDateTime.slice(0, 7)})...`);
         const monthEvents = await fetchTicketmasterEventsByClassificationAndMonth(classificationName, countryCode, startDateTime, endDateTime);
         events.push(...monthEvents);
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -438,8 +452,18 @@ export const storeEvent = async (tmEvent) => {
     const venue = _embedded?.venues?.[0];
     const venueName = venue?.name || 'Unknown Venue';
     const city = venue?.city?.name || 'Unknown';
-    const state = venue?.state?.stateCode || 'Unknown';
-    const country = venue?.country?.countryCode === 'CA' ? 'Canada' : 'USA';
+    const state = venue?.state?.stateCode || venue?.state?.name || 'Unknown';
+    // BUG FIXED 2026-09-26 (found while adding worldwide coverage — see the
+    // WORLDWIDE COVERAGE comment above): this used to hardcode every
+    // non-Canadian event as 'USA' (`countryCode === 'CA' ? 'Canada' : 'USA'`),
+    // which was harmless back when every fetch above was already scoped to
+    // US/CA markets only, but would have silently mislabeled every UK/
+    // Australian/etc. event as American now that fetches search worldwide.
+    // Ticketmaster's venue.country gives both a full name and an ISO code;
+    // prefer the full name (matches this codebase's existing 'USA'/'Canada'
+    // convention — see countryFromRaw in services/ticketnetwork.js) and
+    // fall back to the code, then 'Unknown', rather than ever guessing.
+    const country = venue?.country?.name || venue?.country?.countryCode || 'Unknown';
 
     // Venue coordinates, used to sort events by distance from the customer.
     // Ticketmaster returns these as numeric strings, so coerce with Number().
@@ -899,10 +923,10 @@ export const fetchClosestTicketmasterEvents = async (limit = 5000, after = null)
 
   for (const countryCode of NATIONWIDE_SPORTS_COUNTRIES) {
     for (const segment of NATIONWIDE_ALL_SEGMENTS) {
-      console.log(`📅 Fetching closest-by-date ${segment} events (${countryCode}, from ${startDateTime})...`);
+      console.log(`📅 Fetching closest-by-date ${segment} events (${countryCode || 'ALL COUNTRIES'}, from ${startDateTime})...`);
       const segmentEvents = await fetchTicketmasterEventsPaged({
         classificationName: segment,
-        countryCode,
+        ...(countryCode ? { countryCode } : {}),
         startDateTime,
       }, 1000, 200);
       events.push(...segmentEvents);
