@@ -35,6 +35,31 @@ function hasAllowedReferer(req) {
   }
 }
 
+// Hard IP blocklist for confirmed bots/scrapers (2026-09-27) — a step below
+// the rate limiter: the rate limiter still lets a blocked scanner through at
+// up to 30/min forever, which is exactly what let ~120k+ fake click_events
+// rows accumulate in under a week (see the click-analytics investigation
+// this was added for). BLOCKED_IPS is a comma-separated env var rather than
+// a hardcoded list so an IP can be added/removed on Railway without a code
+// deploy. Requires trust proxy to be set (index.js) — otherwise req.ip is
+// Railway's own internal proxy address, shared by every request, and this
+// would either match nobody or (far worse) match everybody.
+const BLOCKED_IPS = new Set(
+  (process.env.BLOCKED_IPS || '')
+    .split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean)
+);
+
+function blockKnownAbusers(req, res, next) {
+  if (BLOCKED_IPS.has(req.ip)) {
+    console.warn(`Blocked request from denylisted IP ${req.ip}: ${req.originalUrl}`);
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  next();
+}
+router.use(blockKnownAbusers);
+
 // Generous enough for a real person clicking a handful of ticket links, far
 // too tight for a scanner sweeping event ids.
 const goRateLimiter = rateLimit({

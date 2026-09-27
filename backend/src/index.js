@@ -70,6 +70,22 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Railway (like Heroku/most PaaS) terminates TLS and proxies every request
+// through its own edge/internal network before it reaches this process —
+// without this, Express's req.ip is the IP of THAT internal hop, not the
+// real client. Found 2026-09-27 while investigating a click-tracking bot:
+// every "no referer" log line showed a different address in 100.64.0.0/10
+// (RFC 6598 shared/CGNAT space) — Railway's own internal proxy pool, not
+// the scraper. That also means the per-IP rate limiters below (goRateLimiter
+// in routes/redirect.js) were never actually keying on the real client
+// either, just whichever internal proxy IP happened to handle the request —
+// spreading one real client's requests across several rate-limit buckets
+// instead of one, and quietly weakening the limit. `trust proxy: 1` tells
+// Express to take the client IP from the outermost entry of X-Forwarded-For
+// (Railway's edge sets exactly one hop), which is what req.ip and
+// express-rate-limit's default per-IP key both use from here on.
+app.set('trust proxy', 1);
+
 // Database Connection
 export const pool = new Pool({
 user: process.env.DB_USER || 'eventflow',
