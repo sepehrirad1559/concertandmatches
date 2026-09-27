@@ -196,13 +196,19 @@ export const storeEvent = async (item) => {
       // latitude/longitude use the same COALESCE-only-fill pattern: never
       // clobber real coordinates (e.g. merged in from a Ticketmaster/
       // SeatGeek match) with our own approximate city-center geocode.
+      // delisted_at = NULL unconditionally: this row is being touched by a
+      // sync page that just saw it in TicketNetwork's live feed, so whatever
+      // stale-listing sweep may have marked it delisted in a PAST run no
+      // longer applies — same "reappears → becomes visible again
+      // automatically" behavior the old price-nulling approach had, now
+      // decoupled from price (see the stale-listing sweep below).
       await pool.query(
         `UPDATE events SET
          title = $1, category = $2, date = $3, country = $4, state = $5, city = $6,
          venue_name = $7, venue_address = $8, image_url = $9, source_url = $10,
          min_price = COALESCE($11, min_price), max_price = COALESCE($12, max_price),
          latitude = COALESCE(latitude, $13), longitude = COALESCE(longitude, $14),
-         updated_at = NOW()
+         delisted_at = NULL, updated_at = NOW()
          WHERE external_id = $15`,
         [title, category, date, country, state, city, venueName, venueAddress,
          imageUrl, sourceUrl, minPrice, maxPrice, latitude, longitude, externalId]
@@ -309,32 +315,32 @@ export const syncTicketNetworkEvents = async ({ maxPages = null, pageSize = 1000
   // by maxPages) just touched (INSERT or UPDATE, both stamp updated_at)
   // every item TicketNetwork is CURRENTLY offering. Any 'ticketnetwork' row
   // in our own table that this run did NOT touch is therefore no longer in
-  // their feed — sold out, pulled, or expired — yet storeEvent's own
-  // COALESCE($price, min_price) update logic (see above) never clears a
-  // price once set, so without this sweep that row would sit there forever
-  // showing its last-known price even though the event this exact bug
-  // report was about had already stopped being purchasable there. Nulling
-  // min_price/max_price reuses the existing PERMANENT public-listing price
-  // filter (config/priceVisibility.js already hides any unpriced event)
-  // rather than adding a new column/flag — if the listing ever reappears in
-  // a later sync, storeEvent's normal update path restores its price and
-  // it becomes visible again automatically.
+  // their feed — sold out, pulled, or expired. Sets delisted_at (2026-09-27,
+  // replacing the old approach of nulling min_price/max_price) rather than
+  // touching price at all: the price-nulling trick relied on
+  // config/priceVisibility.js hiding every unpriced event site-wide, which
+  // stopped being true once unpriced-but-still-on-sale events (Ticketmaster's
+  // worldwide backlog) needed to stay visible. delisted_at is a dedicated,
+  // price-independent "this source's own feed confirms it's gone" signal —
+  // if the listing ever reappears in a later sync, storeEvent's UPDATE path
+  // above sets delisted_at back to NULL unconditionally, restoring
+  // visibility automatically, same as before.
   //
   // Skipped for a maxPages-limited partial run: that only ever samples a
   // few thousand of the ~210k items, so "not touched this run" would mean
-  // nothing and this would incorrectly null out most of the catalog.
+  // nothing and this would incorrectly delist most of the catalog.
   let staleListingsCleared = 0;
   if (!stoppedEarlyForMaxPages && totalStored > 0) {
     try {
       const staleResult = await pool.query(
-        `UPDATE events SET min_price = NULL, max_price = NULL, updated_at = NOW()
+        `UPDATE events SET delisted_at = NOW(), updated_at = NOW()
          WHERE source = 'ticketnetwork' AND updated_at < $1
-         AND (min_price IS NOT NULL OR max_price IS NOT NULL)`,
+         AND delisted_at IS NULL`,
         [syncStartedAt]
       );
       staleListingsCleared = staleResult.rowCount ?? 0;
       if (staleListingsCleared > 0) {
-        console.log(`🧹 Cleared price on ${staleListingsCleared} TicketNetwork listing(s) no longer present in this sync (now hidden from public listings as unpriced).`);
+        console.log(`🧹 Marked ${staleListingsCleared} TicketNetwork listing(s) delisted — no longer present in this sync (now hidden from public listings).`);
       }
     } catch (err) {
       console.error('TicketNetwork stale-listing sweep failed:', err);

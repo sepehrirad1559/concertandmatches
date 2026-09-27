@@ -43,9 +43,9 @@ router.get('/sitemap.xml', async (req, res) => {
   try {
     // TEMPORARY (see config/sourceVisibility.js): don't keep advertising
     // hidden-source events to search engines while they're hidden on-site.
-    // PERMANENT (see config/priceVisibility.js): same for sold-out/unpriced
-    // events — never worth a crawl budget slot or a search-result click that
-    // leads to "Price TBA".
+    // PERMANENT (see config/priceVisibility.js): same for confirmed delisted
+    // (sold-out/pulled) events — never worth a crawl budget slot. Unpriced-
+    // but-still-listed events ARE included (2026-09-27) — see that file.
     let sitemapWhere = 'WHERE date >= NOW()';
     sitemapWhere = appendPricedOnlyFilter(sitemapWhere);
     const sitemapParams = [];

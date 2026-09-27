@@ -850,6 +850,42 @@ router.post('/schema/add-apify-price-tracking', async (req, res) => {
   }
 });
 
+// Schema prep for the price-independent "delisted" signal (2026-09-27,
+// explicit user request). Previously, "no price" was the ONLY signal for
+// "hide this listing" — config/priceVisibility.js hid every unpriced event
+// site-wide, and services/ticketnetwork.js's stale-listing sweep leaned on
+// that by nulling min_price/max_price for listings no longer in
+// TicketNetwork's feed. That stopped working once unpriced events needed to
+// stay VISIBLE (Ticketmaster's worldwide backlog: unpriced overwhelmingly
+// means "real event, price not fetched yet," not "sold out"). This column
+// decouples the two: delisted_at is set only when a source's own sync
+// confirms a listing is gone (sold out/pulled/expired from THEIR feed), and
+// is null for every event that's simply awaiting a price. See
+// services/ticketnetwork.js's stale-listing sweep and
+// services/canonicalize.js's rebuild query for the actual filtering logic.
+router.post('/schema/add-delisted-tracking', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS delisted_at TIMESTAMPTZ');
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_events_delisted_at
+        ON events (source, delisted_at)
+    `);
+    res.json({ success: true, message: 'events extended with delisted_at; index created.' });
+  } catch (error) {
+    console.error('Error adding delisted_at:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Live-price backfill via Apify (services/apifyPriceService.js) — the next
 // tier after POST /backfill/ticketmaster-prices and /backfill/seatgeek-prices
 // above: scrapes each event's public page directly for events those two

@@ -646,19 +646,12 @@ async function listEventsFromCanonicalLayer(req, res) {
     paramCount++;
   }
 
-  // PERMANENT (see config/priceVisibility.js): never list an event with no
-  // tickets actually for sale. appendPricedOnlyFilter's raw-row test is
-  // `min_price IS NOT NULL OR max_price IS NOT NULL` on a single source row;
-  // the canonical-layer equivalent is "this event has a usable best price
-  // from at least one real seller". NOTE the two are not exactly identical
-  // at the edges: a row whose ONLY price data is max_price, or whose only
-  // priced offer is an 'official' row, passed the raw test but has a NULL
-  // best_price here and is therefore now hidden. That is a stricter reading
-  // of the same rule (neither case gives a visitor a real, comparable price
-  // to click through on), and both are vanishingly rare — the 'official'
-  // scraper no longer runs at all — but it is a real behavior difference and
-  // is called out here deliberately.
-  whereClause += ` AND ${bestPriceSql} IS NOT NULL`;
+  // DISABLED (2026-09-27, see config/priceVisibility.js): this canonical-
+  // layer equivalent of appendPricedOnlyFilter used to hide any event with
+  // no usable best price. Removed at the user's explicit request so
+  // unpriced events (overwhelmingly real, on-sale Ticketmaster events still
+  // waiting on their price backfill — see priceVisibility.js) stay visible;
+  // only expired events are excluded, via ce.event_date >= NOW() above.
 
   // Distance from the customer, via the same Haversine expression the raw
   // path uses — copied verbatim apart from the ce. qualification, so an
@@ -1038,8 +1031,10 @@ async function listEventsFromRawEventsTable(req, res) {
     // browse/search listing to only the active source(s).
     ({ whereClause, paramCount } = appendSourceFilter(whereClause, params, paramCount));
 
-    // PERMANENT (see config/priceVisibility.js): never list an event with no
-    // tickets actually available for sale (no price from its source at all).
+    // PERMANENT (see config/priceVisibility.js): never list an event its own
+    // source has confirmed is delisted (sold out/pulled/gone). Unpriced-but-
+    // still-listed events are NOT filtered here (2026-09-27) — see that
+    // file's header comment.
     whereClause = appendPricedOnlyFilter(whereClause);
 
     // Distance from the customer's location, via the Haversine formula. Only
@@ -1161,13 +1156,12 @@ async function getMergedEventById(eventRowId) {
   // the primary/merged[0] since it's first in the input array.
   const result = merged[0];
 
-  // PERMANENT (see config/priceVisibility.js): checked AFTER merging, not on
-  // `base` alone — an unpriced base row can still be genuinely for-sale if a
-  // priced row from another source merged into it (mergeEventsAcrossSources
-  // promotes the cheapest priced offer's price up to the merged event's own
-  // min_price/max_price). Only hide it if NO offer, from any source, has a
-  // real price — no tickets are actually available for it anywhere we know.
-  if (result.min_price == null && result.max_price == null) return null;
+  // DISABLED (2026-09-27, see config/priceVisibility.js): this used to 404
+  // an event's detail/prerender page outright when no source had a price.
+  // Removed at the user's explicit request — an unpriced event page still
+  // has real content (title, venue, date) worth showing/indexing, and for
+  // Ticketmaster in particular the event is very likely genuinely on sale,
+  // just not yet price-backfilled.
   return result;
 }
 
@@ -1244,8 +1238,9 @@ async function fetchDiscoverCandidates(dbPool, { lat, lng, categoryRule = null, 
   // they all funnel through this one shared candidate fetch.
   ({ whereClause, paramCount } = appendSourceFilter(whereClause, params, paramCount));
 
-  // PERMANENT (see config/priceVisibility.js): no sold-out/unpriced events
-  // in any discover section either.
+  // PERMANENT (see config/priceVisibility.js): no delisted (confirmed sold-
+  // out/pulled) events in any discover section either. Unpriced-but-still-
+  // listed events are shown (2026-09-27) — see that file's header comment.
   whereClause = appendPricedOnlyFilter(whereClause);
 
   if (categoryRule) {

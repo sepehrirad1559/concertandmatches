@@ -30,7 +30,17 @@ export async function rebuildCanonicalEvents() {
     const providerRows = await client.query('SELECT id, name FROM providers');
     const providerIdByName = new Map(providerRows.rows.map((p) => [p.name, p.id]));
 
-    const eventsResult = await client.query('SELECT * FROM events ORDER BY date ASC');
+    // delisted_at IS NULL (2026-09-27): a delisted row (a source's own sync
+    // confirming it's sold out/pulled/gone — see services/ticketnetwork.js's
+    // stale-listing sweep) is excluded from the rebuild ENTIRELY, rather than
+    // filtered later by price. This is what makes canonical_events/
+    // ticket_offers automatically consistent with the new price-independent
+    // visibility model: an unpriced-but-still-listed row still comes through
+    // here and can win/contribute to a group same as always, while a
+    // delisted row contributes nothing (no offer, can't become best_price,
+    // and a group made up ENTIRELY of delisted rows simply never gets a
+    // canonical_events row at all).
+    const eventsResult = await client.query('SELECT * FROM events WHERE delisted_at IS NULL ORDER BY date ASC');
     const rows = eventsResult.rows;
 
     // Group rows representing the same real-world event, same algorithm as
