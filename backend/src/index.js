@@ -208,7 +208,17 @@ try {
 console.log('🔄 Backfilling Ticketmaster prices...');
 startedAt = new Date();
 try {
-  const tmPriceResult = await backfillTicketmasterPrices(300);
+  // Bumped 300 -> 3000 (2026-09-27): the worldwide-coverage expansion added
+  // ~30,000 unpriced international Ticketmaster rows overnight (discovery
+  // returns priceRanges for only a fraction of events; the rest need this
+  // per-event detail-endpoint backfill). At 300/day that backlog would take
+  // ~100 days to clear even once; at 3000/day (4/sec throttle -> ~12.5 min
+  // runtime, well within a background job) it clears in under 2 weeks.
+  // Safe to raise: backfillMissingPrices already detects Ticketmaster's daily
+  // quota exhaustion and stops the batch early with a clear log message
+  // rather than failing silently, so an overly large number just means an
+  // early, well-logged stop rather than a broken run.
+  const tmPriceResult = await backfillTicketmasterPrices(3000);
   console.log('Ticketmaster price backfill result:', tmPriceResult);
   await logProviderSync({
     providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
