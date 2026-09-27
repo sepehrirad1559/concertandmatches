@@ -39,20 +39,50 @@ function hasAllowedReferer(req) {
 // the rate limiter: the rate limiter still lets a blocked scanner through at
 // up to 30/min forever, which is exactly what let ~120k+ fake click_events
 // rows accumulate in under a week (see the click-analytics investigation
-// this was added for). BLOCKED_IPS is a comma-separated env var rather than
-// a hardcoded list so an IP can be added/removed on Railway without a code
+// this was added for). BLOCKED_IPS is a comma-separated env var (single IPs
+// and/or CIDR ranges, e.g. "1.2.3.4,152.233.12.0/23") rather than a
+// hardcoded list, so entries can be added/removed on Railway without a code
 // deploy. Requires trust proxy to be set (index.js) — otherwise req.ip is
 // Railway's own internal proxy address, shared by every request, and this
 // would either match nobody or (far worse) match everybody.
-const BLOCKED_IPS = new Set(
-  (process.env.BLOCKED_IPS || '')
-    .split(',')
-    .map((ip) => ip.trim())
-    .filter(Boolean)
-);
+//
+// CIDR support (IPv4 only — every scraper seen so far, and every real
+// client here, is IPv4): entries are pre-parsed into [rangeStart, rangeEnd]
+// integer pairs once at startup rather than re-parsed per request, since
+// this middleware runs on every single /go/* hit.
+function ipToInt(ip) {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return null;
+  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+}
+
+function parseBlockEntry(entry) {
+  const [ipPart, prefixPart] = entry.split('/');
+  const base = ipToInt(ipPart);
+  if (base == null) return null;
+  const prefix = prefixPart !== undefined ? Number(prefixPart) : 32;
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;
+  const maskBits = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+  const rangeStart = (base & maskBits) >>> 0;
+  const rangeEnd = (rangeStart | (~maskBits >>> 0)) >>> 0;
+  return [rangeStart, rangeEnd];
+}
+
+const BLOCKED_RANGES = (process.env.BLOCKED_IPS || '')
+  .split(',')
+  .map((entry) => entry.trim())
+  .filter(Boolean)
+  .map(parseBlockEntry)
+  .filter(Boolean);
+
+function isBlockedIp(ip) {
+  const ipInt = ip ? ipToInt(ip) : null;
+  if (ipInt == null) return false;
+  return BLOCKED_RANGES.some(([start, end]) => ipInt >= start && ipInt <= end);
+}
 
 function blockKnownAbusers(req, res, next) {
-  if (BLOCKED_IPS.has(req.ip)) {
+  if (isBlockedIp(req.ip)) {
     console.warn(`Blocked request from denylisted IP ${req.ip}: ${req.originalUrl}`);
     return res.status(403).json({ error: 'Forbidden' });
   }
