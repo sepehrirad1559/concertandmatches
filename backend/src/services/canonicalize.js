@@ -24,6 +24,27 @@ function normalizeTitle(title) {
     .trim();
 }
 
+// BLUE/GREEN REBUILD (2026-09-27): this used to build straight into the
+// live canonical_events/ticket_offers tables inside one long transaction
+// that opened with `TRUNCATE ticket_offers, canonical_events RESTART
+// IDENTITY CASCADE`. TRUNCATE takes an ACCESS EXCLUSIVE lock on the
+// truncated tables, and because everything happened in a single
+// transaction, that lock was held for the ENTIRE rebuild — normally a few
+// minutes, but observed live to run 13-20+ minutes when something (DB
+// load, a slow connection) made the run itself slow. Every real request
+// that reads canonical_events/ticket_offers (i.e. every public listing
+// request) blocked behind that lock for the whole duration — confirmed via
+// pg_stat_activity showing several real connections stuck for 180-400+s
+// during one such run.
+//
+// The fix: never touch the live tables until the very end. Build a
+// complete fresh copy into freshly-created `canonical_events_new`/
+// `ticket_offers_new` tables (no lock contention with anything, since
+// nothing else ever queries them), then swap them in with four plain
+// `ALTER TABLE ... RENAME` statements inside one short transaction — an
+// ACCESS EXCLUSIVE lock held for milliseconds, not minutes, regardless of
+// how long the build itself takes. The previous run's data becomes
+// `canonical_events_old`/`ticket_offers_old` and is dropped right after.
 export async function rebuildCanonicalEvents() {
   const client = await pool.connect();
   try {
@@ -114,27 +135,81 @@ export async function rebuildCanonicalEvents() {
       }
     }
 
-    await client.query('BEGIN');
-    // Derived tables only — never touches `events` or `click_events`.
-    await client.query('TRUNCATE ticket_offers, canonical_events RESTART IDENTITY CASCADE');
+    // ---- Build into fresh staging tables — the live canonical_events/
+    // ticket_offers are not touched until the swap far below. ----
+    // Drop any leftover from a previous run that crashed before its own
+    // cleanup (rare — e.g. the process was killed mid-rebuild) so the
+    // CREATE TABLE below doesn't fail with "already exists".
+    await client.query('DROP TABLE IF EXISTS ticket_offers_new CASCADE');
+    await client.query('DROP TABLE IF EXISTS canonical_events_new CASCADE');
+
+    // LIKE ... INCLUDING ALL clones columns, defaults, NOT NULL/CHECK
+    // constraints, generated/identity columns, and every index — including
+    // the primary key and the unique (provider_id, provider_offer_id) index
+    // the ON CONFLICT below relies on — from whatever the live table's
+    // actual current shape is (so this never drifts out of sync with the
+    // many ADD COLUMN migrations applied over time). The one thing it never
+    // copies is foreign keys, so those are added back explicitly next.
+    await client.query('CREATE TABLE canonical_events_new (LIKE canonical_events INCLUDING ALL)');
+    await client.query('CREATE TABLE ticket_offers_new (LIKE ticket_offers INCLUDING ALL)');
+
+    // LIKE's copied `id` DEFAULT is `nextval('canonical_events_id_seq')` —
+    // it still points at the ORIGINAL table's sequence, not a new one made
+    // for this table. Left alone, that means canonical_events_new.id and
+    // the live canonical_events.id would share one sequence object, and
+    // since a SERIAL sequence is OWNED BY the column that first created it,
+    // retiring the old table below with DROP ... CASCADE would cascade-drop
+    // that shared sequence — silently stripping the id DEFAULT off the
+    // table this rebuild just promoted to live. Giving each staging table
+    // its own independent, freshly-owned sequence (reset to start at 1,
+    // matching the old RESTART IDENTITY behavior) avoids that entirely.
+    await client.query(`
+      CREATE SEQUENCE canonical_events_new_id_seq OWNED BY canonical_events_new.id;
+      ALTER TABLE canonical_events_new ALTER COLUMN id SET DEFAULT nextval('canonical_events_new_id_seq'::regclass);
+      SELECT setval('canonical_events_new_id_seq', 1, false);
+    `);
+    await client.query(`
+      CREATE SEQUENCE ticket_offers_new_id_seq OWNED BY ticket_offers_new.id;
+      ALTER TABLE ticket_offers_new ALTER COLUMN id SET DEFAULT nextval('ticket_offers_new_id_seq'::regclass);
+      SELECT setval('ticket_offers_new_id_seq', 1, false);
+    `);
+
+    await client.query(`
+      ALTER TABLE canonical_events_new
+        ADD CONSTRAINT canonical_events_new_primary_event_row_id_fkey
+          FOREIGN KEY (primary_event_row_id) REFERENCES events(id) ON DELETE SET NULL
+    `);
+    await client.query(`
+      ALTER TABLE ticket_offers_new
+        ADD CONSTRAINT ticket_offers_new_canonical_event_id_fkey
+          FOREIGN KEY (canonical_event_id) REFERENCES canonical_events_new(id) ON DELETE CASCADE,
+        ADD CONSTRAINT ticket_offers_new_provider_id_fkey
+          FOREIGN KEY (provider_id) REFERENCES providers(id),
+        ADD CONSTRAINT ticket_offers_new_source_event_row_id_fkey
+          FOREIGN KEY (source_event_row_id) REFERENCES events(id) ON DELETE SET NULL
+    `);
 
     let canonicalCount = 0;
     let offerCount = 0;
     let skippedNoProvider = 0;
+    // price_history rows can't be inserted yet: its existing foreign key
+    // still points at whatever table is live-named `canonical_events` right
+    // now (about to be retired), not at canonical_events_new, so an insert
+    // referencing a canonical_events_new id would fail that check. Buffered
+    // here and flushed once the swap below has made canonical_events_new
+    // the live `canonical_events` and dropped that stale constraint.
+    const priceHistoryBuffer = [];
 
     // How many groups to process between yields back to Node's event loop.
     // This whole loop is one long chain of awaited client.query() calls, but
-    // those all resolve on the same pooled connection inside a single
-    // transaction, so in practice the run monopolizes the process for its
-    // entire duration and public requests queue behind it (already flagged
-    // at the top of this file as a known risk). An explicit setImmediate
-    // every few hundred groups hands control back long enough for pending
-    // I/O callbacks — i.e. other visitors' requests — to be serviced. It is
-    // deliberately a cheap mitigation, not a fix: the real fix is not
-    // rebuilding the entire derived layer from scratch each run. Low
-    // hundreds keeps the added overhead to a few thousand extra event-loop
-    // turns across a full rebuild, which is nothing next to the hundreds of
-    // thousands of queries the loop already issues.
+    // those all resolve on the same pooled connection, so in practice the
+    // run monopolizes the process for its entire duration and public
+    // requests queue behind it unless we yield deliberately. An explicit
+    // setImmediate every few hundred groups hands control back long enough
+    // for pending I/O callbacks — i.e. other visitors' requests — to be
+    // serviced. This no longer risks blocking those requests on a table
+    // lock (the whole point of the staging-table rewrite above), but it
+    // still keeps a long rebuild from starving the event loop itself.
     const YIELD_EVERY_N_GROUPS = 250;
     let groupsProcessed = 0;
 
@@ -189,7 +264,7 @@ export async function rebuildCanonicalEvents() {
         : null;
 
       const canonicalResult = await client.query(
-        `INSERT INTO canonical_events
+        `INSERT INTO canonical_events_new
            (title, normalized_title, category, event_date, venue_name, city, state, country,
             latitude, longitude, image_url, artist_name, best_price, best_source,
             performer, highest_price,
@@ -214,11 +289,12 @@ export async function rebuildCanonicalEvents() {
           artistRow.artist_name, // performer — same value as artist_name under the spec's field name
           worst ? worst.min_price : null,
           // The representative RAW events.id for this merged event. This —
-          // never canonical_events.id, which is reassigned by the TRUNCATE
-          // ... RESTART IDENTITY above on every single rebuild — is what the
-          // public listing endpoint returns as each event's `id`, what the
-          // /event/:id-:slug detail URLs and /go/event/:id affiliate
-          // redirects are built from, and what click tracking logs against.
+          // never canonical_events.id, which is reassigned every rebuild
+          // (a fresh table each time now, same effective behavior as the
+          // old RESTART IDENTITY) — is what the public listing endpoint
+          // returns as each event's `id`, what the /event/:id-:slug detail
+          // URLs and /go/event/:id affiliate redirects are built from, and
+          // what click tracking logs against.
           primary.id,
           descriptionRow.description,
           primary.venue_address,
@@ -261,7 +337,7 @@ export async function rebuildCanonicalEvents() {
         // seat-level listings.
         const totalPrice = row.min_price;
         await client.query(
-          `INSERT INTO ticket_offers
+          `INSERT INTO ticket_offers_new
              (canonical_event_id, provider_id, provider_offer_id, source_event_row_id, price, max_price, currency, seller_url,
               last_updated, source_event_id, total_price, price_type, availability, affiliate_url)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
@@ -282,32 +358,71 @@ export async function rebuildCanonicalEvents() {
         );
         offerCount++;
 
-        // Log a price_history snapshot. Cheap and simple beats clever here:
-        // one row per offer per rebuild rather than trying to detect "did
-        // it actually change" inside the same UPSERT (the RETURNING
-        // subquery above runs against the post-UPDATE row, so it can't
-        // reliably tell old-vs-new) — a rebuild only runs once/day, so this
-        // does not grow unreasonably fast.
-        await client.query(
-          `INSERT INTO price_history (canonical_event_id, provider_id, provider_offer_id, price, total_price)
-           VALUES ($1,$2,$3,$4,$5)`,
-          [canonicalId, providerId, row.external_id, row.min_price, totalPrice]
-        );
+        // Buffered rather than inserted immediately — see the comment above
+        // priceHistoryBuffer's declaration.
+        priceHistoryBuffer.push({
+          canonicalId, providerId, externalId: row.external_id, price: row.min_price, totalPrice,
+        });
       }
 
       // Yield the event loop periodically (see YIELD_EVERY_N_GROUPS above)
       // so a multi-minute rebuild doesn't starve every concurrent public
-      // request for its entire duration. Safe to do mid-transaction: the
-      // transaction lives on `client`, which stays checked out of the pool
-      // across the yield, so nothing else can interleave statements into it
-      // — other requests use their own pooled connections.
+      // request for its entire duration.
       groupsProcessed++;
       if (groupsProcessed % YIELD_EVERY_N_GROUPS === 0) {
         await new Promise((resolve) => setImmediate(resolve));
       }
     }
 
+    // ---- The swap: the only moment the live tables are touched. Four
+    // plain renames in one short transaction — an ACCESS EXCLUSIVE lock on
+    // canonical_events/ticket_offers held for milliseconds, not the whole
+    // rebuild. ----
+    await client.query('BEGIN');
+    await client.query('ALTER TABLE ticket_offers RENAME TO ticket_offers_old');
+    await client.query('ALTER TABLE canonical_events RENAME TO canonical_events_old');
+    await client.query('ALTER TABLE canonical_events_new RENAME TO canonical_events');
+    await client.query('ALTER TABLE ticket_offers_new RENAME TO ticket_offers');
     await client.query('COMMIT');
+
+    // Retire the previous run's tables. CASCADE here only drops
+    // price_history's foreign key (a dependent CONSTRAINT, since it
+    // referenced the table object now named canonical_events_old) — it does
+    // NOT delete price_history's rows. That's a real difference from the old
+    // `TRUNCATE ... CASCADE`, which truncated (deleted the ROWS of) every
+    // table with a foreign key into canonical_events, silently wiping
+    // price_history on every single rebuild despite its own comment saying
+    // it should accumulate — this rewrite fixes that as a side effect.
+    // price_history is deliberately left without a foreign key afterward
+    // (see the comment above the insert loop below) rather than re-added,
+    // since a hard FK would just go stale again next rebuild anyway. Wrapped
+    // so a cleanup hiccup here can't mask an otherwise-successful rebuild —
+    // the swap above already succeeded and is live either way.
+    try {
+      await client.query('DROP TABLE IF EXISTS ticket_offers_old CASCADE');
+      await client.query('DROP TABLE IF EXISTS canonical_events_old CASCADE');
+    } catch (cleanupError) {
+      console.error('Canonical rebuild: swap succeeded but dropping the retired tables failed (harmless — they\'ll be cleaned up next run):', cleanupError.message);
+    }
+
+    // Now that price_history's stale FK is gone, these ids (already
+    // assigned above, and unaffected by the rename) can be logged safely.
+    // price_history's real stable identity across rebuilds is
+    // (provider_id, provider_offer_id) — canonical_event_id is only
+    // meaningful relative to this run's snapshot, same as it always was.
+    let priceHistoryInserted = 0;
+    for (const entry of priceHistoryBuffer) {
+      await client.query(
+        `INSERT INTO price_history (canonical_event_id, provider_id, provider_offer_id, price, total_price)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [entry.canonicalId, entry.providerId, entry.externalId, entry.price, entry.totalPrice]
+      );
+      priceHistoryInserted++;
+      if (priceHistoryInserted % YIELD_EVERY_N_GROUPS === 0) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+    }
+
     return {
       rawEventRows: rows.length,
       canonicalEvents: canonicalCount,
@@ -315,7 +430,14 @@ export async function rebuildCanonicalEvents() {
       skippedNoProvider,
     };
   } catch (error) {
-    await client.query('ROLLBACK');
+    // Best-effort: clean up this run's staging tables so a failed attempt
+    // doesn't block the next one with "relation already exists". If the
+    // swap already happened by the time something failed (e.g. during the
+    // price_history flush), these are no-ops — canonical_events_new/
+    // ticket_offers_new no longer exist under those names, and the live
+    // tables (already correctly swapped in) are untouched by any of this.
+    await client.query('DROP TABLE IF EXISTS ticket_offers_new CASCADE').catch(() => {});
+    await client.query('DROP TABLE IF EXISTS canonical_events_new CASCADE').catch(() => {});
     throw error;
   } finally {
     client.release();
