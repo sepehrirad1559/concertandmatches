@@ -279,6 +279,32 @@ function applyLocationRetailerOrder(events, hasCoords) {
   });
 }
 
+// Ordering rule for the homepage discovery sections (Popular Events,
+// Recommended for You, Trending Events Near [City]) — NOT the same rule as
+// applyLocationRetailerOrder above, which is for category rows/the filtered
+// listing. Those sections are already picked by popularity/score, but
+// applyLocationRetailerOrder's retailer-count tiebreak (used for same/
+// near-tied distance) was letting a far-future event with more listed
+// sellers jump ahead of a much-sooner event at a similar distance — e.g. an
+// event in April 2027 displayed before one on Sep 30, 2026, because the
+// 2027 show happened to have more retailers, even though both were
+// effectively equidistant. "Closest by distance and closest by date" (the
+// actual spec for these sections) means distance stays primary when the
+// visitor's location is known, but the tiebreak is soonest-date, never
+// retailer count — so events at a similar distance always read
+// chronologically instead of jumping around.
+function applyLocationDateOrder(events, hasCoords) {
+  const distanceOf = (e) => (e.distance_km != null ? e.distance_km : Infinity);
+
+  return events.slice().sort((a, b) => {
+    if (hasCoords) {
+      const d = distanceOf(a) - distanceOf(b);
+      if (d !== 0) return d;
+    }
+    return new Date(a.date) - new Date(b.date);
+  });
+}
+
 // Derives best_price/best_source/min_price/max_price/price_comparison for
 // ONE event from its already-assembled `offers` array, using exactly the
 // same rules mergeEventsAcrossSources applies at the end of its own merge
@@ -1480,7 +1506,7 @@ router.get('/discover', async (req, res) => {
     // decides WHICH events qualify as "popular"; once that set is picked,
     // present them closest-first / most-retailers-first / retailer-round-
     // robin, same as every category row.
-    const popular = applyLocationRetailerOrder(popularPicked, hasCoords);
+    const popular = applyLocationDateOrder(popularPicked, hasCoords);
     markUsed(popular);
 
     // ---- Recommended for You: popularity + "happening soon" recency +
@@ -1509,7 +1535,7 @@ router.get('/discover', async (req, res) => {
     // selection — pickDiverse/backfillByDate still decide WHICH events make
     // the cut (score + category diversity), this only decides the order
     // they're displayed in.
-    const recommended = applyLocationRetailerOrder(recommendedPicked, hasCoords);
+    const recommended = applyLocationDateOrder(recommendedPicked, hasCoords);
     markUsed(recommended);
 
     // ---- Trending Events Near [City]: recent (7-day) click velocity, same
@@ -1526,7 +1552,7 @@ router.get('/discover', async (req, res) => {
       DISCOVER_SECTION_COUNT
     );
     // Same standing ordering rule applied on top of the trending selection.
-    const trending = applyLocationRetailerOrder(trendingPicked, hasCoords);
+    const trending = applyLocationDateOrder(trendingPicked, hasCoords);
     markUsed(trending);
 
     // ---- Concerts / Sports / Theater / Comedy: up to DISCOVER_SECTION_COUNT
