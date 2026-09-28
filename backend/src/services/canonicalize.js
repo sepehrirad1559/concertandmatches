@@ -189,6 +189,23 @@ export async function rebuildCanonicalEvents() {
           FOREIGN KEY (source_event_row_id) REFERENCES events(id) ON DELETE SET NULL
     `);
 
+    // The build loop below issues roughly two SQL statements per raw row
+    // (one canonical_events_new insert per group, one ticket_offers_new
+    // insert per offer) with no wrapping transaction — each one auto-commits
+    // (and fsyncs) on its own. That's fine at a few thousand rows, but at
+    // this catalog's real size (a quarter-million-plus rows) the per-
+    // statement commit overhead dominates and can make a run take far
+    // longer than necessary. Wrapping the whole build in one transaction
+    // fixes that (one fsync at the end instead of one per row) and is fully
+    // safe from a locking standpoint — canonical_events_new/ticket_offers_new
+    // are staging tables nothing else ever queries, so holding locks on them
+    // for the whole build blocks nobody. This is separate from (and must
+    // stay separate from) the swap transaction further below, which has to
+    // stay minimal — anything added between the renames and that COMMIT
+    // would hold the live tables' ACCESS EXCLUSIVE lock for that long,
+    // exactly the bug this whole rewrite exists to fix.
+    await client.query('BEGIN');
+
     let canonicalCount = 0;
     let offerCount = 0;
     let skippedNoProvider = 0;
@@ -374,6 +391,15 @@ export async function rebuildCanonicalEvents() {
       }
     }
 
+    // Closes the build transaction opened above. Nothing else ever queries
+    // canonical_events_new/ticket_offers_new, so this could safely have
+    // stayed open through the swap below too — but keeping it scoped to
+    // just the build (and giving the swap its own separate, minimal
+    // transaction next) makes the lock-safety property easy to verify by
+    // inspection: the swap transaction below contains nothing but the four
+    // renames.
+    await client.query('COMMIT');
+
     // ---- The swap: the only moment the live tables are touched. Four
     // plain renames in one short transaction — an ACCESS EXCLUSIVE lock on
     // canonical_events/ticket_offers held for milliseconds, not the whole
@@ -410,6 +436,13 @@ export async function rebuildCanonicalEvents() {
     // price_history's real stable identity across rebuilds is
     // (provider_id, provider_offer_id) — canonical_event_id is only
     // meaningful relative to this run's snapshot, same as it always was.
+    // Wrapped in its own transaction for the same batched-commit reason as
+    // the build phase above — price_history is append-only and nothing
+    // needs read-your-writes consistency against it mid-flush, so holding
+    // row locks on newly-inserted rows for the duration doesn't block
+    // concurrent readers (ordinary SELECTs never wait on another
+    // transaction's uncommitted inserts under Postgres's default isolation).
+    await client.query('BEGIN');
     let priceHistoryInserted = 0;
     for (const entry of priceHistoryBuffer) {
       await client.query(
@@ -422,6 +455,7 @@ export async function rebuildCanonicalEvents() {
         await new Promise((resolve) => setImmediate(resolve));
       }
     }
+    await client.query('COMMIT');
 
     return {
       rawEventRows: rows.length,
@@ -430,6 +464,15 @@ export async function rebuildCanonicalEvents() {
       skippedNoProvider,
     };
   } catch (error) {
+    // If the failure happened inside one of the explicit transactions above
+    // (build, swap, or the price_history flush), this connection is now in
+    // Postgres's "current transaction is aborted" state, where every
+    // statement errors until a ROLLBACK — including the cleanup DROPs right
+    // below, which would otherwise silently no-op-fail and mask the real
+    // error. Harmless (and a no-op) if no transaction was actually open —
+    // e.g. a failure during the initial SELECT/grouping, before the first
+    // BEGIN.
+    await client.query('ROLLBACK').catch(() => {});
     // Best-effort: clean up this run's staging tables so a failed attempt
     // doesn't block the next one with "relation already exists". If the
     // swap already happened by the time something failed (e.g. during the
