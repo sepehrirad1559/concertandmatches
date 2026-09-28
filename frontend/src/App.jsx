@@ -424,6 +424,19 @@ function formatDate(dateStr) {
   }
 }
 
+// Compact "Sep 30" form used only in the on-card category badge (see
+// EventCard) — formatDate above is deliberately long (weekday + time) for
+// the card's body text, which doesn't fit a small image overlay.
+function formatBadgeDate(dateStr) {
+  if (!dateStr) return 'Date TBA';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
 function formatDistance(distanceKm) {
   if (distanceKm == null) return null;
   const miles = distanceKm * 0.621371;
@@ -1184,6 +1197,25 @@ const EVENT_IMAGE_TOPICS = {
   concerts: 'Concert',
 };
 
+// Short, human-facing label for the on-card category badge (see
+// EventCard's typeBadgeLabel below) — reuses guessEventImageTopic's bucket
+// (the same classification already driving which fallback photo a card
+// gets) rather than inventing a second, separate classifier that could
+// disagree with it. Deliberately distinct wording from EVENT_IMAGE_TOPICS
+// above, which holds Wikipedia article titles, not display copy.
+const EVENT_TYPE_BADGE_LABELS = {
+  nba: 'NBA',
+  nfl: 'NFL',
+  nhl: 'NHL',
+  mlb: 'MLB',
+  mls: 'MLS',
+  boxing: 'Boxing',
+  theater: 'Theater',
+  comedy: 'Comedy',
+  sports: 'Sports',
+  concerts: 'Concert',
+};
+
 // Bundled, hand-picked photos (frontend/public/event-fallback-images/) for
 // the buckets the user supplied a reference image for — served locally
 // instead of fetched from Wikipedia, so these five buckets always show
@@ -1575,6 +1607,12 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
   // otherwise the resolved category photo (see EVENT_IMAGE_TOPICS/
   // pickFallbackImage) rather than showing nothing.
   const imgSrc = (hasRealEventPhoto(event) ? event.image_url : null) || entityImageUrl || fallbackImageUrl;
+  // Short "Concert · Sep 30" style badge overlaid on the card photo, per
+  // request — reuses guessEventImageTopic (the same bucket that already
+  // picks this card's fallback photo, see pickFallbackImage above) so the
+  // badge's category always agrees with the image next to it, rather than
+  // running a second, independent classifier.
+  const typeBadgeLabel = EVENT_TYPE_BADGE_LABELS[guessEventImageTopic(event)] || 'Event';
   return (
     <div
       className="cm-card"
@@ -1615,11 +1653,25 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
           // a plain gradient placeholder instead of a blank box.
           <div style={{ width: '100%', height: '150px', background: `linear-gradient(135deg, ${NAVY_PANEL_LIGHT}, ${NAVY_BG})` }} />
         )}
+        <span style={{
+          position: 'absolute',
+          top: '10px',
+          left: '10px',
+          backgroundColor: 'rgba(0,22,52,0.85)',
+          color: 'white',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          padding: '5px 10px',
+          borderRadius: '999px',
+          whiteSpace: 'nowrap',
+        }}>
+          {typeBadgeLabel} • {formatBadgeDate(event.date)}
+        </span>
         {formatDistance(event.distance_km) && (
           <span style={{
             position: 'absolute',
             top: '10px',
-            left: '10px',
+            right: '10px',
             backgroundColor: 'rgba(76,175,80,0.92)',
             color: 'white',
             fontSize: '11px',
