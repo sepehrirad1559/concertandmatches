@@ -139,9 +139,20 @@ export async function rebuildCanonicalEvents() {
     // ticket_offers are not touched until the swap far below. ----
     // Drop any leftover from a previous run that crashed before its own
     // cleanup (rare — e.g. the process was killed mid-rebuild) so the
-    // CREATE TABLE below doesn't fail with "already exists".
+    // CREATE TABLE below doesn't fail with "already exists". This actually
+    // happened: a deploy restarted the container mid-rebuild, and the
+    // canonical_events_new_id_seq sequence created below survived as an
+    // orphan even after canonical_events_new itself got dropped (an
+    // interrupted run can leave the sequence detached from any table that
+    // would otherwise carry it away via CASCADE) — so the next attempt's
+    // CREATE SEQUENCE failed with "relation ... already exists" every time,
+    // wedging the rebuild permanently. Dropping the sequences explicitly
+    // here, independent of whatever table state we find, is what actually
+    // makes this idempotent against a crash at any point in the process.
     await client.query('DROP TABLE IF EXISTS ticket_offers_new CASCADE');
     await client.query('DROP TABLE IF EXISTS canonical_events_new CASCADE');
+    await client.query('DROP SEQUENCE IF EXISTS ticket_offers_new_id_seq CASCADE');
+    await client.query('DROP SEQUENCE IF EXISTS canonical_events_new_id_seq CASCADE');
 
     // LIKE ... INCLUDING ALL clones columns, defaults, NOT NULL/CHECK
     // constraints, generated/identity columns, and every index — including
