@@ -3053,7 +3053,7 @@ export default function App() {
                       color: '#141b2d',
                     }}>
                     <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
-                      Buy Your Ticket On {link.name}
+                      Buy on {link.name}
                     </span>
                     {priceLabel && (
                       <span style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>From {priceLabel}</span>
