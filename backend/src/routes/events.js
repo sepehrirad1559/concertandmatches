@@ -814,9 +814,32 @@ async function listEventsFromCanonicalLayer(req, res) {
   // are independent, and both hit the same index.
   const countQuery = `SELECT COUNT(*)::int AS total FROM canonical_events ce ${whereClause}`;
 
+  // `params` is shared with the main query above, but the main query's
+  // ACTIVE_SOURCES placeholder ($1, reserved right at the top of this
+  // function whenever ACTIVE_SOURCES is set — see activeSourcesParam) is
+  // used only inside bestPriceSql/offerCountSql, which are part of `query`,
+  // never part of `whereClause`. Whenever no other filter (city, category,
+  // search, ...) is active, whereClause ends up with ZERO `$`-placeholders
+  // at all, but `params` still has that one leftover ACTIVE_SOURCES
+  // element sitting in it — and Postgres's bind protocol rejects ANY
+  // supplied parameter count that doesn't exactly match the prepared
+  // statement's own placeholder count, even when the extra value would
+  // never have been read. That mismatch ("bind message supplies 1
+  // parameters, but prepared statement "" requires 0") was confirmed live
+  // in the deploy logs: it fires on every unfiltered request, silently
+  // falls back to the raw-events path (capped at MAX_RAW_ROWS), and is the
+  // actual reason the public event count has been stuck around 27,000
+  // despite the canonical layer itself correctly holding 200,000+ rows.
+  // Whenever whereClause DOES contain a filter placeholder, its highest
+  // `$N` still lines up correctly against the full `params` array (filters
+  // are appended after the source param, so their indices only ever grow),
+  // so passing `params` unmodified in that case is correct — only the
+  // zero-placeholder case needs the empty array instead.
+  const countParams = whereClause.includes('$') ? params : [];
+
   const [pageResult, countResult] = await Promise.all([
     pool.query(query, listParams),
-    pool.query(countQuery, params),
+    pool.query(countQuery, countParams),
   ]);
 
   const total = countResult.rows[0] ? countResult.rows[0].total : 0;
