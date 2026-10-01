@@ -382,23 +382,27 @@ export async function discoverVenues({ limit = 500 } = {}) {
   `, [limit]);
 
   return rows.rows.map((r) => {
+    const slug = slugify(`${r.venue_name}-${r.city}`);
+    const searchData = lookupSearchPatterns('venue', slug);
     const { score, tier, breakdown } = scoreOpportunity({
       eventCount: r.event_count,
       sourceCount: r.source_count,
       pricedFraction: r.event_count > 0 ? r.priced_count / r.event_count : 0,
       clickCount: 0, // venue-level click aggregation not worth a query per candidate at this stage
       daysToNearest: daysUntil(r.nearest_date),
+      hasConfirmedSearchData: !!searchData,
     });
     return {
       type: 'venue',
       venueName: r.venue_name,
       city: r.city,
       state: r.state,
-      slug: slugify(`${r.venue_name}-${r.city}`),
+      slug,
       eventCount: r.event_count,
       score,
       tier,
       breakdown,
+      confirmedSearches: searchData?.suggestions || null,
     };
   }).filter((v) => v.tier !== 'do-not-index');
 }

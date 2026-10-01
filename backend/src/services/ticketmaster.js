@@ -4,6 +4,22 @@ import { pool } from '../index.js';
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
 const TICKETMASTER_BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
 
+// Dedicated axios instance with a hard timeout (2026-10-01, found live: the
+// comprehensive syncAllEvents()/fetchAllTicketmasterEventsNationwide() pull
+// stalled completely overnight with zero new events stored for hours, even
+// though the API key itself was confirmed healthy moments later. Every
+// axios.get() in this file previously had no timeout at all, and the whole
+// sync is one long sequential chain of awaited requests — a single TCP
+// connection that never resolves (nothing unusual over a long-running
+// worldwide/every-segment/every-month pull hitting thousands of requests)
+// blocks that entire chain forever, with no error, no log line, nothing for
+// trackApiError to catch. A bounded timeout turns that silent, permanent
+// hang into an ordinary, already-handled request failure (caught by each
+// call site's existing try/catch, logged via trackApiError, and the loop
+// moves on to the next page/market/month) instead of stopping the sync
+// dead for the rest of the process's lifetime.
+const ticketmasterHttp = axios.create({ timeout: 20000 });
+
 // Ticketmaster affiliate tracking link (2026-09-16) — this account is
 // Approved for Ticketmaster's affiliate program via Impact.com (found while
 // investigating a user report; confirmed on Impact.com's own program page:
@@ -78,7 +94,7 @@ export const US_STATES = [
 // Fetch events from Ticketmaster
 export const fetchTicketmasterEvents = async (marketCode = '1', limit = 50) => {
   try {
-    const response = await axios.get(`${TICKETMASTER_BASE_URL}/events.json`, {
+    const response = await ticketmasterHttp.get(`${TICKETMASTER_BASE_URL}/events.json`, {
       params: {
         apikey: TICKETMASTER_API_KEY,
         marketId: marketCode,
@@ -158,7 +174,7 @@ export const fetchAllCanadianEvents = async () => {
 // with concerts for the same 100-result page.
 export const fetchTicketmasterSportsEvents = async (marketCode = '1', limit = 200) => {
   try {
-    const response = await axios.get(`${TICKETMASTER_BASE_URL}/events.json`, {
+    const response = await ticketmasterHttp.get(`${TICKETMASTER_BASE_URL}/events.json`, {
       params: {
         apikey: TICKETMASTER_API_KEY,
         marketId: marketCode,
@@ -260,7 +276,7 @@ async function fetchTicketmasterEventsPaged(params, maxResults = 1000, pageSize 
   const maxPage = Math.floor(maxResults / pageSize) - 1;
   for (let page = 0; page <= maxPage; page++) {
     try {
-      const response = await axios.get(`${TICKETMASTER_BASE_URL}/events.json`, {
+      const response = await ticketmasterHttp.get(`${TICKETMASTER_BASE_URL}/events.json`, {
         params: { apikey: TICKETMASTER_API_KEY, ...params, size: pageSize, page, sort: 'date,asc' },
       });
       const pageEvents = response.data?._embedded?.events || [];
@@ -348,7 +364,7 @@ const NATIONWIDE_SPORTS_COUNTRIES = [undefined];
 
 async function fetchTicketmasterEventsByClassificationAndMonth(classificationName, countryCode, startDateTime, endDateTime) {
   try {
-    const response = await axios.get(`${TICKETMASTER_BASE_URL}/events.json`, {
+    const response = await ticketmasterHttp.get(`${TICKETMASTER_BASE_URL}/events.json`, {
       params: {
         apikey: TICKETMASTER_API_KEY,
         classificationName,
@@ -677,7 +693,7 @@ const QUOTA_EXHAUSTED_ERRORCODE = 'policies.ratelimit.QuotaViolation';
 
 export const getTicketmasterEventDetails = async (eventId, _isRetry = false) => {
   try {
-    const response = await axios.get(`${TICKETMASTER_BASE_URL}/events/${eventId}`, {
+    const response = await ticketmasterHttp.get(`${TICKETMASTER_BASE_URL}/events/${eventId}`, {
       params: { apikey: TICKETMASTER_API_KEY }
     });
 
