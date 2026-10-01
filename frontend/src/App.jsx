@@ -1262,7 +1262,24 @@ function guessEventImageTopic(event) {
   if (/\bmls\b|\bsoccer\b/.test(haystack) || MLS_TEAMS.some((t) => haystack.includes(t.toLowerCase()))) return 'mls';
   if (/\bboxing\b/.test(haystack)) return 'boxing';
   if (categoryStr.includes('theatre') || categoryStr.includes('theater') || /\btheatre\b|\btheater\b/.test(haystack)) return 'theater';
-  if (categoryStr.includes('sport')) return 'sports';
+  // BUG FIX (2026-10-01, found live): this used to be just
+  // `categoryStr.includes('sport')`, but Ticketmaster's stored `category`
+  // for a game is the specific league/sport name (storeEvent in
+  // ticketmaster.js prefers subGenre/genre over the generic "Sports"
+  // segment — e.g. "Hockey", "Basketball", "Soccer"), which never contains
+  // the literal word "sport". A minor/junior-league team (USHL's "Madison
+  // Capitols vs. Green Bay Gamblers", etc.) also isn't in any of the
+  // NBA_TEAMS/NFL_TEAMS/NHL_TEAMS/MLB_TEAMS/MLS_TEAMS rosters checked
+  // above, so those games fell through every check here and landed on the
+  // 'concerts' catch-all — showing a "Concert" badge and concert photo on
+  // what was clearly a hockey game. Catch any sport-named category (or
+  // obvious sport keyword/matchup phrasing in the title) here, before
+  // giving up and assuming it's a concert.
+  if (
+    categoryStr.includes('sport') ||
+    /\bhockey\b|\bbasketball\b|\bfootball\b|\bbaseball\b|\bsoccer\b|\btennis\b|\bgolf\b|\bwrestling\b|\bmma\b|\bmixed martial arts\b|\bmotorsport\b|\bmotocross\b|\bracing\b|\brugby\b|\blacrosse\b|\bcricket\b|\bvolleyball\b|\bskating\b|\bgymnastics\b/.test(categoryStr) ||
+    /\bvs\.?\b/i.test(event.title || '')
+  ) return 'sports';
   return 'concerts';
 }
 
