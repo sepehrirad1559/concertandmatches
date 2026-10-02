@@ -512,7 +512,14 @@ router.get('/', async (req, res) => {
     // never for an ordinary visitor). Safe to remove once the underlying
     // bug is found and fixed.
     if (!res.headersSent && req.query.debug === '1' && req.headers['x-sync-key'] && req.headers['x-sync-key'] === process.env.SYNC_SECRET_KEY) {
-      return res.status(500).json({ canonicalError: String(error.message || error), stack: String(error.stack || '').slice(0, 2000) });
+      return res.status(500).json({
+        canonicalError: String(error.message || error),
+        stack: String(error.stack || '').slice(0, 2000),
+        position: error.position || null,
+        code: error.code || null,
+        detail: error.detail || null,
+        hint: error.hint || null,
+      });
     }
     if (res.headersSent) return;
   }
