@@ -499,30 +499,6 @@ router.get('/', async (req, res) => {
     console.error('Canonical listing query failed, falling back to raw events table:', error);
     canonicalLayerState.populated = false;
     canonicalLayerState.checkedAt = Date.now();
-    // TEMPORARY DIAGNOSTIC (2026-10-02): the canonical path has been
-    // silently falling back to the raw (MAX_RAW_ROWS-capped) implementation
-    // on every request with lat/lng, with no visibility into why from
-    // outside the server process (console.error only reaches Railway's own
-    // log viewer). A custom response HEADER was tried first but a
-    // cross-origin fetch() from the frontend's own origin can't read it
-    // without Access-Control-Expose-Headers, which this API doesn't set —
-    // so this responds with the error directly in the JSON body instead
-    // (gated on SYNC_SECRET_KEY + an explicit ?debug=1, so it only ever
-    // replaces the normal response for someone actively debugging this,
-    // never for an ordinary visitor). Safe to remove once the underlying
-    // bug is found and fixed.
-    if (!res.headersSent && req.query.debug === '1' && req.headers['x-sync-key'] && req.headers['x-sync-key'] === process.env.SYNC_SECRET_KEY) {
-      return res.status(500).json({
-        canonicalError: String(error.message || error),
-        stack: String(error.stack || '').slice(0, 2000),
-        position: error.position || null,
-        code: error.code || null,
-        detail: error.detail || null,
-        hint: error.hint || null,
-        debugQuery: error.debugQuery || null,
-        debugListParams: error.debugListParams || null,
-      });
-    }
     if (res.headersSent) return;
   }
   if (!served) {
@@ -865,32 +841,51 @@ async function listEventsFromCanonicalLayer(req, res) {
   // updated_at are the CANONICAL row's timestamps (when the derived layer
   // was last rebuilt), not the raw row's — the fields are still present so
   // nothing breaks, but nothing in the frontend reads them.
+  // BUG FIX (2026-10-02, found live via the ?debug=1 diagnostic): Postgres
+  // only lets ORDER BY resolve a bare output-list alias (`ORDER BY
+  // distance_km`, `ORDER BY offer_count DESC` — both fine on their own).
+  // The moment an alias is used INSIDE a larger expression — exactly what
+  // `FLOOR(distance_km / ${LOCATION_DATE_BUCKET_KM})` does below — Postgres
+  // stops treating it as the output column and instead tries to resolve
+  // `distance_km` against the FROM-clause's real columns, where it doesn't
+  // exist (it's a computed expression, not an actual canonical_events
+  // column) — hence "column distance_km does not exist" (42703) on every
+  // location-aware request, which is why every search with a lat/lng was
+  // silently falling back to the old MAX_RAW_ROWS-capped implementation.
+  // Fixed by wrapping the inner SELECT in one more derived-table layer
+  // (`cols` below): once distance_km/offer_count/sort_best_price are
+  // columns of an actual FROM-clause relation rather than just this
+  // query's own output list, ORDER BY can freely use them inside any
+  // expression, the same way the already-correct outer `page.distance_km`
+  // qualification always could.
   const query = `
     SELECT page.*, COALESCE(offer_list.offers, '[]'::json) AS offers
     FROM (
-      SELECT
-        ce.id AS canonical_event_id,
-        ce.primary_event_row_id AS id,
-        ce.title,
-        ce.description,
-        ce.category,
-        ce.event_date AS "date",
-        ce.country,
-        ce.state,
-        ce.city,
-        ce.venue_name,
-        ce.venue_address,
-        ce.image_url,
-        ce.artist_name,
-        ce.latitude,
-        ce.longitude,
-        ce.price_breakdown,
-        ce.created_at,
-        ce.updated_at,
-        ${offerCountSql} AS offer_count,
-        ${bestPriceSql} AS sort_best_price${distanceSelect}
-      FROM canonical_events ce
-      ${whereClause}
+      SELECT * FROM (
+        SELECT
+          ce.id AS canonical_event_id,
+          ce.primary_event_row_id AS id,
+          ce.title,
+          ce.description,
+          ce.category,
+          ce.event_date AS "date",
+          ce.country,
+          ce.state,
+          ce.city,
+          ce.venue_name,
+          ce.venue_address,
+          ce.image_url,
+          ce.artist_name,
+          ce.latitude,
+          ce.longitude,
+          ce.price_breakdown,
+          ce.created_at,
+          ce.updated_at,
+          ${offerCountSql} AS offer_count,
+          ${bestPriceSql} AS sort_best_price${distanceSelect}
+        FROM canonical_events ce
+        ${whereClause}
+      ) cols
       ORDER BY ${innerOrderBy}
       LIMIT $${limitParam} OFFSET $${offsetParam}
     ) page
@@ -960,22 +955,10 @@ async function listEventsFromCanonicalLayer(req, res) {
   // zero-placeholder case needs the empty array instead.
   const countParams = whereClause.includes('$') ? params : [];
 
-  let pageResult, countResult;
-  try {
-    [pageResult, countResult] = await Promise.all([
-      pool.query(query, listParams),
-      pool.query(countQuery, countParams),
-    ]);
-  } catch (error) {
-    // TEMPORARY DIAGNOSTIC (2026-10-02): attach the actual generated SQL so
-    // the debug response in the router handler above can show it verbatim
-    // instead of requiring the position/detail fields to be hand-decoded
-    // against the (long, template-built) query string. Safe to remove once
-    // the underlying bug is found and fixed.
-    error.debugQuery = query;
-    error.debugListParams = listParams;
-    throw error;
-  }
+  const [pageResult, countResult] = await Promise.all([
+    pool.query(query, listParams),
+    pool.query(countQuery, countParams),
+  ]);
 
   const total = countResult.rows[0] ? countResult.rows[0].total : 0;
 
