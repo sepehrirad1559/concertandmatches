@@ -272,7 +272,9 @@ function compareEvents(a, b, effectiveSort) {
 // NHL row stuck on one arena's whole season instead of showing the soonest
 // NHL games nearby). Bucketed the same way: comparably-near events (same
 // LOCATION_DATE_BUCKET_KM band) now compete on retailer-count/date instead
-// of losing outright to a handful of meters.
+// of losing outright to a handful of meters. (LOCATION_DATE_BUCKET_KM is
+// declared just below this function, but that's fine — this function only
+// runs after the whole module has finished loading.)
 function applyLocationRetailerOrder(events, hasCoords) {
   const distanceOf = (e) => (e.distance_km != null ? e.distance_km : Infinity);
   const bucketOf = (e) => {
@@ -285,11 +287,23 @@ function applyLocationRetailerOrder(events, hasCoords) {
       const bucketDiff = bucketOf(a) - bucketOf(b);
       if (bucketDiff !== 0) return bucketDiff;
     }
+    // FOLLOW-UP BUG FIX (2026-10-02, found live): this comparator used to put
+    // retailer-count ahead of date as the within-bucket tiebreak, which is
+    // the exact failure mode applyLocationDateOrder's comment above (and the
+    // canonical-layer SQL ORDER BY below) already documents and avoids — a
+    // far-future event with more listed sellers (e.g. Oct 30/31) was jumping
+    // ahead of a much-sooner event at a near-identical distance (e.g. Oct 2,
+    // both "11 mi away"), because within the same ~15-mile band the OLD code
+    // compared retailer count before date. Swapped so date is the tiebreak
+    // immediately after distance-bucket, matching applyLocationDateOrder and
+    // the canonical SQL's `event_date ASC` before `offer_count DESC`; retailer
+    // count now only breaks a tie between events on the SAME date in the SAME
+    // band, and exact distance remains the final tiebreak.
+    const dateDiff = new Date(a.date) - new Date(b.date);
+    if (dateDiff !== 0) return dateDiff;
     const retailersA = (a.offers || []).length;
     const retailersB = (b.offers || []).length;
     if (retailersB !== retailersA) return retailersB - retailersA;
-    const dateDiff = new Date(a.date) - new Date(b.date);
-    if (dateDiff !== 0) return dateDiff;
     return distanceOf(a) - distanceOf(b);
   });
 }
