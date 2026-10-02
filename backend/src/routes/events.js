@@ -293,13 +293,39 @@ function applyLocationRetailerOrder(events, hasCoords) {
 // visitor's location is known, but the tiebreak is soonest-date, never
 // retailer count — so events at a similar distance always read
 // chronologically instead of jumping around.
+//
+// BUG FIX (2026-10-02, found live): comparing raw distance_km floats as the
+// primary key made distance effectively ABSOLUTE, not just "primary" — two
+// events are only ever "tied" if they're at the exact same venue (identical
+// lat/lng), so the date tiebreak almost never fired. In production this
+// meant a single nearby venue with a packed multi-month schedule (a minor-
+// league hockey arena 6 miles out with games into January) completely
+// buried every other nearby event — including ones happening tomorrow 11
+// miles away — because 6.0 km < 11.0 km always wins outright, however far
+// out the 6-mile event's date is. "Closest by distance and closest by
+// date" has to mean both actually matter, not distance-then-date as two
+// strictly separate sort passes. Fix: bucket distance into ~15-mile
+// (24km) bands first — events within the same band are "comparably
+// near" — then sort by date within a band, and only fall back to exact
+// distance as the final tiebreak. A event 11 miles out and one 6 miles out
+// land in the same near band and now compete on date; a genuinely distant
+// event (different band) still loses to a closer one regardless of date.
+const LOCATION_DATE_BUCKET_KM = 24; // ~15 miles
+
 function applyLocationDateOrder(events, hasCoords) {
   const distanceOf = (e) => (e.distance_km != null ? e.distance_km : Infinity);
+  const bucketOf = (e) => {
+    const d = distanceOf(e);
+    return Number.isFinite(d) ? Math.floor(d / LOCATION_DATE_BUCKET_KM) : Infinity;
+  };
 
   return events.slice().sort((a, b) => {
     if (hasCoords) {
-      const d = distanceOf(a) - distanceOf(b);
-      if (d !== 0) return d;
+      const bucketDiff = bucketOf(a) - bucketOf(b);
+      if (bucketDiff !== 0) return bucketDiff;
+      const dateDiff = new Date(a.date) - new Date(b.date);
+      if (dateDiff !== 0) return dateDiff;
+      return distanceOf(a) - distanceOf(b);
     }
     return new Date(a.date) - new Date(b.date);
   });
