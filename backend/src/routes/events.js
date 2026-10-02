@@ -499,6 +499,18 @@ router.get('/', async (req, res) => {
     console.error('Canonical listing query failed, falling back to raw events table:', error);
     canonicalLayerState.populated = false;
     canonicalLayerState.checkedAt = Date.now();
+    // TEMPORARY DIAGNOSTIC (2026-10-02): the canonical path has been
+    // silently falling back to the raw (MAX_RAW_ROWS-capped) implementation
+    // on every request with lat/lng, with no visibility into why from
+    // outside the server process (console.error only reaches Railway's own
+    // log viewer). Surfacing the real Postgres error back to whoever is
+    // debugging this — gated on the same SYNC_SECRET_KEY every other admin
+    // action requires, so it's never exposed to ordinary visitors — avoids
+    // needing a working shell into the container just to read one error
+    // message. Safe to remove once the underlying bug is found and fixed.
+    if (!res.headersSent && req.headers['x-sync-key'] && req.headers['x-sync-key'] === process.env.SYNC_SECRET_KEY) {
+      res.set('X-Canonical-Error', String(error.message || error).slice(0, 500));
+    }
     if (res.headersSent) return;
   }
   if (!served) {
