@@ -2660,13 +2660,47 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDatesPicker]);
 
-  const handleSearchSubmit = (e) => {
+  // BUG FIX (2026-10-02, found live): typing a ZIP code into this search
+  // bar's Location field returned zero results, always. draftLocation was
+  // sent straight to the backend as `activeLocation`, which does a plain
+  // ILIKE text match against city/state/venue_name (see events.js) — a
+  // 5-digit ZIP never appears in any of those columns, so the query matched
+  // nothing no matter how popular the area actually was. (Separately, the
+  // homepage's OWN "near me" ZIP widget — handleZipSubmit above — already
+  // resolved ZIPs correctly via resolveZipLocation; this search bar is a
+  // different input that never called it.)
+  //
+  // Fix: if what was typed is a 5-digit US ZIP, resolve it the same way
+  // handleZipSubmit does (zippopotam.us) to get a real city/state/lat/lng,
+  // then (a) use the resolved "City, ST" as the text filter so the existing
+  // ILIKE match actually hits real rows, and (b) feed the resolved lat/lng
+  // into discoverLocation so results are also sorted by real distance from
+  // that ZIP, exactly like the "near me" widget does. A ZIP that fails to
+  // resolve (bad/foreign ZIP) falls back to the old plain-text behavior
+  // rather than blocking the search entirely.
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
+    const trimmedLocation = draftLocation.trim();
     setActiveSearch(searchInput.trim());
-    setActiveLocation(draftLocation.trim());
     setActiveStartDate(draftStartDate);
     setActiveEndDate(draftEndDate);
     setShowAutocomplete(false);
+
+    if (/^\d{5}$/.test(trimmedLocation)) {
+      try {
+        const loc = await resolveZipLocation(trimmedLocation);
+        setActiveLocation([loc.city, loc.state].filter(Boolean).join(', '));
+        setDiscoverLocation(loc);
+        saveCachedLocation(loc);
+      } catch (_err) {
+        // Unresolvable ZIP — fall back to the raw text so the search still
+        // runs (and still returns zero results, but no worse than before).
+        setActiveLocation(trimmedLocation);
+      }
+    } else {
+      setActiveLocation(trimmedLocation);
+    }
+
     // Same behavior as clicking a category tile (see CategoryTiles above):
     // the search results land in the Featured Events grid further down the
     // page, so jump there — otherwise a customer who searches from up near

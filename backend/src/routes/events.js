@@ -264,18 +264,33 @@ function compareEvents(a, b, effectiveSort) {
 // distance-then-retailer-count-then-date is all this does now.
 // Applied only for category-scoped views, not the unfiltered homepage/
 // browse list — "for each category" is the requested scope.
+// BUG FIX (2026-10-02, found live): same root cause as applyLocationDateOrder
+// below — comparing raw distance_km as the primary key made distance
+// effectively ABSOLUTE (two events are only "tied" at identical lat/lng), so
+// a single nearby venue with a packed schedule could bury every genuinely
+// sooner event at a slightly different distance in a category row (e.g. the
+// NHL row stuck on one arena's whole season instead of showing the soonest
+// NHL games nearby). Bucketed the same way: comparably-near events (same
+// LOCATION_DATE_BUCKET_KM band) now compete on retailer-count/date instead
+// of losing outright to a handful of meters.
 function applyLocationRetailerOrder(events, hasCoords) {
   const distanceOf = (e) => (e.distance_km != null ? e.distance_km : Infinity);
+  const bucketOf = (e) => {
+    const d = distanceOf(e);
+    return Number.isFinite(d) ? Math.floor(d / LOCATION_DATE_BUCKET_KM) : Infinity;
+  };
 
   return events.slice().sort((a, b) => {
     if (hasCoords) {
-      const d = distanceOf(a) - distanceOf(b);
-      if (d !== 0) return d;
+      const bucketDiff = bucketOf(a) - bucketOf(b);
+      if (bucketDiff !== 0) return bucketDiff;
     }
     const retailersA = (a.offers || []).length;
     const retailersB = (b.offers || []).length;
     if (retailersB !== retailersA) return retailersB - retailersA;
-    return new Date(a.date) - new Date(b.date);
+    const dateDiff = new Date(a.date) - new Date(b.date);
+    if (dateDiff !== 0) return dateDiff;
+    return distanceOf(a) - distanceOf(b);
   });
 }
 
@@ -737,14 +752,32 @@ async function listEventsFromCanonicalLayer(req, res) {
   // result of the offers join. Repeating it is not redundant — a subquery's
   // ordering is not guaranteed to survive being joined to, so the outer
   // ORDER BY is what actually guarantees the response order.
+  // BUG FIX (2026-10-02, found live): this default-view ordering used to put
+  // `distance_km ASC` ahead of date with nothing bucketing it first — the
+  // exact same bug fixed in applyLocationRetailerOrder/applyLocationDateOrder
+  // above, just reproduced in SQL for the canonical-layer listing (the path
+  // that actually serves GET / once the canonical layer is populated, which
+  // it is in production). Two events are only "tied" on distance_km if
+  // they're at the literal same lat/lng, so the date/offer-count tiebreaks
+  // almost never fired — a single close-by venue with a long schedule could
+  // bury every other nearby event regardless of how soon it was. Bucketed
+  // into the same ~15-mile (LOCATION_DATE_BUCKET_KM) bands as the JS
+  // comparators, with event_date now the tiebreak within a band, offer_count
+  // after that, and exact distance_km as the final tiebreak.
   const orderSpecs = [];
   if (!sort) {
-    // Standing rule for every default listing view: closest first (strictly,
-    // across all retailers), then — only among events at the exact same
-    // distance — the ones listed by more retailers, then soonest.
-    if (hasLocation) orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
-    orderSpecs.push(['offer_count DESC', 'page.offer_count DESC']);
-    orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+    if (hasLocation) {
+      orderSpecs.push([
+        `FLOOR(distance_km / ${LOCATION_DATE_BUCKET_KM}) ASC NULLS LAST`,
+        `FLOOR(page.distance_km / ${LOCATION_DATE_BUCKET_KM}) ASC NULLS LAST`,
+      ]);
+      orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+      orderSpecs.push(['offer_count DESC', 'page.offer_count DESC']);
+      orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
+    } else {
+      orderSpecs.push(['offer_count DESC', 'page.offer_count DESC']);
+      orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+    }
   } else if (effectiveSort === 'distance' && hasLocation) {
     orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
     // Distance is the primary key; soonest-date-first is the tiebreaker for
