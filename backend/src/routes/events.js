@@ -503,13 +503,16 @@ router.get('/', async (req, res) => {
     // silently falling back to the raw (MAX_RAW_ROWS-capped) implementation
     // on every request with lat/lng, with no visibility into why from
     // outside the server process (console.error only reaches Railway's own
-    // log viewer). Surfacing the real Postgres error back to whoever is
-    // debugging this — gated on the same SYNC_SECRET_KEY every other admin
-    // action requires, so it's never exposed to ordinary visitors — avoids
-    // needing a working shell into the container just to read one error
-    // message. Safe to remove once the underlying bug is found and fixed.
-    if (!res.headersSent && req.headers['x-sync-key'] && req.headers['x-sync-key'] === process.env.SYNC_SECRET_KEY) {
-      res.set('X-Canonical-Error', String(error.message || error).slice(0, 500));
+    // log viewer). A custom response HEADER was tried first but a
+    // cross-origin fetch() from the frontend's own origin can't read it
+    // without Access-Control-Expose-Headers, which this API doesn't set —
+    // so this responds with the error directly in the JSON body instead
+    // (gated on SYNC_SECRET_KEY + an explicit ?debug=1, so it only ever
+    // replaces the normal response for someone actively debugging this,
+    // never for an ordinary visitor). Safe to remove once the underlying
+    // bug is found and fixed.
+    if (!res.headersSent && req.query.debug === '1' && req.headers['x-sync-key'] && req.headers['x-sync-key'] === process.env.SYNC_SECRET_KEY) {
+      return res.status(500).json({ canonicalError: String(error.message || error), stack: String(error.stack || '').slice(0, 2000) });
     }
     if (res.headersSent) return;
   }
