@@ -2670,13 +2670,22 @@ export default function App() {
   // resolved ZIPs correctly via resolveZipLocation; this search bar is a
   // different input that never called it.)
   //
-  // Fix: if what was typed is a 5-digit US ZIP, resolve it the same way
-  // handleZipSubmit does (zippopotam.us) to get a real city/state/lat/lng,
-  // then (a) use the resolved "City, ST" as the text filter so the existing
-  // ILIKE match actually hits real rows, and (b) feed the resolved lat/lng
-  // into discoverLocation so results are also sorted by real distance from
-  // that ZIP, exactly like the "near me" widget does. A ZIP that fails to
-  // resolve (bad/foreign ZIP) falls back to the old plain-text behavior
+  // FOLLOW-UP BUG FIX (2026-10-02, found live): the first fix resolved the
+  // ZIP to a real city/state via resolveZipLocation, but then used that
+  // resolved "City, ST" as the `activeLocation` text filter — and the
+  // backend ANDs every token of that filter against city/state/venue_name
+  // (see events.js's locationTokens loop), so it ONLY matches rows whose
+  // city column is that *exact* small town. A ZIP in a town with no listed
+  // events of its own (e.g. 53590 → "Sun Prairie, WI") still came back with
+  // zero results, even though a major venue-filled city (Madison) was 10
+  // miles away. A ZIP search should mean "events near here", not "events
+  // whose city column literally says this town's name" — that's exactly
+  // what the distance-bucketed sort (discoverLocation) is already for. Fix:
+  // stop setting activeLocation from a resolved ZIP at all. Only feed the
+  // resolved lat/lng into discoverLocation, so results are sorted nearest-
+  // first from that ZIP (same as the "near me" widget) with no restrictive
+  // text filter narrowing them out first. A ZIP that fails to resolve (bad/
+  // foreign ZIP) still falls back to the old plain-text filter behavior
   // rather than blocking the search entirely.
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
@@ -2689,7 +2698,7 @@ export default function App() {
     if (/^\d{5}$/.test(trimmedLocation)) {
       try {
         const loc = await resolveZipLocation(trimmedLocation);
-        setActiveLocation([loc.city, loc.state].filter(Boolean).join(', '));
+        setActiveLocation('');
         setDiscoverLocation(loc);
         saveCachedLocation(loc);
       } catch (_err) {
