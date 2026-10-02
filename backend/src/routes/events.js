@@ -519,6 +519,8 @@ router.get('/', async (req, res) => {
         code: error.code || null,
         detail: error.detail || null,
         hint: error.hint || null,
+        debugQuery: error.debugQuery || null,
+        debugListParams: error.debugListParams || null,
       });
     }
     if (res.headersSent) return;
@@ -958,10 +960,22 @@ async function listEventsFromCanonicalLayer(req, res) {
   // zero-placeholder case needs the empty array instead.
   const countParams = whereClause.includes('$') ? params : [];
 
-  const [pageResult, countResult] = await Promise.all([
-    pool.query(query, listParams),
-    pool.query(countQuery, countParams),
-  ]);
+  let pageResult, countResult;
+  try {
+    [pageResult, countResult] = await Promise.all([
+      pool.query(query, listParams),
+      pool.query(countQuery, countParams),
+    ]);
+  } catch (error) {
+    // TEMPORARY DIAGNOSTIC (2026-10-02): attach the actual generated SQL so
+    // the debug response in the router handler above can show it verbatim
+    // instead of requiring the position/detail fields to be hand-decoded
+    // against the (long, template-built) query string. Safe to remove once
+    // the underlying bug is found and fixed.
+    error.debugQuery = query;
+    error.debugListParams = listParams;
+    throw error;
+  }
 
   const total = countResult.rows[0] ? countResult.rows[0].total : 0;
 
