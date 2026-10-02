@@ -778,6 +778,14 @@ async function listEventsFromCanonicalLayer(req, res) {
   // into the same ~15-mile (LOCATION_DATE_BUCKET_KM) bands as the JS
   // comparators, with event_date now the tiebreak within a band, offer_count
   // after that, and exact distance_km as the final tiebreak.
+  // NOTE (2026-10-02, part of the same fix): the inner form of every entry
+  // below runs in the outer ORDER BY of the `cols` derived table (see the
+  // BUG FIX comment further down), not inside the `ce`-scoped SELECT itself
+  // — so these must reference `cols`' own OUTPUT column names ("date",
+  // title, canonical_event_id, ...), never `ce.`-qualified ones. `ce` is
+  // out of scope at that point and a `ce.`-qualified reference there fails
+  // with "missing FROM-clause entry for table ce" (confirmed live: this
+  // broke EVERY request, not just location ones, when first introduced).
   const orderSpecs = [];
   if (!sort) {
     if (hasLocation) {
@@ -785,30 +793,30 @@ async function listEventsFromCanonicalLayer(req, res) {
         `FLOOR(distance_km / ${LOCATION_DATE_BUCKET_KM}) ASC NULLS LAST`,
         `FLOOR(page.distance_km / ${LOCATION_DATE_BUCKET_KM}) ASC NULLS LAST`,
       ]);
-      orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+      orderSpecs.push(['"date" ASC', 'page."date" ASC']);
       orderSpecs.push(['offer_count DESC', 'page.offer_count DESC']);
       orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
     } else {
       orderSpecs.push(['offer_count DESC', 'page.offer_count DESC']);
-      orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+      orderSpecs.push(['"date" ASC', 'page."date" ASC']);
     }
   } else if (effectiveSort === 'distance' && hasLocation) {
     orderSpecs.push(['distance_km ASC NULLS LAST', 'page.distance_km ASC NULLS LAST']);
     // Distance is the primary key; soonest-date-first is the tiebreaker for
     // events at (or effectively at) the same distance — see compareEvents'
     // matching logic in the raw-table fallback path above for why.
-    orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+    orderSpecs.push(['"date" ASC', 'page."date" ASC']);
   } else if (effectiveSort === 'price-low') {
     orderSpecs.push(['sort_best_price ASC NULLS LAST', 'page.sort_best_price ASC NULLS LAST']);
   } else if (effectiveSort === 'price-high') {
     orderSpecs.push(['sort_best_price DESC NULLS LAST', 'page.sort_best_price DESC NULLS LAST']);
   } else if (effectiveSort === 'name') {
-    orderSpecs.push(['ce.title ASC', 'page.title ASC']);
+    orderSpecs.push(['title ASC', 'page.title ASC']);
   } else {
     // 'date', an unrecognized sort value, or ?sort=distance with no
     // coordinates — all of which the JS comparator resolved to (or degraded
     // into) plain date-ascending.
-    orderSpecs.push(['ce.event_date ASC', 'page."date" ASC']);
+    orderSpecs.push(['"date" ASC', 'page."date" ASC']);
   }
   // Deterministic final tiebreak. The JS comparators returned 0 for ties and
   // relied on the surrounding array's incidental order, which was harmless
@@ -817,7 +825,7 @@ async function listEventsFromCanonicalLayer(req, res) {
   // both page 1 and page 2 (or on neither), so the ordering has to be a
   // total order. canonical_events.id is used purely as that tiebreak and is
   // never exposed in the response.
-  orderSpecs.push(['ce.id ASC', 'page.canonical_event_id ASC']);
+  orderSpecs.push(['canonical_event_id ASC', 'page.canonical_event_id ASC']);
   const innerOrderBy = orderSpecs.map(([inner]) => inner).join(', ');
   const outerOrderBy = orderSpecs.map(([, outer]) => outer).join(', ');
 
