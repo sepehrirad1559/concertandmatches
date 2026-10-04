@@ -42,7 +42,7 @@ import { logProviderSync } from './utils/syncLog.js';
 // POST /admin/sync|backfill/seatgeek routes are still left in place —
 // unused, not deleted — so re-enabling it later is the same small change as
 // this one was, not rebuilding the integration from scratch.
-import { syncClosestEvents as syncClosestTicketmasterEvents, backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
+import { syncAllEvents as syncAllTicketmasterEvents, backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
 import { rebuildCanonicalEvents } from './services/canonicalize.js';
 
 // TicketNetwork catalog sync (Impact.com affiliate feed) — services/
@@ -205,20 +205,49 @@ console.log(`📦 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.
 const EVENT_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 async function runScheduledEventSync() {
-console.log('🔄 Running scheduled Ticketmaster sync (worldwide, closest 5,000 by date)...');
+// Switched from the bounded syncClosestTicketmasterEvents(5000) to the full
+// syncAllTicketmasterEvents() (2026-10-04, user request: "Ticketmaster
+// inventory is way more than this number in our website... find the real
+// problem and fix it and add all the events available from Ticketmaster").
+//
+// Root cause found in the admin dashboard's Provider Health table: the
+// daily 'closest-by-date' run had stalled to receiving ~1 new event/day.
+// syncClosestEvents cursors forward off MAX(date) already stored for
+// Ticketmaster and only ever fetches events AFTER that cursor — so once the
+// cursor outran the pace of real-world announcements, it stopped seeing
+// anything new. Critically, it also never looks BACKWARD: when Ticketmaster
+// announces a new event for a date earlier than the current cursor (which
+// happens constantly — a show next month goes on sale today, long after
+// the cursor has already moved years out), the cursored sync structurally
+// can never find it, no matter how many days it runs. That's the actual gap
+// between the dashboard's small Ticketmaster number and Ticketmaster's real
+// inventory, not a filter anywhere in storage/canonicalization/the API.
+//
+// syncAllTicketmasterEvents() doesn't cursor — every run re-queries the
+// full worldwide, every-segment, 9-months-ahead window from "now" and
+// upserts on external_id (see storeEvent), so it naturally re-discovers
+// newly announced near-term events instead of only ever moving forward.
+// This is the same comprehensive pull previously only run manually via
+// POST /admin/sync/ticketmaster (see that route's 'discovery' logging,
+// matched here so both paths show up the same way on the dashboard) — it
+// can take a while (many minutes, occasionally longer under heavy API
+// load), which is fine here since this already runs as a backgrounded job
+// with its own concurrency guard (isEventSyncRunning above), not an
+// HTTP-triggered request under Railway's proxy timeout.
+console.log('🔄 Running scheduled Ticketmaster sync (full worldwide catalog, every segment)...');
 let startedAt = new Date();
 try {
-  const tmResult = await syncClosestTicketmasterEvents(5000);
+  const tmResult = await syncAllTicketmasterEvents();
   console.log('Ticketmaster sync result:', tmResult);
   await logProviderSync({
-    providerName: 'ticketmaster', syncType: 'closest-by-date', startedAt, finishedAt: new Date(),
-    recordsReceived: tmResult.totalStored ?? null,
+    providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: tmResult.totalEvents ?? null,
     status: tmResult.success ? 'success' : 'error',
     errorMessage: tmResult.error ?? (tmResult.apiErrorCount > 0 ? `${tmResult.apiErrorCount} API error(s): ${JSON.stringify(tmResult.sampleApiErrors)}` : null),
   });
 } catch (err) {
   console.error('Ticketmaster sync failed:', err);
-  await logProviderSync({ providerName: 'ticketmaster', syncType: 'closest-by-date', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+  await logProviderSync({ providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
 
 console.log('🔄 Backfilling Ticketmaster prices...');
