@@ -1915,6 +1915,26 @@ function Footer({ onGoHome, onSelectCategory, onBrowseSports }) {
           <button type="button" className="cm-link-underline" style={linkStyle} onClick={() => onSelectCategory('theater', 'Comedy')}>Comedy</button>
         </div>
 
+        {/* Browse Events — real crawlable links into the programmatic SEO
+            page system (routes/seoPages.js on the backend, proxied in
+            vercel.json). Nothing else on the homepage links into /cities,
+            /artists, /venues, /teams, or /leagues — the city/venue tile
+            pickers above only filter this page's own event list in place
+            and never navigate there, so without this column those pages
+            have no crawlable path in from the site's highest-authority
+            page and were going undiscovered. Each hub page in turn links
+            on to every individual city/artist/venue/team/league page
+            (already true in seoPages.js), so this one entry point is
+            enough to open up the whole subsystem. */}
+        <div>
+          <div style={columnHeadingStyle}>Browse Events</div>
+          <a href="/cities" className="cm-link-underline" style={linkStyle}>Concerts Near Me / By City</a>
+          <a href="/artists" className="cm-link-underline" style={linkStyle}>By Artist</a>
+          <a href="/venues" className="cm-link-underline" style={linkStyle}>By Venue</a>
+          <a href="/teams" className="cm-link-underline" style={linkStyle}>By Team</a>
+          <a href="/leagues" className="cm-link-underline" style={linkStyle}>By League</a>
+        </div>
+
         {/* About */}
         <div>
           <div style={columnHeadingStyle}>About</div>
