@@ -456,6 +456,34 @@ export const storeEvent = async (tmEvent) => {
     const image = images?.[0]?.url || null;
     const sourceUrl = trackedTicketmasterLink(url);
 
+    // Artist/performer name (2026-10-06, found while investigating why
+    // /guide pages showed 0 results: canonical_events.artist_name was 0/222,589
+    // populated, which traced back here — this INSERT never captured it at
+    // all, for ANY source, so canonicalize.js had nothing to copy forward).
+    // Ticketmaster's Discovery API reports the performing artist/team(s) as
+    // `_embedded.attractions` (a separate array from `_embedded.venues`), one
+    // entry per performer — e.g. a co-headlining show or a sports matchup can
+    // have more than one. Joining every attraction name covers both cases;
+    // when Ticketmaster reports no attractions at all (seen on some
+    // Miscellaneous/Film listings), fall back to the event title itself
+    // rather than leaving this null, since the title is often the artist/
+    // show name anyway (e.g. "Jack White", "The Wiz") and a guide page can
+    // still be built around it.
+    const attractionNames = Array.isArray(_embedded?.attractions)
+      ? _embedded.attractions.map((a) => a?.name).filter(Boolean)
+      : [];
+    // Kept separate from the title-fallback used below: Ticketmaster's bulk
+    // discovery/search endpoint (what every sync in this file hits) is known
+    // to omit embedded sub-objects sometimes even when the per-event detail
+    // endpoint has them (see the min_price/COALESCE comment above this same
+    // function for the identical pattern with priceRanges) — so a resync
+    // that happens to come back with no `_embedded.attractions` must NOT be
+    // allowed to clobber a real attraction name an earlier sync already
+    // found. null (not a fallback value) here means "this call found
+    // nothing" — the UPDATE below only overwrites when this is non-null.
+    const attractionArtistName = attractionNames.length > 0 ? attractionNames.join(', ') : null;
+    const artistName = attractionArtistName || title || null;
+
     // Basic data-quality guard (spec §32): an event with no valid date is
     // useless for a comparison site — it can't be shown, sorted, or matched
     // against — so skip it rather than storing a broken row.
@@ -548,9 +576,10 @@ export const storeEvent = async (tmEvent) => {
          max_price = COALESCE($2, max_price),
          latitude = $3, longitude = $4,
          price_breakdown = COALESCE($5, price_breakdown),
+         artist_name = COALESCE($6, events.artist_name, $7),
          updated_at = NOW()
-         WHERE external_id = $6`,
-        [minPrice, maxPrice, latitude, longitude, priceBreakdown, id]
+         WHERE external_id = $8`,
+        [minPrice, maxPrice, latitude, longitude, priceBreakdown, attractionArtistName, title, id]
       );
       return existingEvent.rows[0].id;
     } else {
@@ -559,12 +588,12 @@ export const storeEvent = async (tmEvent) => {
         `INSERT INTO events (
           external_id, title, description, category, date, country, state, city,
           venue_name, venue_address, image_url, source, source_url, min_price, max_price,
-          latitude, longitude, price_breakdown
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+          latitude, longitude, price_breakdown, artist_name
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         RETURNING id`,
         [id, title, description || '', category, date, country, state, city,
          venueName, venue?.address?.address1 || '', image, 'ticketmaster', sourceUrl, minPrice, maxPrice,
-         latitude, longitude, priceBreakdown]
+         latitude, longitude, priceBreakdown, artistName]
       );
       return result.rows[0].id;
     }

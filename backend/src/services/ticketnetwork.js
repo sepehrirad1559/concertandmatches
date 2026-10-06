@@ -208,23 +208,33 @@ export const storeEvent = async (item) => {
          venue_name = $7, venue_address = $8, image_url = $9, source_url = $10,
          min_price = COALESCE($11, min_price), max_price = COALESCE($12, max_price),
          latitude = COALESCE(latitude, $13), longitude = COALESCE(longitude, $14),
+         artist_name = COALESCE(events.artist_name, $15),
          delisted_at = NULL, updated_at = NOW()
-         WHERE external_id = $15`,
+         WHERE external_id = $16`,
         [title, category, date, country, state, city, venueName, venueAddress,
-         imageUrl, sourceUrl, minPrice, maxPrice, latitude, longitude, externalId]
+         imageUrl, sourceUrl, minPrice, maxPrice, latitude, longitude, title, externalId]
       );
       return existingEvent.rows[0].id;
     } else {
+      // Artist name (2026-10-06, see ticketmaster.js's matching comment for
+      // the full story — this is the other half of why
+      // canonical_events.artist_name was 0/222,589). TicketNetwork's Impact.com
+      // catalog feed has no separate performer/attraction field (confirmed
+      // against admin.js's own field-mapping notes above and by inspecting
+      // live catalog items) — `Name` IS the show/event name, which for the
+      // vast majority of concert/sports/theater listings already is the
+      // artist or team name (e.g. "Jack White", "Sex Pistols"), so it's used
+      // directly rather than leaving this null.
       const result = await pool.query(
         `INSERT INTO events (
           external_id, title, description, category, date, country, state, city,
           venue_name, venue_address, image_url, source, source_url, min_price, max_price,
-          latitude, longitude
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+          latitude, longitude, artist_name
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING id`,
         [externalId, title, '', category, date, country, state, city,
          venueName, venueAddress, imageUrl, 'ticketnetwork', sourceUrl, minPrice, maxPrice,
-         latitude, longitude]
+         latitude, longitude, title]
       );
       return result.rows[0].id;
     }
