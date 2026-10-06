@@ -2213,4 +2213,53 @@ router.get('/diagnostics/first-events-seatgeek-match', requireAdminAccess, async
   }
 });
 
+// TEMPORARY diagnostic (added 2026-10-06, remove after use) — pinpoints
+// exactly which WHERE/HAVING clause of guides.js's topArtistCityCombos is
+// zeroing out every guide combo. Runs each stage of that query as its own
+// COUNT so the funnel is visible instead of guessing from the final 0.
+router.get('/diagnostics/guide-combo-funnel', requireAdminAccess, async (req, res) => {
+  try {
+    const [upcoming, withArtist, withCity, withNonOfficialPricedOffer, comboRows] = await Promise.all([
+      pool.query(`SELECT COUNT(*)::int AS count FROM canonical_events WHERE event_date >= NOW()`),
+      pool.query(`SELECT COUNT(*)::int AS count FROM canonical_events WHERE event_date >= NOW() AND artist_name IS NOT NULL AND artist_name != ''`),
+      pool.query(`SELECT COUNT(*)::int AS count FROM canonical_events WHERE event_date >= NOW() AND artist_name IS NOT NULL AND artist_name != '' AND city IS NOT NULL AND city != ''`),
+      pool.query(`
+        SELECT COUNT(DISTINCT ce.id)::int AS count
+        FROM canonical_events ce
+        JOIN ticket_offers t ON t.canonical_event_id = ce.id
+        JOIN providers p ON p.id = t.provider_id
+        WHERE ce.event_date >= NOW()
+          AND ce.artist_name IS NOT NULL AND ce.artist_name != ''
+          AND ce.city IS NOT NULL AND ce.city != ''
+          AND p.name != 'official'
+          AND t.price IS NOT NULL
+      `),
+      pool.query(`
+        SELECT ce.artist_name, ce.city, COUNT(DISTINCT p.name) AS source_count
+        FROM canonical_events ce
+        JOIN ticket_offers t ON t.canonical_event_id = ce.id
+        JOIN providers p ON p.id = t.provider_id
+        WHERE ce.event_date >= NOW()
+          AND ce.artist_name IS NOT NULL AND ce.artist_name != ''
+          AND ce.city IS NOT NULL AND ce.city != ''
+          AND p.name != 'official'
+          AND t.price IS NOT NULL
+        GROUP BY ce.artist_name, ce.city
+        ORDER BY source_count DESC
+        LIMIT 10
+      `),
+    ]);
+    res.json({
+      success: true,
+      upcomingCanonicalEvents: upcoming.rows[0].count,
+      withArtistName: withArtist.rows[0].count,
+      withArtistNameAndCity: withCity.rows[0].count,
+      withNonOfficialPricedOffer: withNonOfficialPricedOffer.rows[0].count,
+      topCombosSample: comboRows.rows,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
