@@ -51,8 +51,16 @@ function eventSlug(event) {
 }
 
 // Artist+city combos worth a dedicated guide page: at least one upcoming
-// event, and — the actual value proposition of this site — at least two
-// distinct non-official sources so there's a real price to compare.
+// event with a real price from at least one non-official, confirmed
+// seller. Used to require 2+ distinct sources (a real price to compare)
+// but the site's own catalog moved to being carried almost entirely by a
+// single source (TicketNetwork) after Ticketmaster/SeatGeek were dropped
+// as active sources — see sourceVisibility.js — so a 2-source floor left
+// this whole page system dormant (0 live guides) against the real
+// inventory. Lowered to 1+ (2026-10-06, user decision) to match the
+// site's current "list events fast" positioning rather than "compare
+// prices" — see eventsForArtistCity's render logic below for how the
+// page copy itself adapts between the single- and multi-seller cases.
 //
 // ROOT CAUSE (found 2026-09-11) of this returning 0 combos, permanently,
 // no matter how much inventory the site had: this used to GROUP BY the
@@ -99,7 +107,7 @@ async function topArtistCityCombos(limit = 300) {
       AND p.name != 'official'
       AND t.price IS NOT NULL
     GROUP BY ce.artist_name, ce.city, ce.state
-    HAVING COUNT(DISTINCT p.name) >= 2
+    HAVING COUNT(DISTINCT p.name) >= 1
     ORDER BY source_count DESC, row_count DESC
     LIMIT $1
   `, [limit]);
@@ -151,13 +159,13 @@ router.get('/guide', async (req, res) => {
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Ticket Price Guides by Artist & City | ConcertAndMatches</title>
-<meta name="description" content="Compare ticket prices across every upcoming show with more than one confirmed seller, organized by artist and city." />
+<title>Ticket Guides by Artist & City | ConcertAndMatches</title>
+<meta name="description" content="Find tickets, prices, and show dates for upcoming concerts, sports, and theater, organized by artist and city." />
 <link rel="canonical" href="https://www.concertandmatches.com/guide" />
 </head>
 <body>
-<h1>Ticket price guides</h1>
-<p>${items.length} artist/city guides, generated from currently listed shows with more than one confirmed ticket seller.</p>
+<h1>Ticket guides</h1>
+<p>${items.length} artist/city guides, generated from currently listed shows with at least one confirmed ticket seller.</p>
 <ul>${items.join('')}</ul>
 <p><a href="/">Back to ConcertAndMatches</a></p>
 </body>
@@ -196,9 +204,23 @@ router.get('/guide/:slug', async (req, res) => {
     }
 
     const cheapest = events.reduce((a, b) => (Number(a.best_price ?? Infinity) <= Number(b.best_price ?? Infinity) ? a : b));
-    const title = `Cheapest ${match.artist_name} Tickets in ${match.city}${match.state ? `, ${match.state}` : ''} — Compare Prices | ConcertAndMatches`;
-    const description = `Compare live ${match.artist_name} ticket prices in ${match.city} across every confirmed seller. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${Number(cheapest.best_price).toFixed(0)}.`;
     const url = `https://www.concertandmatches.com/guide/${xmlEscape(requested)}`;
+
+    // Multi- vs. single-seller wording (added 2026-10-06, alongside
+    // lowering topArtistCityCombos' source floor to 1+): with the catalog
+    // now carried almost entirely by one source (TicketNetwork), most
+    // guide pages have exactly one seller — saying "compare prices" on a
+    // page with one price is actively misleading, so every place that
+    // used to assume 2+ sellers now branches on the real count instead.
+    const sourceNames = [...new Set(events.flatMap((e) => e.offers.filter((o) => o.min_price != null).map((o) => o.source)))];
+    const isMultiSource = sourceNames.length >= 2;
+
+    const title = isMultiSource
+      ? `Cheapest ${match.artist_name} Tickets in ${match.city}${match.state ? `, ${match.state}` : ''} — Compare Prices | ConcertAndMatches`
+      : `${match.artist_name} Tickets in ${match.city}${match.state ? `, ${match.state}` : ''} — Dates & Prices | ConcertAndMatches`;
+    const description = isMultiSource
+      ? `Compare live ${match.artist_name} ticket prices in ${match.city} across every confirmed seller. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${Number(cheapest.best_price).toFixed(0)}.`
+      : `${match.artist_name} ticket prices and dates in ${match.city}. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${Number(cheapest.best_price).toFixed(0)}.`;
 
     // FAQ block (added 2026-10-06) — every answer is computed straight from
     // the same `events` data rendered in the table above, nothing
@@ -217,7 +239,6 @@ router.get('/guide/:slug', async (req, res) => {
       (max, e) => Math.max(max, ...e.offers.filter((o) => o.min_price != null).map((o) => Number(o.min_price))),
       Number(cheapest.best_price)
     );
-    const sourceNames = [...new Set(events.flatMap((e) => e.offers.filter((o) => o.min_price != null).map((o) => o.source)))];
     const faqs = [
       {
         q: `How much are ${match.artist_name} tickets in ${match.city}?`,
@@ -229,7 +250,9 @@ router.get('/guide/:slug', async (req, res) => {
       },
       {
         q: `Where can I buy ${match.artist_name} tickets in ${match.city}?`,
-        a: `This page compares live listings from ${sourceNames.join(', ')}. ConcertAndMatches links you through to buy directly on the seller's own site — we don't sell tickets ourselves.`,
+        a: isMultiSource
+          ? `This page compares live listings from ${sourceNames.join(', ')}. ConcertAndMatches links you through to buy directly on the seller's own site — we don't sell tickets ourselves.`
+          : `This page lists live availability from ${sourceNames[0] || 'a confirmed seller'}. ConcertAndMatches links you through to buy directly on the seller's own site — we don't sell tickets ourselves.`,
       },
     ];
     const faqJsonLd = {
@@ -293,7 +316,7 @@ router.get('/guide/:slug', async (req, res) => {
 <thead><tr><th>Date</th><th>Venue</th><th>Prices by seller</th><th></th></tr></thead>
 <tbody>${rows}</tbody>
 </table>
-<p>Prices update as sellers change theirs — always confirm the final price on the seller's site before buying. ConcertAndMatches doesn't sell tickets directly; we compare listings from authorized sellers and link you through to buy.</p>
+<p>Prices update as sellers change theirs — always confirm the final price on the seller's site before buying. ConcertAndMatches doesn't sell tickets directly; we list availability from authorized sellers and link you through to buy.</p>
 ${faqHtml}
 <p><a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches</a></p>
 </body>
