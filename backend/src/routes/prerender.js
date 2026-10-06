@@ -1,5 +1,6 @@
 import express from 'express';
 import { getMergedEventById } from './events.js';
+import { slugify as entitySlugify } from '../services/seoEngine.js';
 
 const router = express.Router();
 
@@ -158,6 +159,36 @@ router.get('/event/:pathParam', async (req, res) => {
       ? `<ul>${offers.map((o) => `<li>${xmlEscape(o.source)}${o.min_price != null ? `: from $${Number(o.min_price).toFixed(0)}` : ''}</li>`).join('')}</ul>`
       : '<p>No confirmed ticket seller yet — check back soon.</p>';
 
+    // Internal links up to the hub/collection pages (seoPages.js) — this
+    // event page previously had none at all, just a self-link, which left
+    // the ~15k individual event pages as crawl dead-ends with no path back
+    // into /artists, /cities, /venues. Each target page (getArtistPage/
+    // getCityPage/getVenuePage in seoEngine.js) is itself gated by an
+    // inventory/score "tier" so not every artist/city/venue clears the bar
+    // for its own page — these links can occasionally 404. That 404 is a
+    // clean, noindex page (seoPages.js: notFoundPage()), not a broken
+    // experience, and re-querying discoverArtists/discoverCities/
+    // discoverVenues (each scans up to 2000 scored rows) on every single
+    // event-page render to pre-validate every link would be a real cost for
+    // a soft benefit — so this accepts the occasional dead link rather than
+    // paying that tax on every page view.
+    const relatedLinks = [];
+    if (event.artist_name) {
+      relatedLinks.push(`<a href="/artists/${xmlEscape(entitySlugify(event.artist_name))}">More ${xmlEscape(event.artist_name)} tickets</a>`);
+    }
+    if (event.city) {
+      const citySlug = entitySlugify(`${event.city}-${event.state || ''}`);
+      relatedLinks.push(`<a href="/cities/${xmlEscape(citySlug)}/events">More events in ${xmlEscape(event.city)}${event.state ? `, ${xmlEscape(event.state)}` : ''}</a>`);
+    }
+    if (event.venue_name) {
+      const venueSlug = entitySlugify(`${event.venue_name}-${event.city || ''}`);
+      relatedLinks.push(`<a href="/venues/${xmlEscape(venueSlug)}">More events at ${xmlEscape(event.venue_name)}</a>`);
+    }
+    const breadcrumbHtml = `<nav aria-label="breadcrumb"><p><a href="/">Home</a>${event.city ? ` &raquo; <a href="/cities/${xmlEscape(entitySlugify(`${event.city}-${event.state || ''}`))}/events">${xmlEscape(event.city)}${event.state ? `, ${xmlEscape(event.state)}` : ''}</a>` : ''} &raquo; ${xmlEscape(event.title)}</p></nav>`;
+    const relatedLinksHtml = relatedLinks.length > 0
+      ? `<h2>Related</h2><ul>${relatedLinks.map((l) => `<li>${l}</li>`).join('')}</ul>`
+      : '';
+
     const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -180,12 +211,14 @@ router.get('/event/:pathParam', async (req, res) => {
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>
 <body>
+${breadcrumbHtml}
 <h1>${xmlEscape(event.title)}</h1>
 ${event.artist_name ? `<p>${xmlEscape(event.artist_name)}</p>` : ''}
 <p>Date: ${xmlEscape(formatDate(event.date))}</p>
 <p>Location: ${xmlEscape(event.venue_name || '')}${event.city ? `, ${xmlEscape(event.city)}` : ''}${event.state ? `, ${xmlEscape(event.state)}` : ''}</p>
 <h2>Ticket Sellers</h2>
 ${offersHtml}
+${relatedLinksHtml}
 <p><a href="${xmlEscape(url)}">View live prices and buy tickets on ConcertAndMatches</a></p>
 </body>
 </html>`;
