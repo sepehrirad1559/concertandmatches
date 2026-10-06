@@ -2262,4 +2262,35 @@ router.get('/diagnostics/guide-combo-funnel', requireAdminAccess, async (req, re
   }
 });
 
+// TEMPORARY, part 2 (added 2026-10-06, remove after use) — withArtistName
+// above came back 0 across all 222,589 upcoming canonical_events, which is
+// surprising since Ticketmaster's own API does return artist names. Checks
+// whether that's a raw-data gap (events.artist_name itself empty, even for
+// Ticketmaster rows) or a canonicalize-rebuild bug (raw data has it, but it
+// didn't make it into canonical_events).
+router.get('/diagnostics/raw-artist-name-check', requireAdminAccess, async (req, res) => {
+  try {
+    const [bySource, tmSample] = await Promise.all([
+      pool.query(`
+        SELECT source,
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE artist_name IS NOT NULL AND artist_name != '')::int AS with_artist_name
+        FROM events
+        WHERE date >= NOW()
+        GROUP BY source
+      `),
+      pool.query(`
+        SELECT id, title, artist_name, source
+        FROM events
+        WHERE source = 'ticketmaster' AND date >= NOW() AND min_price IS NOT NULL
+        ORDER BY date ASC
+        LIMIT 10
+      `),
+    ]);
+    res.json({ success: true, eventsBySourceArtistNameCoverage: bySource.rows, ticketmasterPricedSample: tmSample.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
