@@ -200,6 +200,49 @@ router.get('/guide/:slug', async (req, res) => {
     const description = `Compare live ${match.artist_name} ticket prices in ${match.city} across every confirmed seller. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${Number(cheapest.best_price).toFixed(0)}.`;
     const url = `https://www.concertandmatches.com/guide/${xmlEscape(requested)}`;
 
+    // FAQ block (added 2026-10-06) — every answer is computed straight from
+    // the same `events` data rendered in the table above, nothing
+    // hand-written. The point is to add real, unique, indexable text per
+    // page: this site's pages were showing an average Google search
+    // position of ~31 (page 3-4) per Search Console, and a guide page
+    // whose only content is a results table has very little for Google to
+    // match a long-tail question query against. A direct Q&A for the
+    // queries buyers actually type ("how much are X tickets in Y", "where
+    // can I buy X tickets in Y", "when is X playing in Y next") gives
+    // those queries real text to match, without inventing any copy —
+    // every number below already exists elsewhere on this same page.
+    const nextShow = events[0];
+    const soonestDate = formatDate(nextShow.date);
+    const highestPrice = events.reduce(
+      (max, e) => Math.max(max, ...e.offers.filter((o) => o.min_price != null).map((o) => Number(o.min_price))),
+      Number(cheapest.best_price)
+    );
+    const sourceNames = [...new Set(events.flatMap((e) => e.offers.filter((o) => o.min_price != null).map((o) => o.source)))];
+    const faqs = [
+      {
+        q: `How much are ${match.artist_name} tickets in ${match.city}?`,
+        a: `Prices currently start around $${Number(cheapest.best_price).toFixed(0)}${highestPrice > Number(cheapest.best_price) ? ` and go up to about $${highestPrice.toFixed(0)} depending on seller and seat` : ''}, based on live listings from ${sourceNames.length} confirmed seller${sourceNames.length === 1 ? '' : 's'}.`,
+      },
+      {
+        q: `When is ${match.artist_name} next playing in ${match.city}?`,
+        a: `The next confirmed date is ${soonestDate}${nextShow.venue_name ? ` at ${nextShow.venue_name}` : ''}.${events.length > 1 ? ` There ${events.length - 1 === 1 ? 'is' : 'are'} ${events.length - 1} more upcoming show${events.length - 1 === 1 ? '' : 's'} listed below.` : ''}`,
+      },
+      {
+        q: `Where can I buy ${match.artist_name} tickets in ${match.city}?`,
+        a: `This page compares live listings from ${sourceNames.join(', ')}. ConcertAndMatches links you through to buy directly on the seller's own site — we don't sell tickets ourselves.`,
+      },
+    ];
+    const faqJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    };
+    const faqHtml = faqs.map((f) => `<h2>${xmlEscape(f.q)}</h2><p>${xmlEscape(f.a)}</p>`).join('\n');
+
     const rows = events.map((e) => {
       const eventUrl = `https://www.concertandmatches.com/event/${e.id}-${eventSlug(e)}`;
       const offerList = e.offers
@@ -241,6 +284,7 @@ router.get('/guide/:slug', async (req, res) => {
 <meta name="twitter:description" content="${xmlEscape(description)}" />
 <meta name="twitter:image" content="https://www.concertandmatches.com/og-image.png" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+<script type="application/ld+json">${JSON.stringify(faqJsonLd)}</script>
 </head>
 <body>
 <h1>${xmlEscape(match.artist_name)} tickets in ${xmlEscape(match.city)}${match.state ? `, ${xmlEscape(match.state)}` : ''}</h1>
@@ -250,6 +294,7 @@ router.get('/guide/:slug', async (req, res) => {
 <tbody>${rows}</tbody>
 </table>
 <p>Prices update as sellers change theirs — always confirm the final price on the seller's site before buying. ConcertAndMatches doesn't sell tickets directly; we compare listings from authorized sellers and link you through to buy.</p>
+${faqHtml}
 <p><a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches</a></p>
 </body>
 </html>`;
