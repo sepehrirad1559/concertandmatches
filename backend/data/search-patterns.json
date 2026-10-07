@@ -1,6 +1,6 @@
 {
  "source": "Google Autocomplete Suggest API (suggestqueries.google.com) — real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model — every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
- "pulledAt": "2026-10-06T00:00:00Z",
+ "pulledAt": "2026-10-07T00:00:00Z",
  "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
  "entries": [
   {
@@ -11197,6 +11197,830 @@
     "walt disney concert hall free tickets"
    ],
    "pulledAt": "2026-10-06T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "wyndhams-theatre-london",
+   "seed": "Wyndhams Theatre tickets",
+   "suggestions": [
+    "wyndham's theatre tickets",
+    "wyndham's theatre tickets prices",
+    "wyndham's theatre access tickets",
+    "wyndham theatre standing tickets",
+    "wyndham theatre standing tickets view",
+    "wyndham theatre rush tickets",
+    "wyndham's theatre day tickets",
+    "wyndham theatre return tickets",
+    "wyndham theatre cheap tickets",
+    "wyndham theatre exchange tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "tennessee-performing-arts-center-andrew-jackson-hall-nashville",
+   "seed": "Tennessee Performing Arts Center - Andrew Jackson Hall tickets",
+   "suggestions": [
+    "tennessee performing arts center - andrew jackson hall tickets",
+    "tn performing arts center andrew jackson hall tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "mayo-performing-arts-center-morristown",
+   "seed": "Mayo Performing Arts Center tickets",
+   "suggestions": [
+    "mayo performing arts center parking tickets",
+    "community theatre at mayo performing arts center tickets",
+    "mayo performing arts center promo code",
+    "mayo performing arts center events",
+    "mayo performing arts center address"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "paramount-theatre-aurora-aurora",
+   "seed": "Paramount Theatre - Aurora tickets",
+   "suggestions": [
+    "paramount theatre aurora tickets",
+    "paramount theater aurora tickets",
+    "paramount theatre aurora season tickets",
+    "paramount theater aurora il tickets",
+    "paramount theater aurora discount tickets",
+    "paramount theater aurora illinois tickets",
+    "paramount theater aurora promo code",
+    "paramount theater aurora schedule",
+    "directions to paramount theater aurora"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "marriott-theatre-lincolnshire",
+   "seed": "Marriott Theatre tickets",
+   "suggestions": [
+    "marriott theatre tickets discount",
+    "marriott theatre tickets price",
+    "marriott theatre tickets online",
+    "marriott theatre tickets 2026 season",
+    "marriott lincolnshire tickets",
+    "marriott theatre lincolnshire tickets",
+    "marriott theatre season tickets",
+    "marriott theatre rush tickets",
+    "marriott theatre student tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "dc-improv-washington",
+   "seed": "DC Improv tickets",
+   "suggestions": [
+    "dc improv tickets resale",
+    "dc improv tickets for sale",
+    "dc improv tickets tonight",
+    "dc improv transfer tickets",
+    "godfrey dc improv tickets",
+    "resell dc improv tickets",
+    "dc improv club tickets",
+    "dc improv free tickets",
+    "aries spears dc improv tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "churchill-downs-louisville",
+   "seed": "Churchill Downs tickets",
+   "suggestions": [
+    "churchill downs tickets",
+    "churchill downs tickets 2027",
+    "churchill downs tickets 2026",
+    "churchill downs tickets price",
+    "churchill downs tickets today",
+    "churchill downs tickets kentucky derby",
+    "churchill downs tickets thurby",
+    "churchill downs tickets derby",
+    "churchill downs tickets tour",
+    "churchill downs tickets museum"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "fisher-theatre-mi-detroit",
+   "seed": "Fisher Theatre - MI tickets",
+   "suggestions": [
+    "fisher theatre detroit tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "lena-horne-theatre-new-york",
+   "seed": "Lena Horne Theatre tickets",
+   "suggestions": [
+    "lena horne theatre six tickets",
+    "lena horne theater rush tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "awakening-theater-at-wynn-las-vegas-las-vegas",
+   "seed": "Awakening Theater At Wynn Las Vegas tickets",
+   "suggestions": [
+    "awakening theater at wynn las vegas tickets",
+    "is encore at wynn las vegas on the strip",
+    "what time is check in at wynn las vegas",
+    "how many stars is the wynn las vegas"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "minskoff-theatre-new-york",
+   "seed": "Minskoff Theatre tickets",
+   "suggestions": [
+    "minskoff theatre rush tickets",
+    "minskoff theatre lion king tickets",
+    "minskoff theatre box office hours",
+    "minskoff theatre address",
+    "how to book theatre tickets with theatre tokens",
+    "casino theatre ticket price"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "the-comedy-zone-charlotte-charlotte",
+   "seed": "The Comedy Zone - Charlotte tickets",
+   "suggestions": [
+    "the comedy zone charlotte tickets",
+    "the comedy zone charlotte nc",
+    "the comedy zone charlotte nc seating chart",
+    "the comedy zone charlotte nc seating",
+    "the comedy zone charlotte nc capacity",
+    "the comedy club charlotte nc",
+    "the comedy zone charlotte 900 nc music factory blvd b3",
+    "restaurants near the comedy zone charlotte nc",
+    "hotels near the comedy zone charlotte nc",
+    "parking near the comedy zone charlotte nc"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "rudy-theatre-selma",
+   "seed": "Rudy Theatre tickets",
+   "suggestions": [
+    "rudy theatre tickets",
+    "rudy theater tickets for seniors",
+    "rudy theater tickets for seniors price",
+    "rudy theater tickets price",
+    "rudy theater tickets price selma nc"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "triple-door-seattle",
+   "seed": "Triple Door tickets",
+   "suggestions": [
+    "triple door seattle tickets",
+    "door 3 tickets",
+    "triple door schedule",
+    "triple lock security door price",
+    "triple door happy hour"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "faulty-towers-the-dining-experience",
+   "seed": "Faulty Towers: The Dining Experience tickets",
+   "suggestions": [
+    "faulty towers the dining experience tickets",
+    "faulty towers the dining experience tickets price",
+    "faulty towers the dining experience tickets london",
+    "fawlty towers dining experience tickets",
+    "faulty towers dining experience victoria tickets",
+    "faulty towers dining experience sydney tickets",
+    "faulty towers dining experience ireland tickets",
+    "faulty towers dining experience brisbane tickets",
+    "faulty towers dining experience nsw tickets",
+    "faulty towers dining experience manchester tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "dazzling-nights-orlando",
+   "seed": "Dazzling Nights® Orlando tickets",
+   "suggestions": [
+    "dazzling nights orlando tickets price",
+    "dazzling nights orlando 2025 tickets",
+    "dazzling nights orlando discount tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-hook",
+   "seed": "The Hook tickets",
+   "suggestions": [
+    "the hook tickets",
+    "the hook tickets atlantic city",
+    "the hook tickets discount",
+    "off the hook tickets",
+    "off the hook tickets daz and will",
+    "the hook up tickets",
+    "the hook discount tickets atlantic city",
+    "off the hook tickets cardiff",
+    "the hook show tickets",
+    "off the hook tickets manchester"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "matt-mathews",
+   "seed": "Matt Mathews tickets",
+   "suggestions": [
+    "matt mathews tickets",
+    "matt mathews tickets 2026",
+    "matt mathews tickets 2027",
+    "matt mathews tickets near me",
+    "matt mathews tickets pikeville ky",
+    "matt mathews tickets mobile al",
+    "matt mathews tickets louisville ky",
+    "matt mathews tickets michigan",
+    "matt mathews tickets paducah ky",
+    "matt mathews tickets hot springs ar"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "arnez-j",
+   "seed": "Arnez J tickets",
+   "suggestions": [
+    "arnez j tickets",
+    "arnez j tickets houston",
+    "arnez j tickets atlanta",
+    "arnez j tickets chicago",
+    "arnez j tickets cleveland ohio",
+    "arnez j comedian tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "steve-falcon-s-comedy-hypnosis-hour",
+   "seed": "Steve Falcon's Comedy Hypnosis Hour tickets",
+   "suggestions": [
+    "steve falcon's comedy hypnosis hour myrtle beach tickets",
+    "steve falcon's comedy hypnosis hour las vegas tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "branson-s-christmas-wonderland",
+   "seed": "Branson's Christmas Wonderland tickets",
+   "suggestions": [
+    "branson christmas wonderland tickets",
+    "christmas wonderland ticket price"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "christmas-carol-goes-wrong",
+   "seed": "Christmas Carol Goes Wrong tickets",
+   "suggestions": [
+    "christmas carol goes wrong tickets london",
+    "christmas carol goes wrong tickets glasgow",
+    "christmas carol goes wrong tickets resale",
+    "christmas carol goes wrong cheap tickets",
+    "christmas carol goes wrong cardiff tickets",
+    "christmas carol goes wrong access tickets",
+    "christmas carol goes wrong edinburgh tickets",
+    "christmas carol goes wrong 2026 tickets",
+    "christmas carol goes wrong tour tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "shuler-king",
+   "seed": "Shuler King tickets",
+   "suggestions": [
+    "shuler king tickets",
+    "shuler king comedy tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "rouge-the-sexiest-show-in-vegas",
+   "seed": "Rouge - The Sexiest Show In Vegas tickets",
+   "suggestions": [
+    "rouge the sexiest show in vegas tickets",
+    "how to get cheap vegas show tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "oklahoma",
+   "seed": "Oklahoma! tickets",
+   "suggestions": [
+    "oklahoma tickets",
+    "oklahoma tickets plane",
+    "oklahoma tickets pay",
+    "oklahoma tickets traffic",
+    "oklahoma tickets search",
+    "oklahoma tickets pac",
+    "oklahoma tickets norman ok",
+    "oklahoma tickets bord gais",
+    "oklahoma tickets football",
+    "oklahoma tickets nba"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "marlon-wayans",
+   "seed": "Marlon Wayans tickets",
+   "suggestions": [
+    "marlon wayans tickets tonight",
+    "marlon wayans tickets improv"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "zoppe-family-circus",
+   "seed": "Zoppe Family Circus tickets",
+   "suggestions": [
+    "zoppe family circus tickets",
+    "zoppe family circus reviews",
+    "how long is the zoppe circus show",
+    "circus tickets near me"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "usama-siddiquee",
+   "seed": "Usama Siddiquee tickets",
+   "suggestions": [
+    "usama siddiquee tickets",
+    "usama siddiquee tickets toronto",
+    "usama siddiquee tickets vancouver",
+    "usama siddiquee tickets austin",
+    "usama siddiquee tickets seattle",
+    "usama siddiquee tickets houston",
+    "usama siddiquee tour tickets",
+    "usama siddiquee montreal tickets",
+    "usama siddiquee atlanta tickets",
+    "usama siddiquee dallas tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "rocky-dale-davis",
+   "seed": "Rocky Dale Davis tickets",
+   "suggestions": [
+    "rocky dale davis tickets 2026",
+    "rocky dale davis tour tickets",
+    "rocky dale davis comedy tickets",
+    "rocky dale davis jr tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "farrell-dillon",
+   "seed": "Farrell Dillon tickets",
+   "suggestions": [
+    "farrell dillon tickets",
+    "farrell dillon las vegas tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "professor-brian-cox",
+   "seed": "Professor Brian Cox tickets",
+   "suggestions": [
+    "professor brian cox tickets uk",
+    "professor brian cox tour",
+    "professor brian cox tour 2026",
+    "professor brian cox tour 2025",
+    "professor brian cox tour 2026 uk",
+    "professor brian cox live",
+    "professor brian cox tour 2025 uk",
+    "professor brian cox live show",
+    "professor brian cox tour review"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "next-stop-comedy",
+   "seed": "Next Stop Comedy tickets",
+   "suggestions": [
+    "next stop comedy tickets",
+    "next stop comedy shows"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "christmas-jubilee",
+   "seed": "Christmas Jubilee tickets",
+   "suggestions": [
+    "christmas jubilee 2025 tickets",
+    "christmas jubilee mobile al tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "amber-autry",
+   "seed": "Amber Autry tickets",
+   "suggestions": [
+    "amber autry tickets 2027",
+    "amber autry tickets plano",
+    "amber autry tickets phoenix",
+    "amber autry tickets detroit",
+    "amber autry tickets jacksonville fl",
+    "amber autry tickets jacksonville",
+    "amber autry tickets tampa",
+    "amber autry tickets cleveland",
+    "amber autry tickets 2026"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "caitlin-peluffo",
+   "seed": "Caitlin Peluffo tickets",
+   "suggestions": [
+    "caitlin peluffo tickets",
+    "caitlin peluffo toronto tickets",
+    "caitlin peluffo denver tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "museo-banksy-madrid",
+   "seed": "Museo Banksy Madrid tickets",
+   "suggestions": [
+    "museo banksy madrid admission ticket",
+    "biggest art museum in spain",
+    "biggest museum in madrid"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-seagull",
+   "seed": "The Seagull tickets",
+   "suggestions": [
+    "the seagull tickets london",
+    "the seagull tickets resale",
+    "the seagull theatre tickets",
+    "the seagull edinburgh tickets",
+    "the seagull barbican tickets",
+    "seagull play tickets",
+    "the seagull theatre tickets online",
+    "the seagull london 2025 tickets",
+    "the seagull cate blanchett tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "cirque-alice",
+   "seed": "Cirque Alice tickets",
+   "suggestions": [
+    "cirque alice tickets reno",
+    "cirque alice tickets price",
+    "cirque alice tickets auckland",
+    "cirque alice tickets sydney",
+    "cirque alice tickets adelaide",
+    "cirque alice tickets london",
+    "cirque alice tickets singapore",
+    "cirque alice tickets canberra",
+    "cirque alice melbourne tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "sesame-street-live-elmo-s-got-the-moves",
+   "seed": "Sesame Street Live: Elmo's Got The Moves tickets",
+   "suggestions": [
+    "sesame street live elmo's got the moves tickets",
+    "sesame street live near me"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "george-balanchine-s-the-nutcracker",
+   "seed": "George Balanchine's The Nutcracker tickets",
+   "suggestions": [
+    "george balanchine's the nutcracker tickets",
+    "george balanchine's the nutcracker tickets nyc",
+    "george balanchine's the nutcracker ticket prices",
+    "book tickets for george balanchine's the nutcracker"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "slam-frank",
+   "seed": "Slam Frank tickets",
+   "suggestions": [
+    "slam frank tickets nyc",
+    "slam frank tickets resale",
+    "slam frank tickets price",
+    "slam frank tickets london",
+    "slam frank musical tickets",
+    "slam frank rush tickets",
+    "slam frank discount tickets",
+    "slam frank buy tickets",
+    "slam frank standby tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "tape-face",
+   "seed": "Tape Face tickets",
+   "suggestions": [
+    "tape face tickets",
+    "tape face tickets las vegas",
+    "tape face tickets mgm",
+    "tape face ticket prices",
+    "tape face tour",
+    "tape face tour 2026",
+    "tape face tour 2025",
+    "tape face tour dates",
+    "tape face discount tickets",
+    "tape face vip tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "taylor-tomlinson",
+   "seed": "Taylor Tomlinson tickets",
+   "suggestions": [
+    "taylor tomlinson tickets 2026",
+    "taylor tomlinson tickets 2027",
+    "taylor tomlinson tickets raleigh",
+    "taylor tomlinson tickets 2025",
+    "taylor tomlinson tickets vancouver",
+    "taylor tomlinson tickets seattle",
+    "taylor tomlinson tickets dc",
+    "taylor tomlinson tickets san diego",
+    "taylor tomlinson tickets pittsburgh"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "pride-and-prejudice",
+   "seed": "Pride and Prejudice tickets",
+   "suggestions": [
+    "pride and prejudice tickets",
+    "pride and prejudice tickets near me",
+    "pride and prejudice theatre",
+    "pride and prejudice theatre canberra",
+    "how many years does pride and prejudice cover",
+    "is mr darcy pride or prejudice"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "liberation",
+   "seed": "Liberation tickets",
+   "suggestions": [
+    "liberation tickets broadway",
+    "liberation tickets nyc",
+    "liberation tickets telecharge",
+    "liberation tickets new york",
+    "liberation tickets 30 under 30",
+    "liberation tickets roundabout",
+    "liberation tickets discount",
+    "tickets liberation play",
+    "liberation rush tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "ivanov",
+   "seed": "Ivanov tickets",
+   "suggestions": [
+    "ivanov tickets london",
+    "ivanov tickets nyc",
+    "real ivanov tickets",
+    "ivanov play tickets",
+    "chris pine ivanov tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "mystic-pizza",
+   "seed": "Mystic Pizza tickets",
+   "suggestions": [
+    "mystic pizza tickets",
+    "is there a mystic pizza",
+    "mystic pizza hours",
+    "mystic pizza rating"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "allstars-of-magic",
+   "seed": "Allstars Of Magic tickets",
+   "suggestions": [
+    "allstars of magic tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-jury-experience-an-immersive-courtroom-case",
+   "seed": "The Jury Experience: An Immersive Courtroom Case tickets",
+   "suggestions": [
+    "the jury experience an immersive courtroom case tickets",
+    "court exhibit example",
+    "what is a trial jury summons",
+    "what happens if a juror talks about the case",
+    "can you have a jury trial for a traffic ticket"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "dear-soldier-boy",
+   "seed": "Dear Soldier Boy tickets",
+   "suggestions": [
+    "dear soldier boy tickets",
+    "dear veteran letter example"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "tony-n-tina-s-wedding",
+   "seed": "Tony N' Tina's Wedding tickets",
+   "suggestions": [
+    "tony and tina's wedding tickets",
+    "tony and tina's wedding tickets price",
+    "tony and tina's wedding 2026 tickets",
+    "tony and tina's wedding 2025 tickets",
+    "tony and tina's wedding vancouver tickets",
+    "tony and tina's wedding chicago tickets",
+    "tony and tina's wedding nyc tickets",
+    "tony and tina's wedding 2026 tickets price",
+    "tony and tina's wedding calgary tickets",
+    "tony and tina's wedding toronto tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "mr-swindle-s-traveling-peculiarium",
+   "seed": "Mr. Swindle's Traveling Peculiarium tickets",
+   "suggestions": [
+    "mr. swindle's traveling peculiarium tickets",
+    "mr swindle's traveling peculiarium tickets price",
+    "mr swindle's traveling peculiarium tickets sarasota",
+    "how to buy single trip mrt ticket"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "mj-ny",
+   "seed": "MJ (NY) tickets",
+   "suggestions": [
+    "mj ny tickets",
+    "michael jackson ny tickets",
+    "mj nyc tickets",
+    "michael jackson nyc tickets",
+    "mj musical ny tickets",
+    "mj musical new york tickets",
+    "mj broadway new york tickets",
+    "mj lenderman new york tickets",
+    "mj show new york tickets",
+    "michael jackson broadway ny tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "damon-darling",
+   "seed": "Damon Darling tickets",
+   "suggestions": [
+    "damon darling tickets",
+    "damon darling tickets 2026",
+    "damon darling tickets indianapolis",
+    "damon darling tickets 2025",
+    "damon darling tickets detroit",
+    "damon darling tour tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "million-dollar-quartet-christmas",
+   "seed": "Million Dollar Quartet Christmas tickets",
+   "suggestions": [
+    "million dollar quartet christmas tickets",
+    "million dollar quartet near me",
+    "million dollar quartet shows",
+    "million dollar quartet reviews",
+    "how long is million dollar quartet"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "candlelight-coldplay-imagine-dragons-tribute",
+   "seed": "Candlelight: Coldplay & Imagine Dragons Tribute tickets",
+   "suggestions": [
+    "candlelight tribute to coldplay & imagine dragons tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "colin-cloud",
+   "seed": "Colin Cloud tickets",
+   "suggestions": [
+    "colin cloud tickets las vegas",
+    "colin cloud tickets edinburgh",
+    "colin cloud tickets fringe",
+    "colin cloud mastermind tickets",
+    "colin cloud discount tickets",
+    "colin cloud show tickets",
+    "colin cloud hoax tickets",
+    "colin cloud edinburgh fringe tickets",
+    "colin cloud mastermind las vegas tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "jeff-dye",
+   "seed": "Jeff Dye tickets",
+   "suggestions": [
+    "jeff dye tickets",
+    "jeff dye tickets san diego",
+    "jeff dye tickets las vegas",
+    "jeff dye tickets melbourne",
+    "jeff dye tickets tampa",
+    "jeff dye dallas tickets",
+    "jeff dye comedy tickets",
+    "jeff dye sydney tickets",
+    "jeff dye schedule",
+    "jeff dye reviews"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "million-dollar-quartet",
+   "seed": "Million Dollar Quartet tickets",
+   "suggestions": [
+    "million dollar quartet tickets",
+    "million dollar quartet tickets near me",
+    "million dollar quartet tickets aurora il",
+    "million dollar quartet tickets aurora",
+    "million dollar quartet ticket prices",
+    "million dollar quartet branson tickets",
+    "million dollar quartet discount tickets",
+    "tuacahn million dollar quartet tickets",
+    "million dollar quartet phoenix tickets",
+    "million dollar quartet christmas tickets"
+   ],
+   "pulledAt": "2026-10-07T00:00:00Z"
   }
  ]
 }
