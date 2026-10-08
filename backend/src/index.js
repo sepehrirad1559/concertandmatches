@@ -185,9 +185,16 @@ console.log(`📦 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.
 // Run POST /admin/cleanup/official-source-data once to remove the events
 // this job already collected.
 
-// EVENT_SYNC_INTERVAL_MS (24h) and the staggered boot delay below predate
-// Ticketmaster's two removals and one restoration — unaffected by any of it.
-const EVENT_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
+// EVENT_SYNC_INTERVAL_MS — tightened from 24h to 12h on 2026-10-08 at the
+// user's request ("do twice a day to just make sure"), after confirming
+// TicketNetwork's own upstream feed (Impact.com) is only advised/synced
+// daily on their end (per their partner docs) — so this doesn't get any
+// fresher prices than 24h did, it's purely a safety margin in case a given
+// day's run is late, fails partway, or gets interrupted by a redeploy (see
+// the concurrency-guard comment below). The staggered boot delay below
+// predates Ticketmaster's two removals and one restoration — unaffected by
+// any of it.
+const EVENT_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 async function runScheduledEventSync() {
 // Ticketmaster discovery + price backfill steps REMOVED here 2026-10-08 —
@@ -314,11 +321,15 @@ async function maybeRunEventSyncOnBoot() {
     );
     const lastRun = rows[0]?.started_at ? new Date(rows[0].started_at) : null;
     const hoursSinceLastRun = lastRun ? (Date.now() - lastRun.getTime()) / (60 * 60 * 1000) : Infinity;
-    // 20h, not 24h: leaves room for the boot run to still happen a bit
-    // early on a genuinely new day, without re-triggering off a same-day
-    // redeploy shortly after a cycle actually completed.
-    if (hoursSinceLastRun < 20) {
-      console.log(`⏭️  Skipping boot-triggered event sync — the last full cycle completed ${hoursSinceLastRun.toFixed(1)}h ago, within the 20h guard window. (A redeploy restarted this process, but today's sync already ran.)`);
+    // Guard window derived from EVENT_SYNC_INTERVAL_MS (interval minus a ~2h
+    // buffer — the same ratio as the original 24h-interval/20h-guard split)
+    // rather than a hardcoded "20", so this keeps working correctly if the
+    // interval is changed again. Leaves room for the boot run to still
+    // happen a bit early on a genuinely new cycle, without re-triggering off
+    // a same-cycle redeploy shortly after a run actually completed.
+    const guardHours = (EVENT_SYNC_INTERVAL_MS / (60 * 60 * 1000)) - 2;
+    if (hoursSinceLastRun < guardHours) {
+      console.log(`⏭️  Skipping boot-triggered event sync — the last full cycle completed ${hoursSinceLastRun.toFixed(1)}h ago, within the ${guardHours}h guard window. (A redeploy restarted this process, but this cycle already ran.)`);
       return;
     }
   } catch (err) {
