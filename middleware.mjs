@@ -114,9 +114,41 @@ export default async function middleware(request) {
   return proxyTo(`${PRERENDER_ORIGIN}/prerender/event/${pathParam}`, userAgent);
 }
 
+// 2026-10-08: Search Console's "Test Live URL" was repeatedly showing
+// Googlebot getting the plain SPA shell (homepage title/og:url) instead of
+// this per-event prerendered HTML, for event pages that should match the bot
+// branch above — confirmed NOT a UA-matching problem (the backend's own
+// /prerender/event/:id endpoint answers correctly and fast when called
+// directly) and traced to this proxy's silent catch-and-fall-through: this
+// project's Vercel plan doesn't expose historical Edge Middleware logs, so a
+// failed/timed-out fetch here was indistinguishable from "not a bot" with no
+// way to tell which from outside the Vercel dashboard. That silent failure
+// is the direct, confirmed cause of thousands of event pages showing up in
+// GSC as "Soft 404" and "Duplicate, Google chose different canonical than
+// user" (Search Console: 1,726 + 563 pages respectively, as of this date).
+//
+// Two changes to make that failure diagnosable without needing Vercel's own
+// (plan-gated) logs:
+//   1. An explicit timeout via AbortController. The fetch below previously
+//      had none, so a slow/hanging origin response would ride all the way
+//      out to Vercel's own hard Edge Function execution limit before this
+//      caught anything — worse for a bot waiting on a response than failing
+//      fast and falling back.
+//   2. x-prerender-proxy response header: "ok" on success, "fallback:<reason>"
+//      on failure. Google Search Console's own URL Inspection > Test Live
+//      URL > Page Availability panel reports the response headers it
+//      received, so this can be checked straight from GSC — no Vercel log
+//      access, no ability to spoof a bot User-Agent, and no waiting on an
+//      actual Google recrawl required to tell which failure mode this is.
 async function proxyTo(upstreamUrl, userAgent) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
-    const upstream = await fetch(upstreamUrl, { headers: { 'user-agent': userAgent } });
+    const upstream = await fetch(upstreamUrl, {
+      headers: { 'user-agent': userAgent },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
     const body = await upstream.text();
     // Pass through the backend's real content-type (routes/sitemap.js sends
     // application/xml; every HTML page sends text/html) instead of
@@ -124,11 +156,21 @@ async function proxyTo(upstreamUrl, userAgent) {
     const contentType = upstream.headers.get('content-type') || 'text/html; charset=utf-8';
     return new Response(body, {
       status: upstream.status,
-      headers: { 'content-type': contentType },
+      headers: { 'content-type': contentType, 'x-prerender-proxy': 'ok' },
     });
   } catch (err) {
+    clearTimeout(timeoutId);
+    const reason = err?.name === 'AbortError' ? 'timeout' : (err?.message || 'unknown-error');
+    console.error(`[middleware] prerender proxy failed (${reason}) for ${upstreamUrl}`);
     // If the backend is unreachable for any reason, don't break the page —
     // let the request fall through to the normal SPA instead of erroring.
+    // (Deliberately still next() rather than a hand-built Response here: a
+    // bare `return;` instead of next() previously broke this middleware for
+    // every real visitor — commit 37084ad1, 2026-08-23 — and reconstructing
+    // the fallback ourselves would mean re-fetching this same URL, which
+    // would re-enter this same middleware and risk a request loop. next()
+    // is the only change-nothing-about-risk option here; the x-prerender-
+    // proxy header above is what makes the failure visible instead.)
     return next();
   }
 }
