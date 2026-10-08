@@ -102,16 +102,22 @@ export default async function middleware(request) {
     (p) => url.pathname === p || url.pathname.startsWith(`${p}/`)
   );
   if (isPlainContentPath) {
-    return proxyTo(`${PRERENDER_ORIGIN}${url.pathname}${url.search}`, userAgent);
+    // Safe to let the CDN cache these — every visitor (bot or not) gets the
+    // same byte-identical response (see PLAIN_CONTENT_PREFIXES' comment
+    // above), so there's no UA-dependent content for a cache hit to serve
+    // to the wrong audience the way there is for /event/:id below.
+    return proxyTo(`${PRERENDER_ORIGIN}${url.pathname}${url.search}`, userAgent, { cacheable: true });
   }
 
   if (!BOT_UA_REGEX.test(userAgent)) {
     return next(); // not a recognized bot — fall through to the normal SPA rewrite
   }
 
-  // url.pathname looks like "/event/3048-shahin-najafi-erfan-anaheim"
+  // url.pathname looks like "/event/3048-shahin-najafi-erfan-anaheim". This
+  // branch's response genuinely differs by User-Agent (bot vs. not), so it
+  // must never be cached — see proxyTo's cache-control comment below.
   const pathParam = url.pathname.replace(/^\/event\//, '');
-  return proxyTo(`${PRERENDER_ORIGIN}/prerender/event/${pathParam}`, userAgent);
+  return proxyTo(`${PRERENDER_ORIGIN}/prerender/event/${pathParam}`, userAgent, { cacheable: false });
 }
 
 // 2026-10-08: Search Console's "Test Live URL" was repeatedly showing
@@ -140,7 +146,7 @@ export default async function middleware(request) {
 //      received, so this can be checked straight from GSC — no Vercel log
 //      access, no ability to spoof a bot User-Agent, and no waiting on an
 //      actual Google recrawl required to tell which failure mode this is.
-async function proxyTo(upstreamUrl, userAgent) {
+async function proxyTo(upstreamUrl, userAgent, { cacheable } = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
   try {
@@ -154,9 +160,31 @@ async function proxyTo(upstreamUrl, userAgent) {
     // application/xml; every HTML page sends text/html) instead of
     // hardcoding text/html, which would otherwise mislabel the sitemap.
     const contentType = upstream.headers.get('content-type') || 'text/html; charset=utf-8';
+    const headers = { 'content-type': contentType, 'x-prerender-proxy': 'ok' };
+    // 2026-10-08: found WHY the x-prerender-proxy header above never showed
+    // up in Search Console's live test at all, bot-match or not — Vercel's
+    // edge CDN was serving a cached response for this exact /event/:id path
+    // (confirmed: X-Vercel-Cache: HIT, Etag match, Content-Disposition:
+    // inline; filename="index.html" — the plain SPA shell, not this
+    // proxy's output) WITHOUT re-invoking this middleware at all. Whichever
+    // response got cached first for a given path — almost certainly a real
+    // visitor's non-bot next() → static index.html — was then served to
+    // every later request for that same path regardless of User-Agent,
+    // including Googlebot's. Explicit no-store on the UA-dependent /event
+    // branch (see the `cacheable` call sites above, and the matching
+    // vercel.json headers rule for the non-bot/static fallback path) stops
+    // the CDN from caching that branch's output, so every request actually
+    // re-runs this middleware's UA check instead of replaying whatever the
+    // first visitor happened to get. The plain-content branch (/guide,
+    // /artists, etc.) is deliberately left cacheable — its response is
+    // identical for every User-Agent, so there's no wrong-audience risk and
+    // caching it reduces load on the Railway origin as intended.
+    if (!cacheable) {
+      headers['cache-control'] = 'private, no-store, must-revalidate';
+    }
     return new Response(body, {
       status: upstream.status,
-      headers: { 'content-type': contentType, 'x-prerender-proxy': 'ok' },
+      headers,
     });
   } catch (err) {
     clearTimeout(timeoutId);

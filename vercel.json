@@ -1,4 +1,12 @@
 {
+  "headers": [
+    {
+      "source": "/event/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "private, no-store, must-revalidate" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "https://concertandmatches-production.up.railway.app/sitemap.xml" },
     { "source": "/guide", "destination": "https://concertandmatches-production.up.railway.app/guide" },
