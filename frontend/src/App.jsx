@@ -2485,18 +2485,45 @@ export default function App() {
     return () => { cancelled = true; };
   }, [selectedEvent]);
 
-  // SEO: page title, meta description, canonical URL, and Event structured
-  // data (JSON-LD, spec §21) for whichever event is currently shown —
-  // restored to the site defaults when leaving the detail view. This is a
-  // client-rendered SPA (no server-side rendering), so this mainly helps
-  // JS-executing crawlers (Googlebot does render JS) and social share
-  // previews fetched after the page has loaded, rather than a classic
-  // no-JS crawler — real SSR would be a further, separate upgrade.
+  // SEO: page title, meta description, canonical URL, Open Graph/Twitter
+  // tags, and Event structured data (JSON-LD, spec §21) for whichever event
+  // is currently shown — restored to the site defaults when leaving the
+  // detail view. This is a client-rendered SPA (no server-side rendering),
+  // so this mainly helps JS-executing crawlers (Googlebot does render JS)
+  // and social share previews fetched after the page has loaded, rather
+  // than a classic no-JS crawler — real SSR would be a further, separate
+  // upgrade.
+  //
+  // 2026-10-08: previously this effect only updated <title>, the
+  // description meta tag, and the canonical link — never the og:title/
+  // og:description/og:url/twitter:title/twitter:description tags, which
+  // index.html hardcodes to the homepage's copy. Confirmed via Search
+  // Console's "Test Live URL" (VIEW TESTED PAGE → HTML) that whenever a
+  // crawler ends up on this client-rendered path instead of the backend's
+  // per-event prerender.js snapshot (e.g. Google-InspectionTool, which
+  // doesn't always match middleware.mjs's bot-UA regex and falls through
+  // to the plain SPA) the rendered DOM showed a correct, event-specific
+  // <title>/canonical/description sitting alongside a STILL-generic
+  // og:title ("ConcertAndMatches — Be The First To Buy Tickets...") —
+  // every event page's Open Graph data was identical to the homepage's.
+  // That's exactly the kind of signal Google's duplicate-content/canonical
+  // selection can use to override the page's own declared canonical, so
+  // this was a real, independent contributor to the "Duplicate, Google
+  // chose different canonical than user" GSC issue — not just a cosmetic
+  // social-preview gap. Fixing it here closes the gap for this client-
+  // rendered path regardless of whether middleware.mjs's bot detection
+  // matches a given crawler's User-Agent, rather than depending solely on
+  // that regex staying in sync with every crawler Google ever ships.
   useEffect(() => {
     const defaultTitle = 'ConcertAndMatches — Newly Listed Tickets for Concerts, Sports & Theater';
     const defaultDescription = 'Be the first to buy tickets to concerts, sports, theater and comedy across the USA and Canada — new events listed from multiple authorized sellers as fast as they go on sale.';
     const canonicalEl = document.querySelector('link[rel="canonical"]');
     const descriptionEl = document.querySelector('meta[name="description"]');
+    const ogTitleEl = document.querySelector('meta[property="og:title"]');
+    const ogDescriptionEl = document.querySelector('meta[property="og:description"]');
+    const ogUrlEl = document.querySelector('meta[property="og:url"]');
+    const twitterTitleEl = document.querySelector('meta[name="twitter:title"]');
+    const twitterDescriptionEl = document.querySelector('meta[name="twitter:description"]');
     let jsonLdEl = document.getElementById('event-jsonld');
 
     if (selectedEvent) {
@@ -2507,6 +2534,11 @@ export default function App() {
       document.title = title;
       if (descriptionEl) descriptionEl.setAttribute('content', description);
       if (canonicalEl) canonicalEl.setAttribute('href', url);
+      if (ogTitleEl) ogTitleEl.setAttribute('content', title);
+      if (ogDescriptionEl) ogDescriptionEl.setAttribute('content', description);
+      if (ogUrlEl) ogUrlEl.setAttribute('content', url);
+      if (twitterTitleEl) twitterTitleEl.setAttribute('content', title);
+      if (twitterDescriptionEl) twitterDescriptionEl.setAttribute('content', description);
 
       // Offer.validFrom — see the matching comment in backend/src/routes/
       // prerender.js (the server-rendered version of this same JSON-LD,
@@ -2574,6 +2606,11 @@ export default function App() {
       document.title = defaultTitle;
       if (descriptionEl) descriptionEl.setAttribute('content', defaultDescription);
       if (canonicalEl) canonicalEl.setAttribute('href', 'https://www.concertandmatches.com/');
+      if (ogTitleEl) ogTitleEl.setAttribute('content', defaultTitle);
+      if (ogDescriptionEl) ogDescriptionEl.setAttribute('content', defaultDescription);
+      if (ogUrlEl) ogUrlEl.setAttribute('content', 'https://www.concertandmatches.com/');
+      if (twitterTitleEl) twitterTitleEl.setAttribute('content', defaultTitle);
+      if (twitterDescriptionEl) twitterDescriptionEl.setAttribute('content', defaultDescription);
       if (jsonLdEl) jsonLdEl.remove();
     }
   }, [selectedEvent, selectedEventEntityImage]);
