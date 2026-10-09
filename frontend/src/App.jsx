@@ -1933,6 +1933,13 @@ function Footer({ onGoHome, onSelectCategory, onBrowseSports }) {
           <a href="/venues" className="cm-link-underline" style={linkStyle}>By Venue</a>
           <a href="/teams" className="cm-link-underline" style={linkStyle}>By Team</a>
           <a href="/leagues" className="cm-link-underline" style={linkStyle}>By League</a>
+          {/* 2026-10-09: routes/guides.js's own header comment flagged this
+              exact gap ("for internal linking (the homepage/nav should link
+              here too)") and it was never followed up on — /guide and every
+              /guide/:slug page had zero crawlable inbound links from
+              anywhere on the site, reachable only via sitemap-seo.xml. Same
+              fix as the column above: one link from the homepage footer. */}
+          <a href="/guide" className="cm-link-underline" style={linkStyle}>Price Guides by Artist & City</a>
         </div>
 
         {/* About */}

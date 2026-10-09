@@ -7,6 +7,7 @@ import {
   discoverTeams, getTeamPage,
   slugify as citySlugify,
 } from '../services/seoEngine.js';
+import { topArtistCityCombos, guideSlugify } from './guides.js';
 
 const router = express.Router();
 
@@ -121,6 +122,19 @@ ${bodyHtml}
 </html>`;
 }
 
+// Internal-linking helper, added 2026-10-09 alongside the homepage /guide
+// footer link (see App.jsx) — finds the live guide page (if any) for a
+// given artist+city pair so hub pages can link straight down into
+// routes/guides.js's evergreen pages, not just down into individual
+// (short-lived) event pages. `combos` is one topArtistCityCombos() result,
+// passed in by each call site rather than re-fetched per row.
+function findGuideSlug(combos, artistName, city) {
+  if (!artistName || !city) return null;
+  const match = combos.find((c) => c.artist_name === artistName && c.city === city);
+  if (!match) return null;
+  return `${guideSlugify(match.artist_name)}-tickets-${guideSlugify(match.city)}`;
+}
+
 function breadcrumb(items) {
   // items: [{label, href?}] — last item has no href (current page)
   const parts = items.map((it) => it.href ? `<a href="${xmlEscape(it.href)}">${xmlEscape(it.label)}</a>` : xmlEscape(it.label));
@@ -136,8 +150,8 @@ router.get('/artists', async (req, res) => {
     const artists = await discoverArtists({ limit: 1000 });
     const items = artists.map((a) => `<li><a href="/artists/${xmlEscape(a.slug)}">${xmlEscape(a.artistName)}</a> — ${a.eventCount} upcoming show${a.eventCount === 1 ? '' : 's'}${a.cityCount > 1 ? ` in ${a.cityCount} cities` : ''}</li>`).join('');
     const html = pageShell({
-      title: 'Artists With Tickets Available | ConcertAndMatches',
-      description: `Browse ${artists.length} artists with real, currently listed upcoming shows and ticket prices from multiple sellers.`,
+      title: `Concert Tickets by Artist — ${artists.length} Artists | ConcertAndMatches`,
+      description: `Compare ticket prices for ${artists.length} artists with real, currently listed upcoming shows from multiple sellers.`,
       url: `${SITE_ORIGIN}/artists`,
       h1: 'Artists with tickets available',
       intro: `${artists.length} artists currently have upcoming shows listed with real ticket availability.`,
@@ -172,7 +186,12 @@ router.get('/artists/:slug', async (req, res) => {
       : `${page.events.length} upcoming ${page.artistName} show${page.events.length === 1 ? '' : 's'}. See dates, venues, and ticket availability.`;
     const url = `${SITE_ORIGIN}/artists/${xmlEscape(req.params.slug)}`;
     const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url };
-    const cityLinks = cityList.slice(0, 12).map((c) => `<li><a href="/cities/${xmlEscape(citySlugify(`${c.city}-${c.state || ''}`))}/concerts">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a></li>`).join('');
+    const guideCombos = await topArtistCityCombos().catch(() => []);
+    const cityLinks = cityList.slice(0, 12).map((c) => {
+      const guideSlug = findGuideSlug(guideCombos, page.artistName, c.city);
+      const guideLink = guideSlug ? ` (<a href="/guide/${xmlEscape(guideSlug)}">price guide</a>)` : '';
+      return `<li><a href="/cities/${xmlEscape(citySlugify(`${c.city}-${c.state || ''}`))}/concerts">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a>${guideLink}</li>`;
+    }).join('');
     const html = pageShell({
       title, description, url,
       h1: `${page.artistName} tickets`,
@@ -202,8 +221,8 @@ router.get('/cities', async (req, res) => {
     const cities = await discoverCities({ limit: 1000 });
     const items = cities.map((c) => `<li><a href="/cities/${xmlEscape(c.slug)}/events">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a> — ${c.eventCount} upcoming event${c.eventCount === 1 ? '' : 's'}</li>`).join('');
     const html = pageShell({
-      title: 'Events by City | ConcertAndMatches',
-      description: `Browse upcoming concerts and sports events in ${cities.length} cities with real, currently listed ticket availability.`,
+      title: `Concert & Sports Tickets Near You — ${cities.length} Cities | ConcertAndMatches`,
+      description: `Compare ticket prices for upcoming concerts and sports events in ${cities.length} cities with real, currently listed availability.`,
       url: `${SITE_ORIGIN}/cities`,
       h1: 'Events by city',
       intro: `${cities.length} cities currently have upcoming events listed.`,
@@ -235,6 +254,18 @@ async function renderCityVariant(req, res, variant) {
     const otherVariants = CITY_VARIANTS_LIST.filter((v) => v !== variant)
       .map((v) => `<a href="/cities/${xmlEscape(req.params.slug)}/${v}">${CITY_VARIANT_LABEL[v]} in ${xmlEscape(page.city)}</a>`)
       .join(' · ');
+    // Link down to this city's own /guide/:slug price-guide pages (see
+    // findGuideSlug's comment above) — a city page is exactly the kind of
+    // already-indexed page that can pass crawl signal to those guides.
+    const guideCombos = await topArtistCityCombos().catch(() => []);
+    const guideSlugsSeen = new Set();
+    const guideLinks = page.events.map((e) => {
+      const artistName = e.artist_name || e.title;
+      const slug = findGuideSlug(guideCombos, artistName, page.city);
+      if (!slug || guideSlugsSeen.has(slug)) return null;
+      guideSlugsSeen.add(slug);
+      return `<li><a href="/guide/${xmlEscape(slug)}">${xmlEscape(artistName)} price guide</a></li>`;
+    }).filter(Boolean).slice(0, 12).join('');
     const html = pageShell({
       title, description, url,
       h1: `${label} in ${place}`,
@@ -242,6 +273,7 @@ async function renderCityVariant(req, res, variant) {
       breadcrumbHtml: breadcrumb([{ label: 'Cities', href: '/cities' }, { label: place }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${otherVariants ? `<p>${otherVariants}</p>` : ''}
+      ${guideLinks ? `<h2>Price guides for ${xmlEscape(page.city)}</h2><ul>${guideLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
@@ -267,8 +299,8 @@ router.get('/venues', async (req, res) => {
     const venues = await discoverVenues({ limit: 1000 });
     const items = venues.map((v) => `<li><a href="/venues/${xmlEscape(v.slug)}">${xmlEscape(v.venueName)}</a> — ${xmlEscape(v.city || '')}${v.state ? `, ${xmlEscape(v.state)}` : ''} (${v.eventCount} upcoming)</li>`).join('');
     const html = pageShell({
-      title: 'Venues With Upcoming Events | ConcertAndMatches',
-      description: `Browse ${venues.length} venues with real, currently listed upcoming events and ticket availability.`,
+      title: `Event Venues & Tickets — ${venues.length} Venues | ConcertAndMatches`,
+      description: `Compare ticket prices for ${venues.length} venues with real, currently listed upcoming events.`,
       url: `${SITE_ORIGIN}/venues`,
       h1: 'Venues with upcoming events',
       intro: `${venues.length} venues currently have upcoming events listed.`,
@@ -320,8 +352,8 @@ router.get('/venues/:slug', async (req, res) => {
 router.get('/leagues', async (req, res) => {
   const items = Object.entries(LEAGUE_DEFS).map(([slug, def]) => `<li><a href="/leagues/${xmlEscape(slug)}">${xmlEscape(def.label)}</a></li>`).join('');
   const html = pageShell({
-    title: 'Leagues & Categories | ConcertAndMatches',
-    description: 'Browse tickets by league or category: NFL, NBA, NCAA Football, concerts, theater, and comedy.',
+    title: 'NFL, NBA & More — Tickets by League | ConcertAndMatches',
+    description: 'Compare ticket prices by league or category: NFL, NBA, NCAA Football, concerts, theater, and comedy.',
     url: `${SITE_ORIGIN}/leagues`,
     h1: 'Browse by league or category',
     intro: 'Pick a league or category to see all currently listed upcoming events.',
@@ -379,8 +411,8 @@ router.get('/teams', async (req, res) => {
     const teams = await discoverTeams({ limit: 1000 });
     const items = teams.map((t) => `<li><a href="/teams/${xmlEscape(t.slug)}">${xmlEscape(t.name)}</a> — ${t.eventCount} upcoming game${t.eventCount === 1 ? '' : 's'}</li>`).join('');
     const html = pageShell({
-      title: 'Teams With Upcoming Games | ConcertAndMatches',
-      description: `Browse ${teams.length} teams with real, currently listed upcoming games and ticket availability.`,
+      title: `Sports Tickets by Team — ${teams.length} Teams | ConcertAndMatches`,
+      description: `Compare ticket prices for ${teams.length} teams with real, currently listed upcoming games.`,
       url: `${SITE_ORIGIN}/teams`,
       h1: 'Teams with upcoming games',
       intro: `${teams.length} teams currently have upcoming games listed. Team names are extracted from matchup listings and may occasionally be imprecise.`,

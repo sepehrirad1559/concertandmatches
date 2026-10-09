@@ -318,7 +318,7 @@ router.get('/guide/:slug', async (req, res) => {
 </table>
 <p>Prices update as sellers change theirs — always confirm the final price on the seller's site before buying. ConcertAndMatches doesn't sell tickets directly; we list availability from authorized sellers and link you through to buy.</p>
 ${faqHtml}
-<p><a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches</a></p>
+<p><a href="/artists/${xmlEscape(slugify(match.artist_name))}">All ${xmlEscape(match.artist_name)} tickets</a> · <a href="/cities/${xmlEscape(slugify(`${match.city}-${match.state || ''}`))}/concerts">All concerts in ${xmlEscape(match.city)}</a> · <a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches</a></p>
 </body>
 </html>`;
 

@@ -33,31 +33,85 @@ function xmlEscape(str) {
 // event card, matching exactly what a customer sees on the site (not one
 // entry per raw source row). Only future events are listed — a sitemap
 // full of concerts that already happened doesn't help discovery and just
-// dilutes crawl budget. Capped well under the 50,000-URL sitemap protocol
-// limit; the site currently has a few thousand events, so this isn't a
-// real constraint today.
-const SITEMAP_URL_CAP = 5000;
+// dilutes crawl budget.
+//
+// 2026-10-09: this used to be a single flat sitemap.xml capped at 5,000
+// event URLs total (SQL LIMIT 8000 raw rows, then sliced to 5000 after
+// merge) — a holdover comment admitted this was "fine for now" back when
+// the catalog had a few thousand events. It now has 255,000+, so that cap
+// meant ~98% of the catalog was never even submitted to Google for
+// crawling — the single biggest reason so few pages are indexed. Fixed by
+// switching to the standard sitemap-index pattern: GET /sitemap.xml now
+// returns an index listing one child sitemap per ~40,000-event page (well
+// under the protocol's 50,000-URL-per-file limit) plus the existing
+// combined non-event sitemap, so the full catalog gets submitted.
+//
+// Still queries the raw `events` table (not `canonical_events`) and still
+// merges/dedupes per-page via mergeEventsAcrossSources, same as before —
+// deliberately NOT switched to the canonical_events layer in this change.
+// That's a separate, larger fix (routing /event/:id pages through
+// canonical events, which is also what would resolve the small number of
+// "Duplicate, Google chose different canonical" pages in Search Console —
+// see project notes) left for its own task rather than entangled here.
+const EVENTS_PER_SITEMAP_PAGE = 40000;
 const SITE_ORIGIN = 'https://www.concertandmatches.com';
+
+// Shared WHERE clause/params for the eligible-events query, used by both
+// the count (to compute how many event-sitemap pages exist) and each
+// page's actual row fetch — kept in one place so they can never drift out
+// of sync with each other.
+function buildSitemapEventsWhere() {
+  let sitemapWhere = 'WHERE date >= NOW()';
+  sitemapWhere = appendPricedOnlyFilter(sitemapWhere);
+  const sitemapParams = [];
+  if (ACTIVE_SOURCES) {
+    sitemapWhere += ` AND source = ANY($1::text[])`;
+    sitemapParams.push(ACTIVE_SOURCES);
+  }
+  return { sitemapWhere, sitemapParams };
+}
 
 router.get('/sitemap.xml', async (req, res) => {
   try {
-    // TEMPORARY (see config/sourceVisibility.js): don't keep advertising
-    // hidden-source events to search engines while they're hidden on-site.
-    // PERMANENT (see config/priceVisibility.js): same for confirmed delisted
-    // (sold-out/pulled) events — never worth a crawl budget slot. Unpriced-
-    // but-still-listed events ARE included (2026-09-27) — see that file.
-    let sitemapWhere = 'WHERE date >= NOW()';
-    sitemapWhere = appendPricedOnlyFilter(sitemapWhere);
-    const sitemapParams = [];
-    if (ACTIVE_SOURCES) {
-      sitemapWhere += ` AND source = ANY($1::text[])`;
-      sitemapParams.push(ACTIVE_SOURCES);
-    }
-    const result = await pool.query(
-      `SELECT * FROM events ${sitemapWhere} ORDER BY date ASC LIMIT 8000`,
+    const { sitemapWhere, sitemapParams } = buildSitemapEventsWhere();
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM events ${sitemapWhere}`,
       sitemapParams
     );
-    const merged = mergeEventsAcrossSources(result.rows).slice(0, SITEMAP_URL_CAP);
+    const totalEligible = Number(countResult.rows[0]?.count || 0);
+    const eventPageCount = Math.max(1, Math.ceil(totalEligible / EVENTS_PER_SITEMAP_PAGE));
+
+    const sitemapRefs = [];
+    for (let page = 1; page <= eventPageCount; page++) {
+      sitemapRefs.push(`  <sitemap>\n    <loc>${SITE_ORIGIN}/sitemap-events-${page}.xml</loc>\n  </sitemap>`);
+    }
+    sitemapRefs.push(`  <sitemap>\n    <loc>${SITE_ORIGIN}/sitemap-seo.xml</loc>\n  </sitemap>`);
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapRefs.join('\n')}\n</sitemapindex>\n`;
+    res.set('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('Error generating sitemap index:', error);
+    res.status(500).set('Content-Type', 'text/plain').send('Failed to generate sitemap index');
+  }
+});
+
+// One page of up to EVENTS_PER_SITEMAP_PAGE event URLs. `ORDER BY date ASC,
+// id ASC` — the `id` tiebreaker matters here specifically because this is
+// paginated via LIMIT/OFFSET across repeated requests (one per crawl of
+// each child sitemap): `date` alone is not a stable sort when many rows
+// share the same timestamp, which would let OFFSET-based pagination skip
+// or repeat rows across pages/requests as DB page-plan tie-ordering shifts.
+router.get('/sitemap-events-:page([0-9]+).xml', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.params.page, 10) || 1);
+    const { sitemapWhere, sitemapParams } = buildSitemapEventsWhere();
+    const offset = (page - 1) * EVENTS_PER_SITEMAP_PAGE;
+    const result = await pool.query(
+      `SELECT * FROM events ${sitemapWhere} ORDER BY date ASC, id ASC LIMIT $${sitemapParams.length + 1} OFFSET $${sitemapParams.length + 2}`,
+      [...sitemapParams, EVENTS_PER_SITEMAP_PAGE, offset]
+    );
+    const merged = mergeEventsAcrossSources(result.rows);
 
     const urlEntries = merged.map((event) => {
       const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
@@ -67,6 +121,17 @@ router.get('/sitemap.xml', async (req, res) => {
       return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`;
     });
 
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlEntries.join('\n')}\n</urlset>\n`;
+    res.set('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('Error generating event sitemap page:', error);
+    res.status(500).set('Content-Type', 'text/plain').send('Failed to generate event sitemap page');
+  }
+});
+
+router.get('/sitemap-seo.xml', async (req, res) => {
+  try {
     // Evergreen artist+city guide pages (see routes/guides.js) — worth a
     // higher changefreq than per-event pages since their content (the list
     // of upcoming shows/prices for that artist in that city) shifts as
@@ -110,16 +175,18 @@ router.get('/sitemap.xml', async (req, res) => {
 
     // Comfortably under the 50,000-URL sitemap protocol limit even with
     // every entity type at its own individual query cap (2000 each for
-    // artists/venues/teams, 2000 cities x3 variants) plus the event and
-    // guide entries above.
+    // artists/venues/teams, 2000 cities x3 variants) plus the guide entries
+    // above. Event URLs are no longer part of this file (see
+    // sitemap-events-:page.xml above) — this cap only needs to cover the
+    // non-event entity pages now.
     const SEO_SITEMAP_CAP = 45000;
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...urlEntries, ...guideEntries, ...leagueEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries].slice(0, SEO_SITEMAP_CAP).join('\n')}\n</urlset>\n`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...guideEntries, ...leagueEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries].slice(0, SEO_SITEMAP_CAP).join('\n')}\n</urlset>\n`;
 
     res.set('Content-Type', 'application/xml');
     res.send(xml);
   } catch (error) {
-    console.error('Error generating sitemap:', error);
-    res.status(500).set('Content-Type', 'text/plain').send('Failed to generate sitemap');
+    console.error('Error generating SEO sitemap:', error);
+    res.status(500).set('Content-Type', 'text/plain').send('Failed to generate SEO sitemap');
   }
 });
 

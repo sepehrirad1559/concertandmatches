@@ -4,22 +4,66 @@ import { slugify as entitySlugify } from '../services/seoEngine.js';
 
 const router = express.Router();
 
-// "Dynamic rendering" for bots (spec §20-22 — real SEO, tackled the rest of
-// the way). The frontend is a client-rendered SPA: a human's browser and a
-// JS-executing crawler (Googlebot) run the app and see the per-event
-// title/meta/JSON-LD that App.jsx sets after fetching the event. A simple
-// crawler or link-preview bot (Slackbot, Twitterbot, most others) does NOT
-// execute JS, so it only ever sees the generic index.html shell — it would
-// never see real per-event content or meta tags.
+// Real SSR for event pages (2026-10-09 rewrite — see git history for the
+// original bot-only "dynamic rendering" version this replaced).
 //
-// vercel.json rewrites requests to /event/:id-:slug whose User-Agent looks
-// like a known bot to THIS route instead of index.html (real users/
-// Googlebot are unaffected — they still get the normal SPA). This returns
-// fully-formed static HTML: no JS required to see the real title,
-// description, Open Graph/Twitter tags, JSON-LD, and a plain-text summary
-// of the event. This is the same "dynamic rendering" pattern Google
-// documented as a standard interim solution for JS-heavy sites, and is far
-// lower-risk than a full SSR framework migration on a live site.
+// The old approach routed ONLY bot User-Agents here via a Vercel Routing
+// Middleware (middleware.mjs) conditional rewrite; real humans/Googlebot's
+// JS-executing crawl still got the bare index.html SPA shell, which only
+// gets correct per-event title/meta/JSON-LD after client-side hydration.
+// That middleware DOES execute (confirmed by its own in-file history), but
+// proved repeatedly fragile across several real incidents: bot User-Agent
+// strings it didn't recognize (e.g. Google-InspectionTool) silently fell
+// through to the SPA; a silent fetch failure with no visible logs on this
+// Vercel plan was indistinguishable from "not a bot"; and the CDN cached
+// whichever response (bot or human) happened to be generated first for a
+// given /event/:id path and served it to everyone after, bot or not, until
+// a no-store header was added. Each of those took a live GSC Test-Live-URL
+// cycle to even diagnose. Rather than keep patching a UA-branching proxy
+// with that failure history, this routes every visitor through the exact
+// same code path — no UA check left to get out of sync with reality.
+//
+// Fix: vercel.json now rewrites EVERY visit to /event/:id-:slug to this
+// route unconditionally — bot or human, no UA branching, no middleware
+// dependency — exactly like guide/artist/city/venue/team pages already do
+// via their own plain rewrites to seoPages.js. The difference from those
+// pages: this route fetches the site's own live index.html (cached 5 min)
+// and reuses its real <script>/<link> tags for the built JS/CSS bundle,
+// then swaps in the real per-event <title>/meta/canonical/OG/Twitter/
+// JSON-LD and seeds #root with a static summary of the event. Because
+// main.tsx calls ReactDOM.createRoot(...).render(...) — not hydrateRoot —
+// React simply replaces that seeded content once the bundle loads, so
+// human visitors still get the full live-price/buy-ticket SPA exactly as
+// before, just with a correct, real first paint. A crawler that doesn't
+// execute JS (most link-preview bots, some simple crawlers) sees the
+// static summary and never knows the difference.
+let cachedShell = null;
+let cachedShellAt = 0;
+const SHELL_CACHE_MS = 5 * 60 * 1000;
+async function getLiveShell() {
+  if (cachedShell && Date.now() - cachedShellAt < SHELL_CACHE_MS) return cachedShell;
+  const r = await fetch('https://www.concertandmatches.com/');
+  if (!r.ok) throw new Error(`Shell fetch failed: ${r.status}`);
+  const html = await r.text();
+  cachedShell = html;
+  cachedShellAt = Date.now();
+  return html;
+}
+
+// Strips the homepage-specific title/meta/canonical/JSON-LD from a fetched
+// shell so the per-event versions can be inserted in their place without
+// leaving duplicate <title>/<meta>/<script> tags in the response (which
+// would confuse crawlers about which value is authoritative).
+function stripGenericHead(html) {
+  return html
+    .replace(/<title>[\s\S]*?<\/title>/i, '')
+    .replace(/<meta\s+name="description"[^>]*>/i, '')
+    .replace(/<link\s+rel="canonical"[^>]*>/i, '')
+    .replace(/<meta\s+property="og:[^"]*"[^>]*>\s*/gi, '')
+    .replace(/<meta\s+name="twitter:[^"]*"[^>]*>\s*/gi, '')
+    .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>\s*/gi, '');
+}
+
 function xmlEscape(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
@@ -85,12 +129,25 @@ router.get('/event/:pathParam', async (req, res) => {
       return;
     }
 
-    const title = `${event.title} Tickets — ${formatDate(event.date)} | ConcertAndMatches`;
-    const description = `Get tickets for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}. Listed from multiple authorized sellers.`;
+    // Title/meta tuning (2026-10-09): the prior title/description never
+    // included the city or starting price. Both are proven higher-CTR
+    // signals already used elsewhere in this codebase (routes/guides.js's
+    // "starting from $X" pattern) — a searcher typing "[artist] tickets
+    // [city]" or comparison-shopping on price sees neither in the old
+    // copy, even when the data is already on hand for every event with at
+    // least one priced offer. City is included only when known; price only
+    // when at least one offer has a real min_price, so this never
+    // fabricates a number.
+    const offers = Array.isArray(event.offers) ? event.offers : [];
+    const pricedOffers = offers.filter((o) => o.min_price != null);
+    const startingPrice = pricedOffers.length > 0
+      ? Math.min(...pricedOffers.map((o) => Number(o.min_price)))
+      : null;
+
+    const title = `${event.title} Tickets${event.city ? ` in ${event.city}` : ''} — ${formatDate(event.date)} | ConcertAndMatches`;
+    const description = `Get tickets for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}.${startingPrice != null ? ` Prices start at $${startingPrice.toFixed(0)}.` : ''} Listed from multiple authorized sellers.`;
     const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
     const url = `https://www.concertandmatches.com/event/${event.id}-${slug}`;
-
-    const offers = Array.isArray(event.offers) ? event.offers : [];
     const offersForLd = offers
       .filter((o) => o.min_price != null)
       .map((o) => ({
@@ -189,11 +246,7 @@ router.get('/event/:pathParam', async (req, res) => {
       ? `<h2>Related</h2><ul>${relatedLinks.map((l) => `<li>${l}</li>`).join('')}</ul>`
       : '';
 
-    const html = `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<title>${xmlEscape(title)}</title>
+    const eventHeadTags = `<title>${xmlEscape(title)}</title>
 <meta name="description" content="${xmlEscape(description)}" />
 <link rel="canonical" href="${xmlEscape(url)}" />
 <meta property="og:type" content="website" />
@@ -201,7 +254,6 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta property="og:title" content="${xmlEscape(title)}" />
 <meta property="og:description" content="${xmlEscape(description)}" />
 <meta property="og:url" content="${xmlEscape(url)}" />
-
 <meta property="og:image" content="${xmlEscape(event.image_url || 'https://www.concertandmatches.com/og-image.png')}" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${xmlEscape(title)}" />
@@ -209,19 +261,48 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta name="twitter:image" content="${xmlEscape(event.image_url || 'https://www.concertandmatches.com/og-image.png')}" />
 <meta name="robots" content="index, follow" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
-</head>
-<body>
-${breadcrumbHtml}
+</head>`;
+
+    const rootContent = `${breadcrumbHtml}
 <h1>${xmlEscape(event.title)}</h1>
 ${event.artist_name ? `<p>${xmlEscape(event.artist_name)}</p>` : ''}
 <p>Date: ${xmlEscape(formatDate(event.date))}</p>
 <p>Location: ${xmlEscape(event.venue_name || '')}${event.city ? `, ${xmlEscape(event.city)}` : ''}${event.state ? `, ${xmlEscape(event.state)}` : ''}</p>
 <h2>Ticket Sellers</h2>
 ${offersHtml}
-${relatedLinksHtml}
+${relatedLinksHtml}`;
+
+    let html;
+    try {
+      const shell = await getLiveShell();
+      const strippedShell = stripGenericHead(shell);
+      // Insert our tags right before the shell's own </head>, and seed
+      // #root with the static summary so a non-JS crawler still has real
+      // content even if it ignores the <script> tag entirely.
+      html = strippedShell
+        .replace('</head>', eventHeadTags)
+        .replace('<div id="root"></div>', `<div id="root">${rootContent}</div>`);
+      // Belt-and-braces: if either expected anchor wasn't found (a future
+      // index.html edit changes its shape), fall back below rather than
+      // silently shipping a malformed page.
+      if (!html.includes('<title>') || !html.includes('id="root"')) throw new Error('Shell merge anchors not found');
+    } catch (shellError) {
+      // Live-shell fetch/merge failed (Vercel hiccup, index.html shape
+      // changed, etc.) — fall back to the original bare static page rather
+      // than failing the request. Worse for humans (no live SPA) but still
+      // fully correct for SEO, and self-heals next cache cycle.
+      console.error('Prerender shell merge failed, falling back to static-only page:', shellError.message);
+      html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+${eventHeadTags}
+<body>
+${rootContent}
 <p><a href="${xmlEscape(url)}">View live prices and buy tickets on ConcertAndMatches</a></p>
 </body>
 </html>`;
+    }
 
     res.set('Content-Type', 'text/html');
     res.send(html);

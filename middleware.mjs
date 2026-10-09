@@ -77,7 +77,18 @@ const PLAIN_CONTENT_PREFIXES = ['/guide', '/sitemap.xml', '/artists', '/cities',
 
 export const config = {
   matcher: [
-    '/event/:path*',
+    // /event/:path* intentionally removed 2026-10-09: event pages are now
+    // served via an unconditional vercel.json rewrite straight to
+    // backend/src/routes/prerender.js (see that file's header comment for
+    // why — this middleware's bot-branch below had three separate, hard-
+    // to-diagnose production incidents on this exact path over the past
+    // few weeks: UA strings it didn't recognize, a silent fetch failure
+    // indistinguishable from "not a bot" on this Vercel plan, and CDN cache
+    // poisoning serving one visitor's response to every later visitor
+    // regardless of User-Agent). Leaving the bot-detection code below in
+    // place (now unreachable — matcher controls what this file even
+    // receives) rather than deleting it, in case event-specific UA
+    // branching is ever needed again; it just no longer fires.
     '/guide',
     '/guide/:path*',
     '/sitemap.xml',
