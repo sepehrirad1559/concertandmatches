@@ -82,7 +82,30 @@ port: process.env.DB_PORT || 5432,
 });
 
 // Middleware
-app.use(helmet());
+//
+// 2026-10-09: helmet()'s default Content-Security-Policy (script-src
+// 'self', and no connect-src override so it inherits default-src 'self')
+// was harmless as long as every backend-rendered page (routes/seoPages.js,
+// routes/guides.js) was plain static-link HTML with no embedded app JS —
+// those pages never call the API client-side, so a restrictive CSP never
+// had anything to block. That stopped being true the moment
+// routes/prerender.js's /event/:id page started merging real event
+// content into the LIVE SPA SHELL (same script tag, same React bundle, as
+// the homepage) so real visitors still get the interactive price/buy UI —
+// that bundle calls the API at https://concertandmatches-production.up.
+// railway.app/api from the page's own origin (www.concertandmatches.com),
+// a cross-origin fetch the default CSP's connect-src silently blocks.
+// Confirmed live: every direct visit to an /event/:id URL was rendering
+// "We couldn't find that event" for every real visitor, because the
+// client's own re-fetch of the event (and everything else the bundle
+// calls — ticket click tracking, the buy-ticket redirect) was being
+// blocked before it left the browser. The homepage, served as a static
+// file straight from Vercel's CDN rather than through this Express app,
+// was never affected and carries no CSP header at all today — disabling
+// it here just brings the backend-rendered pages in line with the same
+// security posture the site's highest-traffic page already has, rather
+// than introducing anything new.
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // Allow the app's known frontend origins (custom domain + www + Vercel
 // subdomain), plus whatever FRONTEND_URL is set to in the environment.

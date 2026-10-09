@@ -2521,9 +2521,20 @@ export default function App() {
   // rendered path regardless of whether middleware.mjs's bot detection
   // matches a given crawler's User-Agent, rather than depending solely on
   // that regex staying in sync with every crawler Google ever ships.
+  // defaultTitle/defaultDescription must match index.html's own <title>/
+  // meta description verbatim — this effect runs on every mount/update
+  // (including the homepage) and overwrites whatever index.html shipped
+  // with these literals the moment it fires. They'd drifted out of sync
+  // with index.html's actual copy (caught 2026-10-09 while live-verifying
+  // the homepage title/meta tuning: the tuned <title> was visible for an
+  // instant in the initial HTML, then silently overwritten back to this
+  // stale string as soon as the bundle mounted) — every JS-executing
+  // visitor and crawler (Googlebot's render pass included) was seeing the
+  // old pre-tuning copy, not the new one, regardless of what index.html
+  // said.
   useEffect(() => {
-    const defaultTitle = 'ConcertAndMatches — Newly Listed Tickets for Concerts, Sports & Theater';
-    const defaultDescription = 'Be the first to buy tickets to concerts, sports, theater and comedy across the USA and Canada — new events listed from multiple authorized sellers as fast as they go on sale.';
+    const defaultTitle = 'Concert, Sports & Theater Tickets — Compare Prices | ConcertAndMatches';
+    const defaultDescription = 'Find and compare tickets for concerts, sports, theater and comedy from multiple authorized sellers across the USA and Canada. New events listed as soon as they\'re announced.';
     const canonicalEl = document.querySelector('link[rel="canonical"]');
     const descriptionEl = document.querySelector('meta[name="description"]');
     const ogTitleEl = document.querySelector('meta[property="og:title"]');
