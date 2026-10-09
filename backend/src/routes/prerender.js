@@ -37,9 +37,26 @@ const router = express.Router();
 // before, just with a correct, real first paint. A crawler that doesn't
 // execute JS (most link-preview bots, some simple crawlers) sees the
 // static summary and never knows the difference.
+// 2026-10-09: confirmed live, right after this file's own first deploy —
+// Vite content-hashes the built JS bundle filename (e.g.
+// /assets/index-DGoTKwOg.js), so EVERY frontend deploy ships a new hash.
+// The 5-minute cache below meant that for up to 5 minutes after any
+// frontend deploy, every single /event/:id page kept serving the PREVIOUS
+// deploy's now-deleted bundle filename — Vercel has no static file at
+// that path anymore, so its catch-all SPA rewrite served index.html
+// instead (200 status, text/html, wrong MIME type for a <script
+// type="module">), and the browser refused to execute it. Real result:
+// the live-price/buy-ticket SPA silently failed to boot on every event
+// page site-wide for up to 5 minutes after every deploy — caught by
+// fetching the page in an actual browser and watching the console, not
+// visible from a raw HTML diff since the server-rendered fallback content
+// still looked fine. Shrinking this to 60s doesn't eliminate the window
+// (nothing server-side can know the instant Vercel's deploy flips without
+// webhooking it, which is a larger change than this fix), but cuts worst-
+// case exposure from 5 minutes to 1 on every future deploy.
 let cachedShell = null;
 let cachedShellAt = 0;
-const SHELL_CACHE_MS = 5 * 60 * 1000;
+const SHELL_CACHE_MS = 60 * 1000;
 async function getLiveShell() {
   if (cachedShell && Date.now() - cachedShellAt < SHELL_CACHE_MS) return cachedShell;
   const r = await fetch('https://www.concertandmatches.com/');
