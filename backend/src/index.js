@@ -18,17 +18,31 @@ import seoPagesRoutes from './routes/seoPages.js';
 
 import { logProviderSync } from './utils/syncLog.js';
 
-// Ticketmaster scheduled discovery/backfill REMOVED 2026-10-08, permanently
-// this time — see the matching comment on runScheduledEventSync below for
-// the full history and reasoning. SeatGeek's scheduled discovery/backfill
-// remain REMOVED too (2026-09-21, "we no longer need data from seatgeek and
-// ticketmaster, remove their data from our platform"). services/
-// ticketmaster.js, providers/TicketmasterProvider.js, services/seatgeek.js,
-// providers/SeatGeekProvider.js, and their manual POST /admin/sync|backfill
-// routes are still left in place — unused, not deleted (Ticketmaster's
-// manual routes are additionally guarded to refuse, not just unused — see
-// routes/admin.js) — so re-enabling either later is a deliberate code
-// change, not rebuilding the integration from scratch.
+// Ticketmaster scheduled discovery/backfill RESTORED 2026-09-26 at the
+// user's request ("since we have the api approved for ticketmaster, go
+// ahead and add all kind of the events from all countries") — reversing the
+// 2026-09-21 removal below. Also expanded services/ticketmaster.js's own
+// fetches to search worldwide (no country restriction) instead of the old
+// hardcoded US/CA-only scope — see the WORLDWIDE COVERAGE comment there.
+// Uses the bounded syncClosestEvents (5,000 soonest-by-date events per run,
+// cursoring forward each day — see its own comment in services/
+// ticketmaster.js) rather than the unbounded syncAllEvents/
+// fetchAllTicketmasterEventsNationwide: worldwide + every segment fully
+// paginated could be a very large one-shot pull, and this job needs to
+// finish reliably every day, not risk running for hours or blowing through
+// Ticketmaster's daily API quota in one run. The one-time initial backfill
+// to seed the catalog right away used the heavier comprehensive sync
+// directly via POST /admin/sync/ticketmaster (see chat/session notes) —
+// this scheduled job is just the ongoing, incremental keep-it-current step.
+//
+// SeatGeek's scheduled discovery/backfill RESTORED 2026-10-10 alongside
+// Ticketmaster (both had been excluded/discontinued — see git history for
+// 2026-09-21, 2026-09-27, 2026-10-08) at the user's explicit request: the
+// platform's business model is to pull availability and price range from
+// all three major sellers (Ticketmaster, TicketNetwork, SeatGeek) and show
+// customers the price range across them, not just TicketNetwork alone.
+import { syncAllEvents as syncAllTicketmasterEvents, backfillMissingPrices as backfillTicketmasterPrices } from './services/ticketmaster.js';
+import { syncSeatGeekEvents, backfillMissingPrices as backfillSeatGeekPrices } from './services/seatgeek.js';
 import { rebuildCanonicalEvents } from './services/canonicalize.js';
 
 // TicketNetwork catalog sync (Impact.com affiliate feed) — services/
@@ -215,32 +229,124 @@ console.log(`📦 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.
 // fresher prices than 24h did, it's purely a safety margin in case a given
 // day's run is late, fails partway, or gets interrupted by a redeploy (see
 // the concurrency-guard comment below). The staggered boot delay below
-// predates Ticketmaster's two removals and one restoration — unaffected by
-// any of it.
+// predates every Ticketmaster removal/restoration (three of them now, as
+// of 2026-10-10) — unaffected by any of it.
 const EVENT_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 async function runScheduledEventSync() {
-// Ticketmaster discovery + price backfill steps REMOVED here 2026-10-08 —
-// Ticketmaster permanently discontinued as a data source at the user's
-// explicit request ("we are no longer interested in ticketmaster, go ahead
-// and remove all of the events from ticketmaster permanently and properly").
-// This is the second removal: first 2026-09-21 ("we no longer need data
-// from seatgeek and ticketmaster"), reversed 2026-09-26 when the user asked
-// to re-add Ticketmaster worldwide, iterated further 2026-10-04 (switched
-// from the bounded closest-by-date sync to the full comprehensive one, see
-// git history for that reasoning) — now final. The two manual routes
-// (POST /admin/sync/ticketmaster[-closest], POST /admin/backfill/
-// ticketmaster-prices) are additionally guarded to refuse rather than
-// removed outright, specifically because the 2026-09-26 reversal happened
-// via a manual route call like those — see their comments in
-// routes/admin.js. All existing Ticketmaster rows were purged via the
-// chunked POST /admin/cleanup/purge-source-chunk?source=ticketmaster route
-// (see that route's comment) followed by POST /admin/canonicalize/rebuild.
-// services/ticketmaster.js and providers/TicketmasterProvider.js are left
-// in place, unused — re-enabling later is restoring this block (see git
-// history) plus deleting the two guard blocks in routes/admin.js, not
-// rebuilding the integration from scratch.
-let startedAt;
+// Switched from the bounded syncClosestTicketmasterEvents(5000) to the full
+// syncAllTicketmasterEvents() (2026-10-04, user request: "Ticketmaster
+// inventory is way more than this number in our website... find the real
+// problem and fix it and add all the events available from Ticketmaster").
+//
+// Root cause found in the admin dashboard's Provider Health table: the
+// daily 'closest-by-date' run had stalled to receiving ~1 new event/day.
+// syncClosestEvents cursors forward off MAX(date) already stored for
+// Ticketmaster and only ever fetches events AFTER that cursor — so once the
+// cursor outran the pace of real-world announcements, it stopped seeing
+// anything new. Critically, it also never looks BACKWARD: when Ticketmaster
+// announces a new event for a date earlier than the current cursor (which
+// happens constantly — a show next month goes on sale today, long after
+// the cursor has already moved years out), the cursored sync structurally
+// can never find it, no matter how many days it runs. That's the actual gap
+// between the dashboard's small Ticketmaster number and Ticketmaster's real
+// inventory, not a filter anywhere in storage/canonicalization/the API.
+//
+// syncAllTicketmasterEvents() doesn't cursor — every run re-queries the
+// full worldwide, every-segment, 9-months-ahead window from "now" and
+// upserts on external_id (see storeEvent), so it naturally re-discovers
+// newly announced near-term events instead of only ever moving forward.
+// This is the same comprehensive pull previously only run manually via
+// POST /admin/sync/ticketmaster (see that route's 'discovery' logging,
+// matched here so both paths show up the same way on the dashboard) — it
+// can take a while (many minutes, occasionally longer under heavy API
+// load), which is fine here since this already runs as a backgrounded job
+// with its own concurrency guard (isEventSyncRunning above), not an
+// HTTP-triggered request under Railway's proxy timeout.
+console.log('🔄 Running scheduled Ticketmaster sync (full worldwide catalog, every segment)...');
+let startedAt = new Date();
+try {
+  const tmResult = await syncAllTicketmasterEvents();
+  console.log('Ticketmaster sync result:', tmResult);
+  await logProviderSync({
+    providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: tmResult.totalEvents ?? null,
+    status: tmResult.success ? 'success' : 'error',
+    errorMessage: tmResult.error ?? (tmResult.apiErrorCount > 0 ? `${tmResult.apiErrorCount} API error(s): ${JSON.stringify(tmResult.sampleApiErrors)}` : null),
+  });
+} catch (err) {
+  console.error('Ticketmaster sync failed:', err);
+  await logProviderSync({ providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Backfilling Ticketmaster prices...');
+startedAt = new Date();
+try {
+  // Bumped 300 -> 3000 (2026-09-27): the worldwide-coverage expansion added
+  // ~30,000 unpriced international Ticketmaster rows overnight (discovery
+  // returns priceRanges for only a fraction of events; the rest need this
+  // per-event detail-endpoint backfill). At 300/day that backlog would take
+  // ~100 days to clear even once; at 3000/day (4/sec throttle -> ~12.5 min
+  // runtime, well within a background job) it clears in under 2 weeks.
+  // Safe to raise: backfillMissingPrices already detects Ticketmaster's daily
+  // quota exhaustion and stops the batch early with a clear log message
+  // rather than failing silently, so an overly large number just means an
+  // early, well-logged stop rather than a broken run.
+  const tmPriceResult = await backfillTicketmasterPrices(3000);
+  console.log('Ticketmaster price backfill result:', tmPriceResult);
+  await logProviderSync({
+    providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+    recordsUpdated: tmPriceResult.updated ?? null,
+    status: tmPriceResult.success ? 'success' : 'error',
+    errorMessage: tmPriceResult.error ?? null,
+  });
+} catch (err) {
+  console.error('Ticketmaster price backfill failed:', err);
+  await logProviderSync({ providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+// SeatGeek discovery + price backfill — restored 2026-10-10 alongside
+// Ticketmaster, same region-segmented sync the manual POST /admin/sync/
+// seatgeek route already used (perState=300, see that route's comment for
+// why it's segmented by US state/Canadian province rather than one flat
+// call). Mirrors the Ticketmaster block above: discovery first, then a
+// bounded per-event price backfill for whatever discovery left unpriced.
+console.log('🔄 Running scheduled SeatGeek sync (region-segmented)...');
+startedAt = new Date();
+try {
+  const sgResult = await syncSeatGeekEvents(300);
+  console.log('SeatGeek sync result:', sgResult);
+  await logProviderSync({
+    providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: sgResult.totalEvents ?? null,
+    status: sgResult.success ? 'success' : 'error',
+    errorMessage: sgResult.error ?? (sgResult.apiErrorCount > 0 ? `${sgResult.apiErrorCount} API error(s): ${JSON.stringify(sgResult.sampleApiErrors)}` : null),
+  });
+} catch (err) {
+  console.error('SeatGeek sync failed:', err);
+  await logProviderSync({ providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Backfilling SeatGeek prices...');
+startedAt = new Date();
+try {
+  // Same 3000/day bound as Ticketmaster's backfill above, same reasoning:
+  // a fresh region-segmented discovery run can leave a large number of rows
+  // unpriced (SeatGeek's discovery payload doesn't always include a price),
+  // and backfillMissingPrices already detects quota exhaustion and stops
+  // early with a clear log rather than failing silently.
+  const sgPriceResult = await backfillSeatGeekPrices(3000);
+  console.log('SeatGeek price backfill result:', sgPriceResult);
+  await logProviderSync({
+    providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+    recordsUpdated: sgPriceResult.updated ?? null,
+    status: sgPriceResult.success ? 'success' : 'error',
+    errorMessage: sgPriceResult.error ?? null,
+  });
+} catch (err) {
+  console.error('SeatGeek price backfill failed:', err);
+  await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
 
 console.log('🔄 Running scheduled TicketNetwork sync...');
 startedAt = new Date();

@@ -164,24 +164,37 @@ router.post('/sync/ticketmaster', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
-  // 2026-10-08: Ticketmaster discontinued as a data source permanently, at
-  // the user's explicit request ("we are no longer interested in
-  // ticketmaster, go ahead and remove all of the events from ticketmaster
-  // permanently and properly") — the second such removal (first 2026-09-21,
-  // reversed 2026-09-26, now final). Guarded here, not just removed from the
-  // scheduled job in index.js, because the 2026-09-26 reversal happened via
-  // exactly this kind of manual route call — a scheduled-job-only removal
-  // left the data one admin API call away from quietly coming back. This
-  // route intentionally refuses rather than silently no-op-ing, so a future
-  // call surfaces the reason instead of looking like it worked. The
-  // underlying provider code (services/ticketmaster.js, providers/
-  // TicketmasterProvider.js) is left in place, same as SeatGeek's — so
-  // re-enabling later, if ever asked for, is a deliberate code change
-  // (delete this block) rather than rebuilding the integration from scratch.
-  return res.status(410).json({
-    success: false,
-    error: 'Ticketmaster was permanently discontinued as a data source on 2026-10-08. This route is intentionally disabled rather than removed — see the comment above it in backend/src/routes/admin.js to re-enable, or check git history for the full previous implementation.',
-  });
+  const startedAt = new Date();
+
+  // Same fix as /sync/seatgeek above: the comprehensive nationwide sync
+  // (every segment, every US/CA town, fully paginated per month) can take
+  // many minutes — far longer than Railway's proxy will hold a synchronous
+  // request open. Waiting on it here is exactly what produced the
+  // PowerShell-side "upstream error" (a proxy-level timeout/disconnect)
+  // even though the sync itself kept running server-side. Respond
+  // immediately once it's kicked off instead; check GET /admin/health or
+  // the Railway logs for the actual completed result (including the new
+  // apiErrorCount/sampleApiErrors fields).
+  res.json({ success: true, message: 'Ticketmaster sync started in the background. Check GET /admin/health or Railway logs for completion.' });
+
+  getProvider('ticketmaster').sync()
+    .then((result) => logProviderSync({
+      providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+      recordsReceived: result.totalEvents ?? null, status: result.success ? 'success' : 'error',
+      // Surface apiErrorCount/sampleApiErrors (see services/ticketmaster.js)
+      // in the logged error_message even on a "successful" run, so a sync
+      // that silently failed most of its requests but still returned
+      // success:true is visible from GET /admin/health without needing a
+      // separate diagnostics call.
+      errorMessage: result.error ?? (result.apiErrorCount > 0 ? `${result.apiErrorCount} API error(s): ${JSON.stringify(result.sampleApiErrors)}` : null),
+    }))
+    .catch((error) => {
+      console.error('Background Ticketmaster sync failed:', error);
+      return logProviderSync({
+        providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+        recordsReceived: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 // Bounded alternative to /sync/ticketmaster above — fetches and stores only
@@ -203,12 +216,25 @@ router.post('/sync/ticketmaster-closest', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
-  // 2026-10-08: Ticketmaster permanently discontinued — see the matching
-  // comment on /sync/ticketmaster above for the full reasoning.
-  return res.status(410).json({
-    success: false,
-    error: 'Ticketmaster was permanently discontinued as a data source on 2026-10-08. This route is intentionally disabled rather than removed — see the comment above /sync/ticketmaster in backend/src/routes/admin.js to re-enable, or check git history for the full previous implementation.',
-  });
+  const requestedLimit = Number(req.body?.limit ?? req.query?.limit);
+  const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 5000;
+  const startedAt = new Date();
+
+  res.json({ success: true, message: `Ticketmaster closest-${limit}-events sync started in the background. Check GET /admin/health or Railway logs for completion.` });
+
+  getProvider('ticketmaster').syncClosest(limit)
+    .then((result) => logProviderSync({
+      providerName: 'ticketmaster', syncType: 'closest-by-date', startedAt, finishedAt: new Date(),
+      recordsReceived: result.totalStored ?? null, status: result.success ? 'success' : 'error',
+      errorMessage: result.error ?? (result.apiErrorCount > 0 ? `${result.apiErrorCount} API error(s): ${JSON.stringify(result.sampleApiErrors)}` : null),
+    }))
+    .catch((error) => {
+      console.error('Background Ticketmaster closest-events sync failed:', error);
+      return logProviderSync({
+        providerName: 'ticketmaster', syncType: 'closest-by-date', startedAt, finishedAt: new Date(),
+        recordsReceived: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 // One-time seed: adds a 'ticketnetwork' row to `providers` so
@@ -1359,12 +1385,23 @@ router.post('/backfill/ticketmaster-prices', async (req, res) => {
     return res.status(403).json({ error: 'Invalid or missing sync key' });
   }
 
-  // 2026-10-08: Ticketmaster permanently discontinued — see the matching
-  // comment on /sync/ticketmaster above for the full reasoning.
-  return res.status(410).json({
-    success: false,
-    error: 'Ticketmaster was permanently discontinued as a data source on 2026-10-08. This route is intentionally disabled rather than removed — see the comment above /sync/ticketmaster in backend/src/routes/admin.js to re-enable, or check git history for the full previous implementation.',
-  });
+  const limit = Number(req.query.limit) || 100;
+  const startedAt = new Date();
+  res.json({ success: true, message: `Ticketmaster price backfill started in the background (limit=${limit}). Check GET /admin/health or Railway logs for completion.` });
+
+  getProvider('ticketmaster').backfillPrices(limit)
+    .then((result) => logProviderSync({
+      providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+      recordsReceived: result.checked ?? null, recordsUpdated: result.updated ?? null,
+      status: result.success ? 'success' : 'error', errorMessage: result.error ?? backfillDiagnosticMessage(result),
+    }))
+    .catch((error) => {
+      console.error('Background Ticketmaster price backfill failed:', error);
+      return logProviderSync({
+        providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+        recordsReceived: null, recordsUpdated: null, status: 'error', errorMessage: error.message,
+      });
+    });
 });
 
 router.post('/backfill/seatgeek-prices', async (req, res) => {

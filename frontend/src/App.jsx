@@ -1612,6 +1612,19 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
 function EventCard({ event, onSelect, fallbackImageUrl }) {
   const priceLabel = (event.min_price != null || event.max_price != null) ? formatPrice(event) : null;
   const fromPrice = event.min_price != null ? event.min_price : event.max_price;
+  // Price RANGE across sellers (2026-10-10, business-model change: pull
+  // availability + price from Ticketmaster, TicketNetwork and SeatGeek and
+  // show the customer the range across them, not just the single cheapest
+  // number). routes/events.js's mergeEventsAcrossSources already computes
+  // this for every merged event (price_comparison.lowest_price/
+  // highest_price, from the real priced offers, 'official' already
+  // excluded there) — it just sat unused in the API response until now.
+  // Only shown when at least 2 sellers actually have a price and they
+  // differ; a single-seller or equal-price event still shows the plain
+  // "From $X" line below, same as before.
+  const pc = event.price_comparison;
+  const hasRange = pc && pc.offers && pc.offers.length > 1 && pc.lowest_price !== pc.highest_price;
+  const sellerCount = pc?.offers?.length ?? 0;
   // Real, specific photo of this event's actual artist/team (see
   // getEventEntityQuery/useEntityImage above) — a real Taylor Swift or
   // Manchester United photo rather than a generic concert/basketball stock
@@ -1708,7 +1721,12 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
             the bottom of the now-flex content column — see the flex
             comment on the card's outer div above. */}
         <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
-          {priceLabel && (
+          {hasRange ? (
+            <div style={{ fontSize: '13px', fontWeight: 700, color: NAV_ACCENT_COLOR, marginBottom: '6px' }}>
+              ${pc.lowest_price.toFixed(0)} – ${pc.highest_price.toFixed(0)}
+              <span style={{ fontWeight: 400, color: '#666' }}> · {sellerCount} sellers</span>
+            </div>
+          ) : priceLabel && (
             <div style={{ fontSize: '13px', fontWeight: 700, color: NAV_ACCENT_COLOR, marginBottom: '6px' }}>
               From ${Number(fromPrice).toFixed(0)}
             </div>
@@ -3126,15 +3144,10 @@ export default function App() {
                 We don't have a confirmed ticket seller link for this event yet. Check back later,
                 or search for it directly on your preferred ticket site.
               </p>
-            ) : (
-              // Simplified from a per-seller price-comparison list down to a
-              // single "Buy Ticket" box — with Ticketmaster/SeatGeek data
-              // purged (see config/sourceVisibility.js), TicketNetwork is
-              // effectively the only confirmed seller left for most events,
-              // so a seller-by-seller comparison list no longer earns its
-              // keep. Uses the same cheapest-first link buildFindTicketsLinks
-              // already produces (findTicketsLinks[0]), and deliberately
-              // shows only the price — no seller name — per product request.
+            ) : findTicketsLinks.length === 1 ? (
+              // Single confirmed seller — a plain "Buy Ticket" box, same as
+              // before, rather than a one-row "comparison" list with
+              // nothing to compare against.
               (() => {
                 const link = findTicketsLinks[0];
                 const linkPrices = [...new Set(
@@ -3149,17 +3162,7 @@ export default function App() {
                     target="_blank"
                     rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
                     onClick={() => {
-                      // The /go/event/:id redirect above logs the click
-                      // server-side. Only fall back to the client-side
-                      // beacon when we don't have a row id to redirect
-                      // through (so the link above is the raw seller
-                      // URL) — otherwise this would double-count.
                       if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
-                      // Meta Pixel "Lead" event — unlike the backend
-                      // click log above, this always fires here
-                      // regardless of eventRowId; it's a separate,
-                      // ads-only signal with its own de-dupe (Meta's
-                      // pixel script), not the site's own click count.
                       trackMetaTicketClick({
                         source: link.source,
                         title: selectedEvent?.title,
@@ -3182,8 +3185,6 @@ export default function App() {
                       border: 'none',
                       cursor: 'pointer',
                       overflowX: 'auto',
-                      // Exact same background color as the event card's
-                      // "Find Your Ticket" button (see EventCard above).
                       backgroundColor: LOGO_BG_COLOR,
                       color: '#141b2d',
                     }}>
@@ -3196,6 +3197,108 @@ export default function App() {
                   </a>
                 );
               })()
+            ) : (
+              // RESTORED 2026-10-10 (business-model change: pull
+              // availability + price from Ticketmaster, TicketNetwork and
+              // SeatGeek and show the customer the price range across
+              // them) — the per-seller comparison list that was simplified
+              // away on 2026-09-21 when Ticketmaster/SeatGeek data was
+              // purged and TicketNetwork was effectively the only seller
+              // left. buildFindTicketsLinks already produces everything
+              // this needs (isBest/dotColor/logoUrl were left in place,
+              // unused, the whole time — see that function above) so this
+              // is a rendering-only restoration, not new data plumbing.
+              <>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
+                  ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — click through below to buy:
+                </p>
+                <div style={{ border: '1px solid #eee', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#fff' }}>
+                  {findTicketsLinks.map((link, i) => {
+                    const linkPrices = [...new Set(
+                      [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
+                    )].sort((a, b) => a - b);
+                    const priceLabel = linkPrices.length > 0
+                      ? linkPrices.map((p) => `$${p.toFixed(0)}`).join(', ')
+                      : null;
+                    const isOfficialLink = link.source === 'official';
+                    return (
+                      <a
+                        key={link.source}
+                        href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}?sid=${encodeURIComponent(CLICK_SESSION_ID)}` : link.url}
+                        target="_blank"
+                        rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
+                        onClick={() => {
+                          if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
+                          trackMetaTicketClick({
+                            source: link.source,
+                            title: selectedEvent?.title,
+                            city: selectedEvent?.city,
+                            state: selectedEvent?.state,
+                          });
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          padding: '16px 18px',
+                          textDecoration: 'none',
+                          color: 'inherit',
+                          borderTop: i === 0 ? 'none' : '1px solid #eee',
+                          backgroundColor: link.isBest ? '#f3faf3' : 'transparent',
+                        }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', rowGap: '4px', flexWrap: 'wrap', minWidth: 0 }}>
+                          <span
+                            aria-hidden="true"
+                            style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor, flexShrink: 0 }}
+                          />
+                          {link.logoUrl && (
+                            <img
+                              src={link.logoUrl}
+                              alt=""
+                              width={16}
+                              height={16}
+                              style={{ borderRadius: '3px', flexShrink: 0 }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          )}
+                          <span style={{ fontWeight: 'bold', fontSize: '15px', flexShrink: 0 }}>
+                            {isOfficialLink ? `Visit ${link.name}` : link.name}
+                          </span>
+                          {link.isBest && (
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: 800,
+                              color: '#fff',
+                              backgroundColor: '#2e7d32',
+                              borderRadius: '999px',
+                              padding: '2px 8px',
+                              letterSpacing: '0.03em',
+                              flexShrink: 0,
+                            }}>
+                              BEST PRICE
+                            </span>
+                          )}
+                          <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          {priceLabel ? (
+                            <>
+                              <div style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</div>
+                              <div style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</div>
+                            </>
+                          ) : !isOfficialLink && (
+                            <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#999' }}>Price not listed</span>
+                          )}
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: '12px', color: '#888', marginTop: '14px' }}>
+                  Prices shown are as last reported by each ticket seller and may change — confirm the final price on their site before buying.
+                </p>
+              </>
             )}
           </div>
 
