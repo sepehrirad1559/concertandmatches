@@ -1,6 +1,6 @@
 {
- "source": "Google Autocomplete Suggest API (suggestqueries.google.com) — real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model — every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
- "pulledAt": "2026-10-08T00:00:00Z",
+ "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
+ "pulledAt": "2026-10-10T00:00:00Z",
  "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
  "entries": [
   {
@@ -19,7 +19,7 @@
     "nfl tickets military discount",
     "nfl tickets 49ers"
    ],
-   "pulledAt": "2026-09-08T00:00:00Z"
+   "pulledAt": "2026-10-10T00:00:00Z"
   },
   {
    "matchType": "league",
@@ -37,7 +37,7 @@
     "nba tickets for sale",
     "nba tickets 76ers"
    ],
-   "pulledAt": "2026-09-08T00:00:00Z"
+   "pulledAt": "2026-10-10T00:00:00Z"
   },
   {
    "matchType": "league",
@@ -55,7 +55,7 @@
     "college football tickets 2025",
     "college football tickets 2026"
    ],
-   "pulledAt": "2026-09-08T00:00:00Z"
+   "pulledAt": "2026-10-10T00:00:00Z"
   },
   {
    "matchType": "league",
@@ -73,7 +73,7 @@
     "concert tickets los angeles",
     "concert tickets atlanta"
    ],
-   "pulledAt": "2026-09-08T00:00:00Z"
+   "pulledAt": "2026-10-10T00:00:00Z"
   },
   {
    "matchType": "league",
@@ -91,7 +91,7 @@
     "broadway tickets today",
     "broadway tickets last minute center"
    ],
-   "pulledAt": "2026-09-08T00:00:00Z"
+   "pulledAt": "2026-10-10T00:00:00Z"
   },
   {
    "matchType": "league",
@@ -109,7 +109,7 @@
     "comedy show tickets tonight",
     "comedy show tickets toronto"
    ],
-   "pulledAt": "2026-09-08T00:00:00Z"
+   "pulledAt": "2026-10-10T00:00:00Z"
   },
   {
    "matchType": "artist",
@@ -7100,7 +7100,7 @@
    "matchKey": "cirque-du-soleil-alize",
    "seed": "Cirque du Soleil - Alize tickets",
    "suggestions": [
-    "cirque du soleil alizé tickets",
+    "cirque du soleil aliz\u00e9 tickets",
     "cirque du soleil alize tickets berlin",
     "cirque du soleil alize tickets kaufen"
    ],
@@ -11418,7 +11418,7 @@
   {
    "matchType": "artist",
    "matchKey": "dazzling-nights-orlando",
-   "seed": "Dazzling Nights® Orlando tickets",
+   "seed": "Dazzling Nights\u00ae Orlando tickets",
    "suggestions": [
     "dazzling nights orlando tickets price",
     "dazzling nights orlando 2025 tickets",
@@ -12132,7 +12132,7 @@
     "fly linq zipline las vegas tickets",
     "fly linq zipline vegas price",
     "fly linq zipline ticket price",
-    "tickets für fly linq zipline",
+    "tickets f\u00fcr fly linq zipline",
     "fly linq zipline hours",
     "fly linq zipline age limit",
     "fly linq zipline reviews"
@@ -13143,6 +13143,1251 @@
     "truist park ticket prices"
    ],
    "pulledAt": "2026-10-08T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "banksy-museum-new-york",
+   "seed": "Banksy Museum New York tickets",
+   "suggestions": [
+    "banksy museum new york tickets",
+    "banksy museum new york city admission ticket",
+    "is there any banksy art in nyc",
+    "are museums free in nyc"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "eiffel-tower-experience-multiple-dates-and-times",
+   "seed": "Eiffel Tower Experience tickets",
+   "suggestions": [
+    "eiffel tower experience tickets",
+    "eiffel tower tour tickets",
+    "eiffel tower tickets experience first",
+    "eiffel tower tour tickets price",
+    "eiffel tower boat tour tickets",
+    "eiffel tower night tour tickets",
+    "eiffel tower summit tour tickets",
+    "eiffel tower private tour tickets",
+    "eiffel tower guided tour tickets",
+    "official eiffel tower tour tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "discovering-king-tut-s-tomb-multiple-dates-and-times",
+   "seed": "Discovering King Tut's Tomb tickets",
+   "suggestions": [
+    "discovering king tut's tomb tickets",
+    "discovering king tut's tomb tickets price",
+    "discovering king tut's tomb boston tickets",
+    "discovering king tut's tomb discount tickets",
+    "can i visit king tut's tomb",
+    "is king tut's tomb open to the public"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "bodies-the-exhibition-multiple-dates-and-times",
+   "seed": "Bodies: The Exhibition tickets",
+   "suggestions": [
+    "bodies the exhibition tickets",
+    "bodies exhibit tickets las vegas",
+    "the bodies exhibit atlanta tickets",
+    "exhibition entry fee",
+    "exhibition ticket price",
+    "what happens at an exhibition"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "drunk-romeo-juliet",
+   "seed": "Drunk Romeo & Juliet tickets",
+   "suggestions": [
+    "drunk Romeo & Juliet tickets",
+    "drunk romeo and juliet nyc tickets",
+    "drunk shakespeare romeo and juliet tickets",
+    "drunk romeo and juliet chicago tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "twist-museum",
+   "seed": "Twist Museum tickets",
+   "suggestions": [
+    "twist museum tickets",
+    "twist museum tickets 2 for 1",
+    "twist museum tickets price",
+    "twist museum tickets discount",
+    "twist museum tickets london",
+    "twist museum tickets online",
+    "twist museum tickets cheap",
+    "twist museum ticket refund",
+    "twist museum cost",
+    "twist museum hours"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "balloon-museum-emotionair",
+   "seed": "Balloon Museum, EmotionAir tickets",
+   "suggestions": [
+    "emotion air balloon museum tickets",
+    "balloon museum emotionair chicago tickets",
+    "balloon museum emotion air london tickets",
+    "balloon museum emotionair chicago tickets price",
+    "balloon museum emotion air d\u00fcsseldorf tickets",
+    "balloon museum emotion air san francisco tickets",
+    "balloon museum emotionair chicago photos tickets",
+    "balloon museum emotion air san francisco tickets price",
+    "balloon museum emotion air san francisco tickets discount",
+    "balloon museum emotionair chicago discount tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "high-roller-wheel-multiple-dates-and-times",
+   "seed": "High Roller Wheel tickets",
+   "suggestions": [
+    "high roller wheel tickets",
+    "high roller wheel tickets las vegas",
+    "high roller wheel ticket price",
+    "high roller ferris wheel tickets",
+    "high roller observation wheel tickets",
+    "high roller observation wheel tickets at the linq",
+    "high roller wheel discount tickets",
+    "high roller ferris wheel tickets price",
+    "high roller ferris wheel tickets groupon",
+    "high roller wheel linq tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "masquerade-multiple-dates-and-times",
+   "seed": "Masquerade tickets",
+   "suggestions": [
+    "masquerade tickets",
+    "masquerade tickets nyc",
+    "masquerade tickets new york",
+    "masquerade tickets broadway",
+    "masquerade tickets discount",
+    "masquerade tickets sdcc",
+    "masquerade tickets phantom",
+    "masquerade tickets phantom of the opera",
+    "masquerade tickets new york city",
+    "masquerade tickets atlanta"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "balloon-museum",
+   "seed": "Balloon Museum tickets",
+   "suggestions": [
+    "balloon museum tickets",
+    "balloon museum tickets price",
+    "balloon museum tickets chicago",
+    "balloon museum tickets dallas",
+    "balloon museum tickets nyc",
+    "balloon museum tickets discount",
+    "balloon museum tickets miami",
+    "balloon museum tickets new york",
+    "balloon museum tickets on sale",
+    "balloon museum tickets groupon"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "maybe-happy-ending",
+   "seed": "Maybe Happy Ending tickets",
+   "suggestions": [
+    "maybe happy ending tickets",
+    "maybe happy ending tickets broadway",
+    "maybe happy ending tickets nyc",
+    "maybe happy ending tickets lottery",
+    "maybe happy ending tickets discount",
+    "maybe happy ending tickets rush",
+    "maybe happy ending tickets promo code",
+    "maybe happy ending tickets today",
+    "maybe happy ending tickets reddit",
+    "maybe happy ending tickets tonight"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "dr-seuss-how-the-grinch-stole-christmas",
+   "seed": "Dr. Seuss How the Grinch Stole Christmas tickets",
+   "suggestions": [
+    "dr seuss how the grinch stole christmas tickets",
+    "dr seuss how the grinch stole christmas the musical tickets",
+    "dr seuss how the grinch stole christmas the musical touring tickets",
+    "dr seuss how the grinch stole christmas live in concert"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-very-hungry-caterpillar",
+   "seed": "The Very Hungry Caterpillar tickets",
+   "suggestions": [
+    "the very hungry caterpillar tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-great-gatsby-the-musical",
+   "seed": "The Great Gatsby - The Musical tickets",
+   "suggestions": [
+    "the great gatsby the musical tickets",
+    "the great gatsby musical tickets london",
+    "the great gatsby musical tickets new york",
+    "the great gatsby musical broadway tickets",
+    "the great gatsby broadway tickets",
+    "the great gatsby theatre tickets",
+    "the great gatsby broadway tickets price",
+    "the great gatsby play tickets",
+    "the great gatsby broadway tickets cheap",
+    "the great gatsby broadway tickets lottery"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "disney-s-frozen-the-musical",
+   "seed": "Disney's Frozen - The Musical tickets",
+   "suggestions": [
+    "disney frozen the musical tickets",
+    "disney's frozen the broadway musical tickets",
+    "disney frozen theatre tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "disney-s-beauty-and-the-beast",
+   "seed": "Disney's Beauty and the Beast tickets",
+   "suggestions": [
+    "disney beauty and the beast tickets",
+    "disney beauty and the beast theatre",
+    "disney's beauty and the beast majestic theatre",
+    "how much are beauty and the beast tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "hell-s-kitchen",
+   "seed": "Hell's Kitchen tickets",
+   "suggestions": [
+    "hell's kitchen tickets",
+    "hell's kitchen tickets foxwoods",
+    "hell's kitchen tickets sacramento",
+    "hell's kitchen tickets gordon ramsay",
+    "hell's kitchen tickets las vegas",
+    "hell's kitchen tickets los angeles",
+    "hell's kitchen tickets broadway",
+    "hell's kitchen tickets nyc",
+    "hell's kitchen tickets chicago",
+    "hell's kitchen tickets sf"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-rocky-horror-picture-show",
+   "seed": "The Rocky Horror Picture Show tickets",
+   "suggestions": [
+    "the rocky horror picture show tickets",
+    "the rocky horror picture show broadway tickets",
+    "the sphere rocky horror picture show tickets",
+    "the rocky horror picture show christchurch tickets",
+    "rocky horror picture show tickets nyc"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "baltimore-symphony-orchestra",
+   "seed": "Baltimore Symphony Orchestra tickets",
+   "suggestions": [
+    "baltimore symphony orchestra tickets",
+    "baltimore symphony orchestra tickets price",
+    "baltimore symphony orchestra ticket office",
+    "baltimore symphony orchestra ticket exchange",
+    "baltimore symphony orchestra student tickets",
+    "nas baltimore symphony orchestra tickets",
+    "baltimore symphony orchestra discount tickets",
+    "baltimore symphony orchestra season tickets",
+    "baltimore symphony orchestra rush tickets",
+    "baltimore symphony orchestra strathmore tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "ben-bankas",
+   "seed": "Ben Bankas tickets",
+   "suggestions": [
+    "ben bankas tickets",
+    "ben bankas tickets toronto",
+    "ben bankas tickets calgary",
+    "ben bankas tickets kitchener",
+    "ben bankas tickets vancouver",
+    "ben bankas tickets boston",
+    "ben bankas tickets kelowna",
+    "ben bankas tickets near me",
+    "ben bankas tickets st paul mn",
+    "ben bankas tickets ottawa"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "anastasia-the-musical",
+   "seed": "Anastasia The Musical tickets",
+   "suggestions": [
+    "anastasia the musical tickets",
+    "anastasia the musical tickets sydney",
+    "anastasia the musical tickets melbourne",
+    "anastasia the musical tickets perth",
+    "anastasia the musical ticket prices",
+    "anastasia the musical cheap tickets",
+    "anastasia the musical adelaide tickets",
+    "anastasia the musical brisbane tickets",
+    "anastasia broadway tickets",
+    "anastasia play tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "a-christmas-carol-a-ghost-story-of-christmas",
+   "seed": "A Christmas Carol: A Ghost Story of Christmas tickets",
+   "suggestions": [
+    "a christmas carol a ghost story tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "boop-the-musical",
+   "seed": "Boop! The Musical tickets",
+   "suggestions": [
+    "boop the musical tickets",
+    "betty boop the musical tickets",
+    "boop the musical tour tickets",
+    "boop broadway tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "central-arkansas-bears",
+   "seed": "Central Arkansas Bears tickets",
+   "suggestions": [
+    "central arkansas bears football tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "merrimack-warriors",
+   "seed": "Merrimack Warriors tickets",
+   "suggestions": [
+    "merrimack college tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "umass-minutemen",
+   "seed": "UMass Minutemen tickets",
+   "suggestions": [
+    "umass minutemen tickets",
+    "umass minutemen football tickets",
+    "umass minutemen basketball tickets",
+    "umass minutemen hockey tickets",
+    "umass ticket office phone number"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "bethune-cookman-wildcats",
+   "seed": "Bethune-Cookman Wildcats tickets",
+   "suggestions": [
+    "bethune cookman wildcats football tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "ohio-bobcats",
+   "seed": "Ohio Bobcats tickets",
+   "suggestions": [
+    "ohio bobcats tickets",
+    "ohio bobcats tickets football",
+    "ohio university tickets",
+    "ohio university tickets football",
+    "ohio university tickets basketball",
+    "ohio university tickets hockey"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "monmouth-hawks",
+   "seed": "Monmouth Hawks tickets",
+   "suggestions": [
+    "monmouth hawks tickets",
+    "monmouth basketball tickets",
+    "monmouth hawks football tickets",
+    "monmouth hawks basketball tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "austin-peay-governors",
+   "seed": "Austin Peay Governors tickets",
+   "suggestions": [
+    "austin peay governors football tickets",
+    "georgia bulldogs vs austin peay governors tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "tarleton-state-texans",
+   "seed": "Tarleton State Texans tickets",
+   "suggestions": [
+    "tarleton state texans football tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "bucknell-bison",
+   "seed": "Bucknell Bison tickets",
+   "suggestions": [
+    "bucknell university tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "north-carolina-central-eagles",
+   "seed": "North Carolina Central Eagles tickets",
+   "suggestions": [
+    "north carolina central eagles football tickets",
+    "north carolina central eagles football vs southern jaguars football tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "eastern-michigan-eagles",
+   "seed": "Eastern Michigan Eagles tickets",
+   "suggestions": [
+    "eastern michigan eagles football tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "cal-poly-mustangs",
+   "seed": "Cal Poly Mustangs tickets",
+   "suggestions": [
+    "cal poly mustangs tickets",
+    "cal poly mustangs football tickets",
+    "cal poly mustang express tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "mercyhurst-lakers",
+   "seed": "Mercyhurst Lakers tickets",
+   "suggestions": [
+    "mercyhurst university tickets",
+    "mercyhurst lakers vs west virginia tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "wagner-seahawks",
+   "seed": "Wagner Seahawks tickets",
+   "suggestions": [
+    "wagner college tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "houston-christian-huskies",
+   "seed": "Houston Christian Huskies tickets",
+   "suggestions": [
+    "houston christian huskies football tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "towson-tigers",
+   "seed": "Towson Tigers tickets",
+   "suggestions": [
+    "towson tigers tickets",
+    "towson university tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "lindenwood-lions",
+   "seed": "Lindenwood Lions tickets",
+   "suggestions": [
+    "lindenwood lions/tickets",
+    "lindenwood university tickets",
+    "lindenwood lions football tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "stony-brook-seawolves",
+   "seed": "Stony Brook Seawolves tickets",
+   "suggestions": [
+    "stony brook seawolves tickets",
+    "stony brook seawolves football tickets",
+    "stony brook seawolves basketball tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "lafayette-leopards",
+   "seed": "Lafayette Leopards tickets",
+   "suggestions": [
+    "lafayette college tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "greensboro-nc",
+   "seed": "Greensboro events",
+   "suggestions": [
+    "greensboro events",
+    "greensboro events today",
+    "greensboro events this weekend",
+    "greensboro events tonight",
+    "greensboro events calendar",
+    "greensboro events tomorrow",
+    "greensboro events next weekend",
+    "greensboro events this week",
+    "greensboro events september 2026",
+    "greensboro events august"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "wichita-ks",
+   "seed": "Wichita events",
+   "suggestions": [
+    "wichita events",
+    "wichita events this weekend",
+    "wichita events today",
+    "wichita events calendar",
+    "wichita events tonight",
+    "wichita events 2026",
+    "wichita events this week",
+    "wichita events september 2026",
+    "wichita events september",
+    "wichita events tomorrow"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "syracuse-ny",
+   "seed": "Syracuse events",
+   "suggestions": [
+    "syracuse events",
+    "syracuse events this weekend",
+    "syracuse events today",
+    "syracuse events calendar",
+    "syracuse events company",
+    "syracuse events tonight",
+    "syracuse events job",
+    "syracuse events calendar 2026",
+    "syracuse events september 2026",
+    "syracuse events org"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "playa-del-carmen-quintana-roo",
+   "seed": "Playa del Carmen events",
+   "suggestions": [
+    "playa del carmen events",
+    "playa del carmen events this weekend",
+    "playa del carmen events today",
+    "playa del carmen events tonight",
+    "playa del carmen events february 2026",
+    "playa del carmen events calendar",
+    "playa del carmen events 2025",
+    "playa del carmen events 2026",
+    "playa del carmen events this week",
+    "playa del carmen events december 2025"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "schenectady-ny",
+   "seed": "Schenectady events",
+   "suggestions": [
+    "schenectady events",
+    "schenectady events this weekend",
+    "schenectady events today",
+    "schenectady events calendar",
+    "schenectady events tonight",
+    "schenectady events tomorrow",
+    "schenectady events this weekend for adults",
+    "schenectady events this week",
+    "schenectady events october",
+    "schenectady events today free"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "costa-mesa-ca",
+   "seed": "Costa Mesa events",
+   "suggestions": [
+    "costa mesa events",
+    "costa mesa events today",
+    "costa mesa events this weekend",
+    "costa mesa events tonight",
+    "costa mesa events tomorrow",
+    "costa mesa events calendar",
+    "costa mesa events center",
+    "costa mesa events today free",
+    "costa mesa events this week",
+    "costa mesa events june"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "appleton-wi",
+   "seed": "Appleton events",
+   "suggestions": [
+    "appleton events",
+    "appleton events today",
+    "appleton events this weekend",
+    "appleton events calendar",
+    "appleton events next 3 days",
+    "appleton events tonight",
+    "appleton events tomorrow",
+    "appleton events this week",
+    "appleton events saturday",
+    "appleton events labor day weekend"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "grapevine-tx",
+   "seed": "Grapevine events",
+   "suggestions": [
+    "grapevine events",
+    "grapevine events this weekend",
+    "grapevine events today",
+    "grapevine events calendar",
+    "grapevine events tonight",
+    "grapevine events 2026",
+    "grapevine events tomorrow",
+    "grapevine events september",
+    "grapevine events october",
+    "grapevine events today free"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "rochester-hills-mi",
+   "seed": "Rochester Hills events",
+   "suggestions": [
+    "rochester hills events",
+    "rochester hills events this weekend",
+    "rochester hills events today",
+    "rochester hills events next 14 days",
+    "rochester hills events calendar",
+    "rochester hills events tonight",
+    "rochester hills events tomorrow",
+    "rochester mi events",
+    "rochester mi events today",
+    "rochester mi events this weekend"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "pigeon-forge-tn",
+   "seed": "Pigeon Forge events",
+   "suggestions": [
+    "pigeon forge events",
+    "pigeon forge events 2026",
+    "pigeon forge events this weekend",
+    "pigeon forge events september 2026",
+    "pigeon forge events october 2026",
+    "pigeon forge events august 2026",
+    "pigeon forge events calendar",
+    "pigeon forge events july 2026",
+    "pigeon forge events today",
+    "pigeon forge events 2027"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "carmel-in",
+   "seed": "Carmel events",
+   "suggestions": [
+    "carmel events",
+    "carmel events this weekend",
+    "carmel events today",
+    "carmel events calendar",
+    "carmel events tonight",
+    "carmel events september 2026",
+    "carmel events august 2026",
+    "carmel events 2026",
+    "carmel events tomorrow",
+    "carmel events in august"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "sugarcreek-oh",
+   "seed": "Sugarcreek events",
+   "suggestions": [
+    "sugar creek casino concert tickets"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "stockton-ca",
+   "seed": "Stockton events",
+   "suggestions": [
+    "stockton events",
+    "stockton events today",
+    "stockton events this weekend",
+    "stockton events calendar",
+    "stockton events tonight",
+    "stockton events 2026",
+    "stockton events today free",
+    "stockton events center",
+    "stockton events september 2026",
+    "stockton events tomorrow"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "red-bank-nj",
+   "seed": "Red Bank events",
+   "suggestions": [
+    "red bank events",
+    "red bank events today",
+    "red bank events this weekend",
+    "red bank events tonight",
+    "red bank events 2026",
+    "red bank events tomorrow",
+    "red bank events calendar",
+    "red bank events 2025",
+    "red bank events hereford",
+    "red bank events nj"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "bronx-ny",
+   "seed": "Bronx events",
+   "suggestions": [
+    "bronx events today",
+    "bronx events",
+    "bronx events this weekend",
+    "bronx events 2026",
+    "bronx events tomorrow",
+    "bronx events today free",
+    "bronx events tonight",
+    "bronx events this weekend free",
+    "bronx events for kids",
+    "bronx events this week"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "jupiter-fl",
+   "seed": "Jupiter events",
+   "suggestions": [
+    "jupiter events this weekend",
+    "jupiter events",
+    "jupiter events today",
+    "jupiter events calendar",
+    "jupiter events this weekend for adults",
+    "jupiter events tonight",
+    "jupiter events calendar today",
+    "jupiter events this weekend free"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "frisco-tx",
+   "seed": "Frisco events",
+   "suggestions": [
+    "frisco events",
+    "frisco events today",
+    "frisco events calendar",
+    "frisco events tonight",
+    "frisco events tomorrow",
+    "frisco events august",
+    "frisco events center",
+    "frisco events october 2026",
+    "frisco events this weekend",
+    "frisco events this week"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "thousand-oaks-ca",
+   "seed": "Thousand Oaks events",
+   "suggestions": [
+    "thousand oaks events",
+    "thousand oaks events today",
+    "thousand oaks events this weekend",
+    "thousand oaks events calendar",
+    "thousand oaks events and retreats",
+    "thousand oaks events tomorrow",
+    "thousand oaks events tonight",
+    "thousand oaks events today near me",
+    "thousand oaks events for kids",
+    "thousand oaks events today free"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "east-lansing-mi",
+   "seed": "East Lansing events",
+   "suggestions": [
+    "east lansing events",
+    "east lansing events this weekend",
+    "east lansing events today",
+    "east lansing events tonight",
+    "east lansing events calendar",
+    "east lansing events this weekend free",
+    "east lansing events tomorrow",
+    "east lansing events this week",
+    "east lansing events this weekend for adults",
+    "east lansing event space"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "spartanburg-sc",
+   "seed": "Spartanburg events",
+   "suggestions": [
+    "spartanburg events",
+    "spartanburg events today",
+    "spartanburg events this weekend",
+    "spartanburg events calendar",
+    "spartanburg events tonight",
+    "spartanburg events this week",
+    "spartanburg events tomorrow",
+    "spartanburg events next weekend",
+    "spartanburg events 2025",
+    "spartanburg events today free"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "nuevo-vallarta-nayarit",
+   "seed": "Nuevo Vallarta events",
+   "suggestions": [
+    "nuevo vallarta events",
+    "vidanta nuevo vallarta events"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "pleasant-grove-ut",
+   "seed": "Pleasant Grove events",
+   "suggestions": [
+    "pleasant grove events",
+    "pleasant grove events today",
+    "pleasant grove events this weekend",
+    "pleasant grove event center",
+    "pleasant grove event venue",
+    "pleasant grove event space",
+    "pleasant grove library events",
+    "pleasant grove park events",
+    "pleasant grove halloween events"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "skokie-il",
+   "seed": "Skokie events",
+   "suggestions": [
+    "skokie events",
+    "skokie events today",
+    "skokie events this weekend",
+    "skokie events calendar",
+    "skokie events this weekend free",
+    "skokie events tomorrow",
+    "skokie events this week",
+    "skokie events today free",
+    "skokie events tonight",
+    "skokie events 2026"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "ivins-ut",
+   "seed": "Ivins events",
+   "suggestions": [
+    "ivins events",
+    "events ivins utah",
+    "ivins city events"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "fairfield-ct",
+   "seed": "Fairfield events",
+   "suggestions": [
+    "fairfield events",
+    "fairfield events today",
+    "fairfield events this weekend",
+    "fairfield events calendar",
+    "fairfield events tonight",
+    "fairfield events today free",
+    "fairfield events center",
+    "fairfield events tomorrow",
+    "fairfield events 2025",
+    "fairfield events this week"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "west-sacramento-ca",
+   "seed": "West Sacramento events",
+   "suggestions": [
+    "west sacramento events",
+    "west sacramento events today",
+    "west sacramento events this weekend",
+    "west sacramento event space",
+    "west sacramento event venues",
+    "west sacramento event center",
+    "west sacramento activities",
+    "ikea west sacramento events",
+    "west sacramento library events",
+    "west sacramento community events"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "lynchburg-va",
+   "seed": "Lynchburg events",
+   "suggestions": [
+    "lynchburg events",
+    "lynchburg events this weekend",
+    "lynchburg events today",
+    "lynchburg events calendar",
+    "lynchburg events tonight",
+    "lynchburg events tomorrow",
+    "events lynchburg va",
+    "lynchburg amphitheater events",
+    "lynchburg va events this weekend"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "bloomington-in",
+   "seed": "Bloomington events",
+   "suggestions": [
+    "bloomington events",
+    "bloomington events this weekend",
+    "bloomington events calendar",
+    "bloomington events today",
+    "bloomington events tonight",
+    "bloomington events center",
+    "bloomington events september",
+    "bloomington events this week",
+    "bloomington events tomorrow",
+    "bloomington events next 3 days"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "cedar-park-tx",
+   "seed": "Cedar Park events",
+   "suggestions": [
+    "cedar park events",
+    "cedar park events today",
+    "cedar park events this weekend",
+    "cedar park events tomorrow",
+    "cedar park events tonight",
+    "cedar park events calendar",
+    "cedar park events this weekend free",
+    "cedar park events center",
+    "cedar park events today free",
+    "cedar park events 2026"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "somerville-ma",
+   "seed": "Somerville events",
+   "suggestions": [
+    "somerville events",
+    "somerville events today",
+    "somerville events this weekend",
+    "somerville events calendar",
+    "somerville events tonight",
+    "somerville events tomorrow",
+    "somerville events nj",
+    "somerville events august",
+    "somerville events this weekend free",
+    "somerville events this week"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "granada-granada",
+   "seed": "Granada events",
+   "suggestions": [
+    "granada events",
+    "granada events today",
+    "granada events this weekend",
+    "granada events september",
+    "granada events august",
+    "granada events 2026",
+    "granada events this week",
+    "granada events tonight",
+    "granada events 2025",
+    "granada events october 2025"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "fort-collins-co",
+   "seed": "Fort Collins events",
+   "suggestions": [
+    "fort collins events",
+    "fort collins events today",
+    "fort collins events this weekend",
+    "fort collins events calendar",
+    "fort collins events tonight",
+    "fort collins events tomorrow",
+    "fort collins events september 2026",
+    "fort collins events this week",
+    "fort collins events august 2026",
+    "fort collins events september"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "bethesda-md",
+   "seed": "Bethesda events",
+   "suggestions": [
+    "bethesda events",
+    "bethesda events this weekend",
+    "bethesda events today",
+    "bethesda events tonight",
+    "bethesda events tomorrow",
+    "bethesda events 2026",
+    "bethesda events place",
+    "bethesda events calendar",
+    "bethesda events 2025",
+    "bethesda events place photos"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "port-saint-lucie-fl",
+   "seed": "Port Saint Lucie events",
+   "suggestions": [
+    "port saint lucie events",
+    "port saint lucie events this weekend",
+    "port saint lucie events today",
+    "port saint lucie events this weekend for adults",
+    "port saint lucie events calendar",
+    "port saint lucie events this weekend free",
+    "port saint lucie events today free",
+    "port saint lucie events tonight",
+    "port st lucie events",
+    "port st lucie events next 14 days"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "roanoke-va",
+   "seed": "Roanoke events",
+   "suggestions": [
+    "roanoke events",
+    "roanoke events this weekend",
+    "roanoke events today",
+    "roanoke events calendar",
+    "roanoke events tonight",
+    "roanoke events tomorrow",
+    "roanoke events 2026",
+    "roanoke events september",
+    "roanoke events this week",
+    "roanoke events next weekend"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "iowa-city-ia",
+   "seed": "Iowa City events",
+   "suggestions": [
+    "iowa city events",
+    "iowa city events this weekend",
+    "iowa city events today",
+    "iowa city events calendar",
+    "iowa city events tonight",
+    "iowa city events tomorrow",
+    "iowa city events this week",
+    "iowa city events today free",
+    "iowa city events next weekend",
+    "iowa city events july 2026"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "london-on",
+   "seed": "London Ontario events",
+   "suggestions": [
+    "london ontario events",
+    "london ontario events this weekend",
+    "london ontario events calendar",
+    "london ontario events today",
+    "london ontario events 2026",
+    "london ontario events august 2026",
+    "london ontario events this week",
+    "london ontario events tonight",
+    "london ontario events september 2026",
+    "london ontario events tomorrow"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "brossard-qc",
+   "seed": "Brossard events",
+   "suggestions": [
+    "brossard events",
+    "brossard events today",
+    "brossard events this weekend",
+    "brossard library events",
+    "halloween events brossard"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "beverly-hills-ca",
+   "seed": "Beverly Hills events",
+   "suggestions": [
+    "beverly hills events",
+    "beverly hills events today",
+    "beverly hills events this weekend",
+    "beverly hills events tonight",
+    "beverly hills events calendar",
+    "beverly hills events this week",
+    "beverly hills events tomorrow",
+    "beverly hills events september"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "west-des-moines-ia",
+   "seed": "West Des Moines events",
+   "suggestions": [
+    "west des moines events",
+    "west des moines events this weekend",
+    "west des moines events today",
+    "west des moines events center grant",
+    "west des moines events center",
+    "west des moines events calendar",
+    "west des moines events tonight",
+    "west des moines event venues",
+    "west des moines event space",
+    "west des moines event rentals"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "birdland-theatre-new-york",
+   "seed": "Birdland Theatre tickets",
+   "suggestions": [
+    "birdland theatre tickets",
+    "what are rush tickets on broadway"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "punch-line-comedy-club-sacramento-sacramento",
+   "seed": "Punch Line Comedy Club - Sacramento tickets",
+   "suggestions": [
+    "punch line comedy club sacramento tickets",
+    "punch line comedy club sacramento ca",
+    "comedy club tickets near me"
+   ],
+   "pulledAt": "2026-10-10T00:00:00Z"
   }
  ]
 }
