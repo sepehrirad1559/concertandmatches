@@ -187,7 +187,24 @@ const TITLE_FLOOR_FOR_VENUE_MATCH = 0.15;
 
 export function isSameEvent(a, b) {
   if (!a || !b) return false;
-  if (a.source === b.source) return false; // only merge ACROSS sources
+  // Same-source pairs ARE allowed through here (2026-10-11) -- a source's own
+  // feed can list one real show more than once under different IDs (seen in
+  // production: TicketNetwork listing "Pete Lee" at Comedy Club on State,
+  // same date, same venue, as two separate product SKUs with different
+  // prices -- a resale marketplace carrying more than one seller's inventory
+  // for the same performance under its own API). That used to be hard-
+  // blocked here ("only merge ACROSS sources"), which meant two same-source
+  // rows could never reach a single canonical event no matter how exactly
+  // they matched -- producing the exact duplicate-card bug this comment
+  // replaces. The downstream merge code (routes/events.js's
+  // mergeEventsAcrossSources, and the canonical-layer listing query in the
+  // same file) already collapses a same-source duplicate into one offer
+  // (keeping the cheaper price) wherever isSameEvent reports two rows as a
+  // match -- that collapsing logic already existed and was simply unreachable
+  // for same-source pairs because of the line removed here. The title/venue
+  // thresholds below are unchanged and still the only thing deciding a
+  // match, so this doesn't loosen matching generally -- it only stops
+  // reflexively rejecting a same-source pair before those checks even run.
   if (!isSameDay(a.date, b.date)) return false;
   // Skip the doubleheader-guard time check when either side's timestamp has
   // no real time-of-day component (see isMidnightUTC above) — a source that
