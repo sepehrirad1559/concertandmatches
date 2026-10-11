@@ -3978,7 +3978,7 @@ export default function App() {
                 backgroundColor: NAVY_PANEL,
                 color: '#fff',
               }}>
-              {eventsLoadingMore ? 'Loading...' : `Load More (${events.length} of ${eventsTotal})`}
+              {eventsLoadingMore ? 'Loading...' : 'Load More'}
             </button>
           </div>
         )}
