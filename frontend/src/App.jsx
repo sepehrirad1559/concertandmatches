@@ -3552,34 +3552,19 @@ export default function App() {
           color: '#fff',
           maxWidth: '620px',
         }}>
-          Be The First To Find Your Ticket.
+          One Search. Multiple Marketplaces.
         </h1>
 
         <p style={{
           position: 'relative',
           textAlign: 'left',
-          fontSize: 'clamp(26px, 3.6vw, 38px)',
-          fontWeight: 800,
-          letterSpacing: '-0.01em',
-          lineHeight: 1.15,
-          color: NAV_ACCENT_LIGHT,
-          margin: '0 0 10px',
-          whiteSpace: 'nowrap',
-        }}>
-          Unbeatable Prices. No Checkout Surprises.
-        </p>
-
-        <p style={{
-          position: 'relative',
-          textAlign: 'left',
-          fontSize: 'clamp(12px, 1.4vw, 16px)',
-          fontWeight: 500,
+          fontSize: 'clamp(14px, 1.6vw, 18px)',
+          fontWeight: 600,
           lineHeight: 1.4,
           color: 'rgba(255,255,255,0.82)',
           margin: 0,
-          whiteSpace: 'nowrap',
         }}>
-          Enjoy verified tickets at the internet's best rates with absolutely zero hidden service fees.
+          Instantly compare top platforms to spot the best price.
         </p>
 
         <span style={{
