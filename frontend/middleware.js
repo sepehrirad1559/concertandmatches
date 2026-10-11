@@ -83,7 +83,12 @@ const PRERENDER_ORIGIN = 'https://concertandmatches-production.up.railway.app';
 // of these paths; handling them here too is redundant but harmless — this
 // middleware runs before rewrites either way — and keeps all "proxy to the
 // backend" logic in one place instead of split across two config systems.
-const PLAIN_CONTENT_PREFIXES = ['/guide', '/sitemap.xml', '/artists', '/cities', '/venues', '/leagues', '/teams'];
+// /about, /how-it-works, /faq, and /contact (routes/contentPages.js on the
+// backend) added alongside the others — same "plain server-rendered
+// content page" shape, and vercel.json already has direct rewrites for
+// all four, so skipping them here would just mean this middleware and
+// vercel.json disagree about which paths are backend-rendered.
+const PLAIN_CONTENT_PREFIXES = ['/guide', '/sitemap.xml', '/artists', '/cities', '/venues', '/leagues', '/teams', '/about', '/how-it-works', '/faq', '/contact'];
 
 export const config = {
   matcher: [
@@ -101,6 +106,10 @@ export const config = {
     '/leagues/:path*',
     '/teams',
     '/teams/:path*',
+    '/about',
+    '/how-it-works',
+    '/faq',
+    '/contact',
   ],
 };
 

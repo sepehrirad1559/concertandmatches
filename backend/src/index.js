@@ -15,6 +15,7 @@ import sitemapRoutes from './routes/sitemap.js';
 import prerenderRoutes from './routes/prerender.js';
 import guidesRoutes from './routes/guides.js';
 import seoPagesRoutes from './routes/seoPages.js';
+import contentPagesRoutes from './routes/contentPages.js';
 
 import { logProviderSync } from './utils/syncLog.js';
 
@@ -182,6 +183,12 @@ app.use('/', guidesRoutes);
 // routes/seoPages.js and services/seoEngine.js. Mounted at root, same as
 // guidesRoutes, so paths are reachable at e.g. /artists/:slug directly.
 app.use('/', seoPagesRoutes);
+// Static informational pages (About/How It Works/FAQ/Contact) — see
+// routes/contentPages.js. Previously App.jsx's footer linked to
+// /how-it-works, /faq, and /contact with nothing backing any of those
+// paths anywhere (backend, vercel.json, or the SPA), so they silently
+// fell through to the homepage via vercel.json's catch-all rewrite.
+app.use('/', contentPagesRoutes);
 app.use('/prerender', prerenderRoutes);
 
 // 404 Handler
