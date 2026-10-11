@@ -2826,6 +2826,25 @@ export default function App() {
     setSelectedVenue(null);
   };
 
+  // BUG FIX (2026-10-11): "View All Events" / "Explore" style buttons call
+  // this instead of handleClearSearch alone. handleClearSearch deliberately
+  // leaves activeCategoryId/teamsBrowseCategoryId untouched -- see
+  // handleFooterGoHome above, which already has to clear those itself on
+  // top of handleClearSearch() for exactly that reason -- but the "View All
+  // Events" button (shown whenever activeCategoryId is set, among other
+  // things) and the CtaBanner's "Explore" button were calling ONLY
+  // handleClearSearch(), so clicking them while a category/team filter was
+  // active left that filter in place: the grid stayed filtered, the button
+  // itself didn't even disappear (its own visibility check includes
+  // activeCategoryId), and the whole thing looked like it silently did
+  // nothing. This reuses handleFooterGoHome's already-correct clear-set
+  // rather than duplicating it inline at each call site.
+  const handleViewAllEvents = () => {
+    handleClearSearch();
+    setActiveCategoryId(null);
+    setTeamsBrowseCategoryId(null);
+  };
+
   // Picking a team from TeamTiles runs the team's name as a plain search —
   // same mechanism as typing it into the search box and hitting Search —
   // so the results grid, count line, and Clear button all behave exactly
@@ -3919,7 +3938,7 @@ export default function App() {
           {(activeSearch || activeCategoryId || activeFilterCount > 0) && (
             <button
               type="button"
-              onClick={handleClearSearch}
+              onClick={handleViewAllEvents}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: NAV_ACCENT_LIGHT, fontWeight: 700, fontSize: '13.5px', padding: 0 }}>
               View All Events →
             </button>
@@ -3988,7 +4007,7 @@ export default function App() {
 
       <CtaBanner
         onExplore={() => {
-          handleClearSearch();
+          handleViewAllEvents();
           document.getElementById('featured-events')?.scrollIntoView({ behavior: 'smooth' });
         }}
       />
