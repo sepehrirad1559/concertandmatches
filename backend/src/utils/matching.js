@@ -113,7 +113,22 @@ function isMidnightUTC(date) {
 // offset per services/ticketnetwork.js's LaunchDate comment, and this stays
 // safe either way: isSameEvent still requires an exact city/state match plus
 // a strong title or venue match before treating two rows as the same event.
-export function isSameDay(dateA, dateB) {
+// allowAdjacentDay (default true, preserving every existing caller's
+// behavior) gates the +-1-day tolerance described above. isSameEvent
+// (2026-10-11) passes false for a same-source pair: the +-1-day allowance
+// exists ONLY to bridge a cross-source UTC-conversion artifact (see above)
+// -- within a single source there is no such artifact, so two of that
+// source's own rows a calendar day apart are two different real dates, not
+// a timezone gap. Found live: a same-source fix that let same-source pairs
+// reach this function at all (removing isSameEvent's old blanket
+// same-source rejection) incorrectly merged a comedian's separate
+// consecutive-night shows at the same venue (e.g. Pete Lee at Comedy Club
+// on State, three real nights in a row) into just two canonical events,
+// because two of those three TicketNetwork rows were exactly 1 day apart
+// and TicketNetwork's date-only values are always midnight UTC -- the same
+// signal that correctly bridges a cross-source gap was, within one source,
+// quietly erasing a real distinct show night.
+export function isSameDay(dateA, dateB, allowAdjacentDay = true) {
   if (!dateA || !dateB) return false;
   const a = new Date(dateA);
   const b = new Date(dateB);
@@ -122,6 +137,7 @@ export function isSameDay(dateA, dateB) {
   const dayB = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate());
   const dayDiff = Math.round((dayA - dayB) / (24 * 60 * 60 * 1000));
   if (dayDiff === 0) return true;
+  if (!allowAdjacentDay) return false;
   return Math.abs(dayDiff) === 1 && (isMidnightUTC(a) || isMidnightUTC(b));
 }
 
@@ -205,7 +221,10 @@ export function isSameEvent(a, b) {
   // thresholds below are unchanged and still the only thing deciding a
   // match, so this doesn't loosen matching generally -- it only stops
   // reflexively rejecting a same-source pair before those checks even run.
-  if (!isSameDay(a.date, b.date)) return false;
+  // See isSameDay's own comment: the +-1-day tolerance it otherwise allows
+  // is a cross-source-only bridge, so a same-source pair must land on the
+  // exact same calendar day to be considered a duplicate of each other.
+  if (!isSameDay(a.date, b.date, a.source !== b.source)) return false;
   // Skip the doubleheader-guard time check when either side's timestamp has
   // no real time-of-day component (see isMidnightUTC above) — a source that
   // only gives a date, not a start time, can't be compared on time at all,
