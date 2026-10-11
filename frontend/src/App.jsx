@@ -3564,7 +3564,7 @@ export default function App() {
           color: 'rgba(255,255,255,0.82)',
           margin: 0,
         }}>
-          Instantly compare top platforms to spot the best price.
+          Instantly check real-time ticket availability and compare top platforms to spot the best price.
         </p>
 
         <span style={{
