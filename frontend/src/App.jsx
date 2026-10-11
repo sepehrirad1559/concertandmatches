@@ -3544,13 +3544,13 @@ export default function App() {
         <h1 style={{
           position: 'relative',
           textAlign: 'left',
-          fontSize: 'clamp(26px, 3.6vw, 38px)',
+          fontSize: 'clamp(20px, 3.6vw, 38px)',
           fontWeight: 800,
           letterSpacing: '-0.01em',
           lineHeight: 1.15,
           margin: '4px 0 8px',
           color: '#fff',
-          maxWidth: '620px',
+          whiteSpace: 'nowrap',
         }}>
           One Search. Multiple Marketplaces.
         </h1>
