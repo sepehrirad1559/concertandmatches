@@ -3301,13 +3301,11 @@ export default function App() {
                           <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          {priceLabel ? (
+                          {priceLabel && (
                             <>
                               <div style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</div>
                               <div style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</div>
                             </>
-                          ) : !isOfficialLink && (
-                            <span style={{ fontSize: '13px', fontStyle: 'italic', color: '#999' }}>Price not listed</span>
                           )}
                         </div>
                       </a>
