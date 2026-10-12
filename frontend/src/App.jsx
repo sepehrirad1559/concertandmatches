@@ -412,11 +412,26 @@ function formatDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
     const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    // Some providers (TicketNetwork) only give us a bare calendar date with
+    // no real start time — those rows always land on exact midnight UTC
+    // (see backend/src/utils/matching.js's isMidnightUTC comment for the
+    // full story: this is a deliberate, already-relied-on signal elsewhere
+    // in the codebase, not noise). The old check here used LOCAL getters
+    // (d.getHours()) to detect that case, but midnight UTC converted to any
+    // negative-offset viewer timezone — every US/Canada timezone — lands on
+    // the PREVIOUS local calendar day with a non-zero local hour, so the
+    // check never matched: both the date (shifted back a day) AND a
+    // fabricated time (e.g. "7:00 PM" for an event with no real time at
+    // all) got shown. Checking UTC getters instead correctly detects this
+    // case, and the date itself is then read via UTC getters too so the
+    // calendar day isn't shifted for viewers west of UTC.
+    const isDateOnly = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
+      d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+    if (isDateOnly) {
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    }
     const datePart = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    // Some providers only give us a bare date with no real time-of-day, which
-    // lands on local midnight — showing "12:00 AM" for those would be
-    // misleading, so only append a time when one was actually reported.
-    if (d.getHours() === 0 && d.getMinutes() === 0) return datePart;
     const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     return `${datePart} • ${timePart}`;
   } catch {
@@ -431,7 +446,13 @@ function formatBadgeDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (Number.isNaN(d.getTime())) return dateStr;
+    // Same midnight-UTC "date-only, no real time" case formatDate() above
+    // handles — pin to UTC for those rows so a bare-date TicketNetwork row
+    // doesn't roll back a calendar day for viewers west of UTC.
+    const isDateOnly = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
+      d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(isDateOnly ? { timeZone: 'UTC' } : {}) });
   } catch {
     return dateStr;
   }

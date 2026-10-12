@@ -128,7 +128,14 @@ function toIsoCountryCode(country) {
 function formatDate(dateStr) {
   if (!dateStr) return 'Date TBA';
   try {
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    // Pinned to UTC so this always reflects the stored calendar date as-is
+    // regardless of the server's own TZ setting — otherwise a TicketNetwork
+    // row (date-only, stored as exact midnight UTC; see
+    // backend/src/utils/matching.js's isMidnightUTC comment) could render a
+    // day early/late if the server ever ran outside UTC. See the same fix
+    // in frontend/src/App.jsx's formatDate() for the full writeup of the
+    // bug this prevents.
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   } catch {
     return String(dateStr);
   }
