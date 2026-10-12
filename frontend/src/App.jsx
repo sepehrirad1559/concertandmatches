@@ -3192,6 +3192,24 @@ export default function App() {
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '14px', color: '#222' }}>
             <p><strong>📅 Date:</strong> {formatDate(selectedEvent.date)}</p>
             <p><strong>📍 Location:</strong> {selectedEvent.venue_name ? `${selectedEvent.venue_name}, ` : ''}{selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}</p>
+            {/* Mirrors the server-rendered prerender.js notice (same 24h
+                grace window so this never fires for an event that's merely
+                today in its own local timezone) — a user who navigates here
+                client-side (not a fresh page load) should see the same
+                "this already happened" state as a crawler or a direct
+                visit does, instead of a stale listing with a dead buy
+                link. */}
+            {(Date.now() - new Date(selectedEvent.date).getTime()) > 24 * 60 * 60 * 1000 && (
+              <p style={{ marginTop: '8px', fontSize: '14px' }}>
+                <strong>This event has already taken place.</strong>{' '}
+                <button
+                  onClick={handleFooterGoHome}
+                  style={{ padding: 0, border: 'none', background: 'none', color: 'var(--cm-accent, #2563eb)', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
+                >
+                  Browse upcoming events
+                </button>
+              </p>
+            )}
           </div>
 
           <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '14px', color: '#222' }}>

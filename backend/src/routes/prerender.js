@@ -153,6 +153,19 @@ router.get('/event/:pathParam', async (req, res) => {
       return;
     }
 
+    // Past events: the date is real (not a timezone-display bug — see
+    // isMidnightUTC() in utils/matching.js for that separate class of
+    // issue), the event has simply already happened. These pages were
+    // showing up as "Soft 404" in Search Console: a stale listing with a
+    // dead/expired buy link and nothing timely about it is exactly what
+    // that classification means, and letting Google keep re-crawling and
+    // re-evaluating ~thousands of them as if they were live, sellable
+    // inventory just burns crawl budget that should go to real unindexed
+    // pages. 24h grace window (not "date < now") so this never fires on an
+    // event that's merely today in its own local timezone while UTC has
+    // already ticked past midnight.
+    const isPastEvent = (Date.now() - new Date(event.date).getTime()) > 24 * 60 * 60 * 1000;
+
     // Title/meta tuning (2026-10-09): the prior title/description never
     // included the city or starting price. Both are proven higher-CTR
     // signals already used elsewhere in this codebase (routes/guides.js's
@@ -312,15 +325,25 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta name="twitter:title" content="${xmlEscape(title)}" />
 <meta name="twitter:description" content="${xmlEscape(description)}" />
 <meta name="twitter:image" content="${xmlEscape(event.image_url || 'https://www.concertandmatches.com/og-image.png')}" />
-<meta name="robots" content="index, follow" />
+<meta name="robots" content="${isPastEvent ? 'noindex, follow' : 'index, follow'}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>`;
+
+    const citySlugForEvent = event.city ? entitySlugify(`${event.city}-${event.state || ''}`) : null;
+    const pastEventNoticeHtml = isPastEvent
+      ? `<p><strong>This event has already taken place.</strong> Looking for something coming up${event.city ? ` in ${xmlEscape(event.city)}` : ''}? ${
+          citySlugForEvent
+            ? `<a href="/cities/${xmlEscape(citySlugForEvent)}/events">Browse upcoming events${event.state ? ` in ${xmlEscape(event.city)}, ${xmlEscape(event.state)}` : ''}</a>`
+            : '<a href="/">Browse upcoming events</a>'
+        }.</p>`
+      : '';
 
     const rootContent = `${breadcrumbHtml}
 <h1>${xmlEscape(event.title)}</h1>
 ${event.artist_name ? `<p>${xmlEscape(event.artist_name)}</p>` : ''}
 <p>Date: ${xmlEscape(formatDate(event.date))}</p>
 <p>Location: ${xmlEscape(event.venue_name || '')}${event.city ? `, ${xmlEscape(event.city)}` : ''}${event.state ? `, ${xmlEscape(event.state)}` : ''}</p>
+${pastEventNoticeHtml}
 <h2>Ticket Sellers</h2>
 ${offersHtml}
 ${relatedLinksHtml}`;
