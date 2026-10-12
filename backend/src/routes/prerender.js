@@ -167,20 +167,31 @@ router.get('/event/:pathParam', async (req, res) => {
     const startingPrice = pricedOffers.length > 0
       ? Math.min(...pricedOffers.map((o) => Number(o.min_price)))
       : null;
+    // Real per-seller prices this platform actually has for this event —
+    // the inputs for the AggregateOffer built below, not a separate query.
+    const pricedValues = pricedOffers.map((o) => Number(o.min_price));
+    const lowPrice = pricedValues.length > 0 ? Math.min(...pricedValues) : null;
+    const highPrice = pricedValues.length > 0 ? Math.max(...pricedValues) : null;
 
     const title = `${event.title} Tickets${event.city ? ` in ${event.city}` : ''} — ${formatDate(event.date)} | ConcertAndMatches`;
     const description = `Get tickets for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}.${startingPrice != null ? ` Prices start at $${startingPrice.toFixed(0)}.` : ''} Listed from multiple authorized sellers.`;
     const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
     const url = `https://www.concertandmatches.com/event/${event.id}-${slug}`;
-    const offersForLd = offers
-      .filter((o) => o.min_price != null)
-      .map((o) => ({
-        '@type': 'Offer',
-        price: Number(o.min_price).toFixed(2),
-        priceCurrency: o.currency || 'USD',
-        availability: 'https://schema.org/InStock',
-        url,
-      }));
+    // AggregateOffer, not a flat array of per-seller Offers: this is a
+    // PRICE-COMPARISON platform, so "we found N sellers listing this event
+    // between $X and $Y" is the honest, correctly-typed claim — and it's
+    // also the shape Google's own Event rich-result/Merchant guidance
+    // expects when more than one seller is shown for the same event. Each
+    // seller still gets its own nested Offer (url/seller) inside offers, so
+    // nothing about per-seller detail is lost versus the old flat array.
+    const offersForLd = pricedOffers.map((o) => ({
+      '@type': 'Offer',
+      price: Number(o.min_price).toFixed(2),
+      priceCurrency: o.currency || 'USD',
+      availability: 'https://schema.org/InStock',
+      url,
+      seller: { '@type': 'Organization', name: o.source },
+    }));
 
     // Approximate end time — none of the active sources (TicketNetwork
     // above all) carry a real end time, and Google's Event structured-data
@@ -201,6 +212,24 @@ router.get('/event/:pathParam', async (req, res) => {
       ? new Date(event.updated_at).toISOString()
       : new Date().toISOString();
     const offersForLdWithValidFrom = offersForLd.map((o) => ({ ...o, validFrom: validFromIso }));
+
+    // Single AggregateOffer wrapping every seller's nested Offer (built
+    // above) — lowPrice/highPrice/offerCount give Google (and anything
+    // else parsing this) the actual spread this platform found, rather
+    // than N disconnected Offer entries with no stated relationship.
+    // offerCount intentionally counts PRICED offers only (pricedOffers,
+    // not the raw offers array), matching lowPrice/highPrice/the nested
+    // list — an unpriced "visit official site" link isn't a comparable
+    // price point and would make offerCount disagree with the prices shown.
+    const aggregateOffer = pricedOffers.length > 0 ? {
+      '@type': 'AggregateOffer',
+      priceCurrency: pricedOffers[0]?.currency || 'USD',
+      lowPrice: lowPrice.toFixed(2),
+      highPrice: highPrice.toFixed(2),
+      offerCount: pricedOffers.length,
+      availability: 'https://schema.org/InStock',
+      offers: offersForLdWithValidFrom,
+    } : undefined;
 
     const jsonLd = {
       '@context': 'https://schema.org',
@@ -233,7 +262,7 @@ router.get('/event/:pathParam', async (req, res) => {
       organizer: event.venue_name
         ? { '@type': 'Organization', name: event.venue_name }
         : { '@type': 'Organization', name: 'ConcertAndMatches', url: 'https://www.concertandmatches.com/' },
-      ...(offersForLdWithValidFrom.length > 0 ? { offers: offersForLdWithValidFrom } : {}),
+      ...(aggregateOffer ? { offers: aggregateOffer } : {}),
     };
 
     const offersHtml = offers.length > 0
@@ -328,6 +357,14 @@ ${rootContent}
 </html>`;
     }
 
+    // Shorter TTL than the city/league pages (routes/seoPages.js): this
+    // response's JSON-LD states real live prices (AggregateOffer
+    // low/highPrice), so it shouldn't sit stale at the edge for as long —
+    // 10 minutes is enough to absorb a burst of re-crawls of the same
+    // event without re-querying Postgres for every single one, while
+    // staying close to current pricing. max-age=0 so a direct (non-CDN)
+    // client always revalidates rather than caching stale prices locally.
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=600, stale-while-revalidate=3600');
     res.set('Content-Type', 'text/html');
     res.send(html);
   } catch (error) {

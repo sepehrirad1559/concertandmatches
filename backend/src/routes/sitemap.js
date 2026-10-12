@@ -88,6 +88,7 @@ router.get('/sitemap.xml', async (req, res) => {
     sitemapRefs.push(`  <sitemap>\n    <loc>${SITE_ORIGIN}/sitemap-seo.xml</loc>\n  </sitemap>`);
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapRefs.join('\n')}\n</sitemapindex>\n`;
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'application/xml');
     res.send(xml);
   } catch (error) {
@@ -118,10 +119,30 @@ router.get('/sitemap-events-:page([0-9]+).xml', async (req, res) => {
       const loc = `${SITE_ORIGIN}/event/${event.id}-${slug}`;
       const lastmodSource = event.updated_at || event.date || new Date();
       const lastmod = new Date(lastmodSource).toISOString();
-      return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`;
+      // An event page is at its most volatile (price/availability
+      // changing as sellers update, or the event itself selling out)
+      // right before it happens, and effectively static once it's months
+      // out. daily/0.9 inside a week, weekly/0.6 inside 60 days, monthly/
+      // 0.3 beyond that — gives Googlebot an honest, differentiated signal
+      // instead of every one of 255,000+ event pages claiming the same
+      // crawl priority regardless of how soon (or how likely to still be
+      // on sale) it actually is.
+      const daysOut = (new Date(event.date).getTime() - Date.now()) / 86400000;
+      const { changefreq, priority } = daysOut <= 7
+        ? { changefreq: 'daily', priority: '0.9' }
+        : daysOut <= 60
+          ? { changefreq: 'weekly', priority: '0.6' }
+          : { changefreq: 'monthly', priority: '0.3' };
+      return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
     });
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlEntries.join('\n')}\n</urlset>\n`;
+    // Sitemaps don't need to be instantly fresh — Google polls them on its
+    // own schedule rather than treating them as a live feed — but 255,000+
+    // event rows means these pages are expensive to regenerate on every
+    // single crawl hit. 1hr edge cache keeps that cost down while staying
+    // well inside how often new events actually get synced in.
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'application/xml');
     res.send(xml);
   } catch (error) {
@@ -182,6 +203,7 @@ router.get('/sitemap-seo.xml', async (req, res) => {
     const SEO_SITEMAP_CAP = 45000;
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...guideEntries, ...leagueEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries].slice(0, SEO_SITEMAP_CAP).join('\n')}\n</urlset>\n`;
 
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'application/xml');
     res.send(xml);
   } catch (error) {

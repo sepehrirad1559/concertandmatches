@@ -311,6 +311,12 @@ function categoryFilterForVariant(variant) {
   return null; // 'events' = everything
 }
 
+// Approximate city centroid from this city's own events (every active
+// source geocodes to at least a city-center lat/lng — see
+// services/geocode.js / TicketNetworkProvider's module comment) — just
+// precise enough to rank OTHER cities by real distance for the "nearby
+// cities" interlinking block on city pages (see nearbyCities below), not
+// meant for anything requiring true precision.
 export async function discoverCities({ limit = 500 } = {}) {
   const rows = await pool.query(`
     SELECT
@@ -318,7 +324,9 @@ export async function discoverCities({ limit = 500 } = {}) {
       COUNT(*)::int AS event_count,
       COUNT(DISTINCT source)::int AS source_count,
       COUNT(*) FILTER (WHERE min_price IS NOT NULL)::int AS priced_count,
-      MIN(date) AS nearest_date
+      MIN(date) AS nearest_date,
+      AVG(latitude)::float AS avg_lat,
+      AVG(longitude)::float AS avg_lng
     FROM events
     WHERE date >= NOW() AND city IS NOT NULL AND city != '' AND city != 'Unknown'
     GROUP BY city, state
@@ -357,8 +365,40 @@ export async function discoverCities({ limit = 500 } = {}) {
       tier,
       breakdown,
       confirmedSearches: searchData?.suggestions || null,
+      lat: Number.isFinite(r.avg_lat) ? r.avg_lat : null,
+      lng: Number.isFinite(r.avg_lng) ? r.avg_lng : null,
     };
   }).filter((c) => c.tier !== 'do-not-index');
+}
+
+// Haversine great-circle distance in miles — used only to rank active city
+// pages by real proximity for the "nearby cities" interlinking block (see
+// routes/seoPages.js). city/lat/lng here are approximate centroids (see
+// discoverCities above), so this is a ranking signal, not a precise figure.
+function milesBetween(lat1, lng1, lat2, lng2) {
+  const R = 3958.8; // Earth radius, miles
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Nearest `limit` OTHER active city pages to `city`, by real distance
+// between their event centroids — every candidate returned already has a
+// live page (it's drawn from discoverCities' own already do-not-index-
+// filtered result), so this can never link to a dead/empty city page. Falls
+// back to an empty list (never fabricated/random cities) when either city
+// is missing coordinates, e.g. every one of its events failed to geocode.
+export async function nearbyCities(citySlug, { limit = 8 } = {}) {
+  const cities = await discoverCities({ limit: 2000 });
+  const origin = cities.find((c) => c.slug === citySlug);
+  if (!origin || origin.lat == null || origin.lng == null) return [];
+  return cities
+    .filter((c) => c.slug !== citySlug && c.lat != null && c.lng != null)
+    .map((c) => ({ ...c, distanceMiles: milesBetween(origin.lat, origin.lng, c.lat, c.lng) }))
+    .sort((a, b) => a.distanceMiles - b.distanceMiles)
+    .slice(0, limit);
 }
 
 export async function getCityPage(slug, variant = 'events') {

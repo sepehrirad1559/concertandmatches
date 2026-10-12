@@ -6,6 +6,7 @@ import {
   LEAGUE_DEFS, getLeaguePage,
   discoverTeams, getTeamPage,
   slugify as citySlugify,
+  nearbyCities,
 } from '../services/seoEngine.js';
 import { topArtistCityCombos, guideSlugify } from './guides.js';
 
@@ -164,6 +165,7 @@ router.get('/artists', async (req, res) => {
       intro: `${artists.length} artists currently have upcoming shows listed with real ticket availability.`,
       bodyHtml: `<ul>${items}</ul>`,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('Artists index failed:', error);
@@ -210,6 +212,7 @@ router.get('/artists/:slug', async (req, res) => {
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('Artist page failed:', error);
@@ -235,6 +238,7 @@ router.get('/cities', async (req, res) => {
       intro: `${cities.length} cities currently have upcoming events listed.`,
       bodyHtml: `<ul>${items}</ul>`,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('Cities index failed:', error);
@@ -256,6 +260,18 @@ async function renderCityVariant(req, res, variant) {
     const description = cheapest != null
       ? `${page.events.length} upcoming ${variant === 'events' ? 'events' : variant} in ${place}. Compare prices across sellers, starting from $${Number(cheapest).toFixed(0)}.`
       : `${page.events.length} upcoming ${variant === 'events' ? 'events' : variant} in ${place}. See dates, venues, and ticket availability.`;
+
+    // Richer, page-specific on-page intro (kept separate from the meta
+    // `description` above, which stays short for the search-result
+    // snippet) — real counts/names pulled straight from this page's own
+    // already-fetched `page.events`, never templated boilerplate repeated
+    // identically across all 1,000+ city pages. Named events are capped at
+    // 2 so this stays one sentence regardless of catalog size.
+    const venueCount = new Set(page.events.map((e) => e.venue_name).filter(Boolean)).size;
+    const topEventNames = page.events.slice(0, 2).map((e) => e.title || e.artist_name).filter(Boolean);
+    const namedPart = topEventNames.length > 0 ? `, including ${topEventNames.join(' and ')}` : '';
+    const richIntro = `Showing ${page.events.length} upcoming ${variant === 'events' ? 'live event' : variant.slice(0, -1)}${page.events.length === 1 ? '' : 's'} across ${venueCount} active venue${venueCount === 1 ? '' : 's'} in ${place}${namedPart}.`;
+
     const url = `${SITE_ORIGIN}/cities/${xmlEscape(req.params.slug)}/${variant}`;
     const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url };
     const otherVariants = CITY_VARIANTS_LIST.filter((v) => v !== variant)
@@ -273,18 +289,42 @@ async function renderCityVariant(req, res, variant) {
       guideSlugsSeen.add(slug);
       return `<li><a href="/guide/${xmlEscape(slug)}">${xmlEscape(artistName)} price guide</a></li>`;
     }).filter(Boolean).slice(0, 12).join('');
+
+    // Lateral interlinking to the nearest OTHER live city pages (real
+    // distance between event centroids — see nearbyCities in
+    // seoEngine.js), so Googlebot (and real visitors) can crawl sideways
+    // across the city-page graph instead of every one of these 1,000+
+    // pages being reachable only from the top-level /cities index. Every
+    // linked city already has a live page by construction (nearbyCities
+    // draws from the same do-not-index-filtered list the sitemap uses), so
+    // this can never link to a dead page.
+    const nearby = await nearbyCities(req.params.slug, { limit: 8 }).catch(() => []);
+    const nearbyLinks = nearby
+      .map((c) => `<li><a href="/cities/${xmlEscape(c.slug)}/${variant}">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a></li>`)
+      .join('');
+
     const html = pageShell({
       title, description, url,
       h1: `${label} in ${place}`,
-      intro: description,
+      intro: richIntro,
       breadcrumbHtml: breadcrumb([{ label: 'Cities', href: '/cities' }, { label: place }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${otherVariants ? `<p>${otherVariants}</p>` : ''}
       ${guideLinks ? `<h2>Price guides for ${xmlEscape(page.city)}</h2><ul>${guideLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
+      ${nearbyLinks ? `<h2>${label} near ${xmlEscape(page.city)}</h2><ul>${nearbyLinks}</ul>` : ''}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
+    // Public edge cache (Vercel honors this on its rewrite-proxy to this
+    // Railway route — see frontend/vercel.json): a short browser max-age
+    // plus a much longer s-maxage/stale-while-revalidate means Vercel's
+    // edge can serve this to the next visitor AND to Googlebot's next
+    // crawl without hitting Postgres again, while still refreshing in the
+    // background well within a sync cycle. 1,000+ of these getting crawled
+    // with zero caching today is the core of the TTFB/crawl-budget risk
+    // this is fixing.
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error(`City ${variant} page failed:`, error);
@@ -313,6 +353,7 @@ router.get('/venues', async (req, res) => {
       intro: `${venues.length} venues currently have upcoming events listed.`,
       bodyHtml: `<ul>${items}</ul>`,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('Venues index failed:', error);
@@ -345,6 +386,7 @@ router.get('/venues/:slug', async (req, res) => {
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('Venue page failed:', error);
@@ -366,6 +408,7 @@ router.get('/leagues', async (req, res) => {
     intro: 'Pick a league or category to see all currently listed upcoming events.',
     bodyHtml: `<ul>${items}</ul>`,
   });
+  res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
   res.set('Content-Type', 'text/html').send(html);
 });
 
@@ -402,6 +445,7 @@ router.get('/leagues/:slug', async (req, res) => {
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('League page failed:', error);
@@ -425,6 +469,7 @@ router.get('/teams', async (req, res) => {
       intro: `${teams.length} teams currently have upcoming games listed. Team names are extracted from matchup listings and may occasionally be imprecise.`,
       bodyHtml: `<ul>${items}</ul>`,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('Teams index failed:', error);
@@ -457,6 +502,7 @@ router.get('/teams/:slug', async (req, res) => {
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
       jsonLd,
     });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
   } catch (error) {
     console.error('Team page failed:', error);

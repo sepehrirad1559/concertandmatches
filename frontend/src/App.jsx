@@ -2605,16 +2605,32 @@ export default function App() {
       const validFromIso = selectedEvent.updated_at
         ? new Date(selectedEvent.updated_at).toISOString()
         : new Date().toISOString();
-      const offersForLd = (Array.isArray(selectedEvent.offers) ? selectedEvent.offers : [])
-        .filter((o) => o.min_price != null)
-        .map((o) => ({
-          '@type': 'Offer',
-          price: Number(o.min_price).toFixed(2),
-          priceCurrency: o.currency || 'USD',
-          availability: 'https://schema.org/InStock',
-          validFrom: validFromIso,
-          url,
-        }));
+      const pricedOffers = (Array.isArray(selectedEvent.offers) ? selectedEvent.offers : [])
+        .filter((o) => o.min_price != null);
+      const offersForLd = pricedOffers.map((o) => ({
+        '@type': 'Offer',
+        price: Number(o.min_price).toFixed(2),
+        priceCurrency: o.currency || 'USD',
+        availability: 'https://schema.org/InStock',
+        validFrom: validFromIso,
+        url,
+        seller: { '@type': 'Organization', name: o.source },
+      }));
+      // AggregateOffer — see the matching comment in backend/src/routes/
+      // prerender.js (the server-rendered version of this same JSON-LD):
+      // this is a price-comparison platform, so "N sellers between $X and
+      // $Y" is the correctly-typed claim, not a flat list of unrelated
+      // Offers. Each seller's own Offer is still nested inside it.
+      const pricedValues = pricedOffers.map((o) => Number(o.min_price));
+      const aggregateOffer = pricedValues.length > 0 ? {
+        '@type': 'AggregateOffer',
+        priceCurrency: pricedOffers[0]?.currency || 'USD',
+        lowPrice: Math.min(...pricedValues).toFixed(2),
+        highPrice: Math.max(...pricedValues).toFixed(2),
+        offerCount: pricedOffers.length,
+        availability: 'https://schema.org/InStock',
+        offers: offersForLd,
+      } : undefined;
 
       // Approximate end time — see the matching comment in prerender.js.
       const startDateObj = new Date(selectedEvent.date);
@@ -2649,7 +2665,7 @@ export default function App() {
         organizer: selectedEvent.venue_name
           ? { '@type': 'Organization', name: selectedEvent.venue_name }
           : { '@type': 'Organization', name: 'ConcertAndMatches', url: 'https://www.concertandmatches.com/' },
-        ...(offersForLd.length > 0 ? { offers: offersForLd } : {}),
+        ...(aggregateOffer ? { offers: aggregateOffer } : {}),
       };
 
       if (!jsonLdEl) {

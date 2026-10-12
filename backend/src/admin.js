@@ -778,6 +778,17 @@ router.post('/schema/add-listing-columns', async (req, res) => {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_events_state ON events (state)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_events_category ON events (category)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_events_source ON events (source)');
+    // Composite index matching the actual WHERE shape of the programmatic
+    // city pages (getCityPage/discoverCities in seoEngine.js: `city = $1
+    // AND state = $2 AND date >= NOW()`, run once per city page load/
+    // crawl) and the event-sitemap/city-sitemap generators. The four
+    // single-column indexes above can each narrow the row set but Postgres
+    // still has to intersect/filter the rest in memory; one composite
+    // index covering all three filter columns lets the planner satisfy the
+    // whole WHERE clause (and the date-ascending ORDER BY) from a single
+    // index scan instead — the difference that matters once there are
+    // 1,000+ of these pages getting hit by both real traffic and crawlers.
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_events_city_state_date ON events (city, state, date)');
 
     await pool.query(`
       INSERT INTO providers (name, provider_type, api_endpoint, commercial_use_allowed, redistribution_allowed, affiliate_enabled, attribution_required, active)
