@@ -62,9 +62,35 @@ try {
 } catch (err) {
   console.warn('search-patterns.json not loaded — confirmed-search-data signal will be empty:', err.message);
 }
-const SEARCH_PATTERNS_BY_KEY = new Map(
-  SEARCH_PATTERNS.entries.map((e) => [`${e.matchType}:${e.matchKey}`, e])
-);
+// Multiple hand-pulled entries can legitimately share the same
+// matchType:matchKey (e.g. several confirmed seed queries all pointing at
+// the same league or city page, pulled on different research passes).
+// Earlier versions of this loader kept only the LAST entry for a shared
+// key, silently discarding every other seed's confirmed suggestions —
+// fixed here to merge all suggestions for a key into one deduped list
+// instead of overwriting.
+const SEARCH_PATTERNS_BY_KEY = new Map();
+for (const e of SEARCH_PATTERNS.entries) {
+  const key = `${e.matchType}:${e.matchKey}`;
+  const existing = SEARCH_PATTERNS_BY_KEY.get(key);
+  if (!existing) {
+    SEARCH_PATTERNS_BY_KEY.set(key, {
+      matchType: e.matchType,
+      matchKey: e.matchKey,
+      seeds: [e.seed],
+      suggestions: [...(e.suggestions || [])],
+      pulledAt: e.pulledAt,
+    });
+  } else {
+    existing.seeds.push(e.seed);
+    for (const s of e.suggestions || []) {
+      if (!existing.suggestions.includes(s)) existing.suggestions.push(s);
+    }
+    if (!existing.pulledAt || (e.pulledAt && e.pulledAt > existing.pulledAt)) {
+      existing.pulledAt = e.pulledAt;
+    }
+  }
+}
 
 // Looks up a real confirmed-search-pattern entry for an entity, if this
 // snapshot happens to cover it. Returns null for the (large majority of)
