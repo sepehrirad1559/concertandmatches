@@ -1,6 +1,6 @@
 {
   "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-10-15T00:00:00Z",
+  "pulledAt": "2026-10-16T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -22145,6 +22145,2202 @@
         "caesars windsor concerts"
       ],
       "pulledAt": "2026-10-15T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "ultimate-4d-experience",
+      "seed": "Ultimate 4D Experience tickets",
+      "suggestions": [
+        "Ultimate 4D Experience tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "iron-mike-legacy",
+      "seed": "Iron Mike Legacy tickets",
+      "suggestions": [
+        "iron mike legacy tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "a-ghost-in-your-ear",
+      "seed": "A Ghost in Your Ear tickets",
+      "suggestions": [
+        "a ghost in your ear tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "t-j-miller",
+      "seed": "T.J. Miller tickets",
+      "suggestions": [
+        "T.J. Miller tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "brisbane-racing-club",
+      "seed": "Brisbane Racing Club tickets",
+      "suggestions": [
+        "brisbane racing club tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "don-barnhart-friends",
+      "seed": "Don Barnhart & Friends tickets",
+      "suggestions": [
+        "Don Barnhart & Friends tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "orchestre-symphonique-de-montreal",
+      "seed": "Orchestre Symphonique de Montreal tickets",
+      "suggestions": [
+        "orchestre symphonique de montr\u00e9al tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-jazz-room-a-journey-to-the-heart-of-new-orleans",
+      "seed": "The Jazz Room - A Journey to the Heart of New Orleans tickets",
+      "suggestions": [
+        "the jazz room a journey to the heart of new orleans tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "golden-girls-the-laughs-continue",
+      "seed": "Golden Girls: The Laughs Continue tickets",
+      "suggestions": [
+        "golden girls the laughs continue tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "tablao-flamenco-las-tablas",
+      "seed": "Tablao Flamenco Las Tablas tickets",
+      "suggestions": [
+        "Tablao Flamenco Las Tablas tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "florian-henckel-von-donnersmarck-s-the-lives-of-others",
+      "seed": "Florian Henckel von Donnersmarck's The Lives of Others tickets",
+      "suggestions": [
+        "Florian Henckel von Donnersmarck's The Lives of Others tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-imaginary-invalid",
+      "seed": "The Imaginary Invalid tickets",
+      "suggestions": [
+        "the imaginary invalid tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "ringling-bros-and-barnum-bailey-presents-the-greatest-show-on-earth",
+      "seed": "Ringling Bros. and Barnum & Bailey presents The Greatest Show On Earth tickets",
+      "suggestions": [
+        "ringling bros. and barnum & bailey presents the greatest show on earth tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-river-bride",
+      "seed": "The River Bride tickets",
+      "suggestions": [
+        "The River Bride tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-mountaintop",
+      "seed": "The Mountaintop tickets",
+      "suggestions": [
+        "the mountaintop tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "dial-m-for-murder-the-play",
+      "seed": "Dial M For Murder - The Play tickets",
+      "suggestions": [
+        "dial m for murder play tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "2-pianos-4-hands",
+      "seed": "2 Pianos 4 Hands tickets",
+      "suggestions": [
+        "2 Pianos 4 Hands tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-world-goes-round",
+      "seed": "The World Goes 'Round tickets",
+      "suggestions": [
+        "The World Goes 'Round tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "lenny-pearce",
+      "seed": "Lenny Pearce tickets",
+      "suggestions": [
+        "lenny pearce tickets",
+        "lenny pearce tickets price",
+        "lenny pearce tickets for kids",
+        "lenny pearce tickets melbourne",
+        "lenny pearce tickets uk",
+        "lenny pearce tickets christchurch",
+        "lenny pearce tickets 2026",
+        "lenny pearce tickets sydney",
+        "lenny pearce tickets brisbane",
+        "lenny pearce tickets australia"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "a-drag-queen-christmas",
+      "seed": "A Drag Queen Christmas tickets",
+      "suggestions": [
+        "a drag queen christmas tickets",
+        "a drag queen christmas 2025 tickets",
+        "a drag queen christmas vip tickets",
+        "a drag queen christmas 2026 tickets",
+        "a drag queen christmas meet and greet tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "water-for-elephants",
+      "seed": "Water For Elephants tickets",
+      "suggestions": [
+        "water for elephants tickets",
+        "water for elephants tickets broward center",
+        "water for elephants tickets chicago",
+        "water for elephants tickets denver",
+        "water for elephants tickets pittsburgh",
+        "water for elephants tickets houston",
+        "water for elephants musical tickets",
+        "water for elephants broadway tickets",
+        "water for elephants rush tickets",
+        "dpac water for elephants tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "world-ballet-company",
+      "seed": "World Ballet Company tickets",
+      "suggestions": [
+        "world ballet company tickets",
+        "world ballet company cinderella tickets",
+        "world ballet company nutcracker tickets",
+        "world ballet company swan lake tickets",
+        "world ballet company the great gatsby ballet tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "candlelight-the-best-of-hans-zimmer",
+      "seed": "Candlelight: The Best of Hans Zimmer tickets",
+      "suggestions": [
+        "candlelight the best of hans zimmer tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "can-can-s-hitchcock-hotel",
+      "seed": "Can Can's Hitchcock Hotel tickets",
+      "suggestions": [
+        "Can Can's Hitchcock Hotel tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "hot-freaks",
+      "seed": "Hot Freaks tickets",
+      "suggestions": [
+        "hot freaks tickets",
+        "hot freaks concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "hunter-flynn",
+      "seed": "Hunter Flynn tickets",
+      "suggestions": [
+        "hunter flynn tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "funny-marco",
+      "seed": "Funny Marco tickets",
+      "suggestions": [
+        "funny marco tickets",
+        "funny marco tickets baltimore",
+        "funny marco tampa tickets",
+        "funny marco cleveland tickets",
+        "funny marco comedy show tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "donnell-rawlings",
+      "seed": "Donnell Rawlings tickets",
+      "suggestions": [
+        "donnell rawlings tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "jesse-cook",
+      "seed": "Jesse Cook tickets",
+      "suggestions": [
+        "jesse cook tickets",
+        "jesse cook concert",
+        "jesse cook concert schedule",
+        "jesse cook concert toronto",
+        "jesse cook concert schedule 2026",
+        "jesse cook concert london",
+        "jesse cook concert tickets",
+        "jesse cook concert 2026",
+        "jesse cook concert 2025",
+        "jesse cook concert paris"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "trippie-redd",
+      "seed": "Trippie Redd tickets",
+      "suggestions": [
+        "trippie redd tickets",
+        "trippie redd tickets 2026",
+        "trippie redd tickets 2025",
+        "trippie redd tickets tampa",
+        "trippie redd tickets chicago",
+        "trippie redd tickets cleveland",
+        "trippie redd tickets joliet",
+        "trippie redd lubbock tx tickets",
+        "trippie redd tickets price",
+        "trippie redd tickets prague"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "moe",
+      "seed": "moe. tickets",
+      "suggestions": [
+        "moe. tickets",
+        "moe tickets buffalo ny",
+        "moe tickets ardmore",
+        "moe tickets denver",
+        "moe tickets brooklyn bowl",
+        "moe tickets boston",
+        "moe tickets tonight",
+        "moe tickets patchogue",
+        "moe tickets stubhub",
+        "moe's alley tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "awake-and-sing",
+      "seed": "Awake And Sing! tickets",
+      "suggestions": [
+        "awake and sing tickets",
+        "awake and sing summary"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "a-mountain-for-elodie",
+      "seed": "A Mountain For Elodie tickets",
+      "suggestions": [
+        "A Mountain For Elodie tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "henry-cho",
+      "seed": "Henry Cho tickets",
+      "suggestions": [
+        "henry cho tickets",
+        "henry cho tickets 2026",
+        "henry cho tickets huntsville al",
+        "henry cho tickets indianapolis",
+        "henry cho tickets knoxville",
+        "henry cho tickets hot springs ar",
+        "henry cho tickets fresno",
+        "henry cho tickets tampa",
+        "henry cho tickets tulsa",
+        "henry cho tickets lubbock"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "rush",
+      "seed": "Rush tickets",
+      "suggestions": [
+        "rush tickets",
+        "rush tickets broadway",
+        "rush tickets 2026",
+        "rush tickets chicago",
+        "rush tickets boston",
+        "rush tickets philadelphia",
+        "rush tickets broadway nyc",
+        "rush tickets cleveland",
+        "rush tickets san antonio",
+        "rush tickets nyc"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "jamie-lissow",
+      "seed": "Jamie Lissow tickets",
+      "suggestions": [
+        "jamie lissow tickets",
+        "jamie lissow tickets 2025",
+        "jamie lissow tickets 2026",
+        "jamie lissow tour tickets",
+        "jamie lissow las vegas tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-lemonheads",
+      "seed": "The Lemonheads tickets",
+      "suggestions": [
+        "the lemonheads tickets",
+        "the lemonheads tour",
+        "the lemonheads tour 2026",
+        "the lemonheads tour 2025",
+        "the lemonheads tour uk",
+        "the lemonheads tour dates",
+        "the lemonheads tour review",
+        "the lemonheads tour bus",
+        "the lemonheads tour merch",
+        "the lemonheads tour cancelled"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "justin-silva",
+      "seed": "Justin Silva tickets",
+      "suggestions": [
+        "justin silva tickets",
+        "justin silva tickets philadelphia",
+        "justin silva tickets rochester ny",
+        "justin silva tickets orlando",
+        "justin silva tickets nj",
+        "justin silva tickets detroit",
+        "justin silva tickets chicago",
+        "justin silva tickets buffalo ny",
+        "justin silva tickets tampa",
+        "justin silva tickets ct"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "trivium",
+      "seed": "Trivium tickets",
+      "suggestions": [
+        "trivium tickets",
+        "trivium tickets uk",
+        "trivium tickets melbourne",
+        "trivium tickets sydney",
+        "trivium tickets london",
+        "trivium tickets dublin",
+        "trivium tickets vancouver",
+        "trivium tickets brisbane",
+        "trivium tickets glasgow",
+        "trivium tickets manchester"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "our-town",
+      "seed": "Our Town tickets",
+      "suggestions": [
+        "our town tickets",
+        "our town tickets swansea",
+        "our town tickets london",
+        "our town tickets ithaca college",
+        "our town tickets nyc",
+        "our town tickets kingston",
+        "our town tickets michael sheen"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "detroit-symphony-orchestra",
+      "seed": "Detroit Symphony Orchestra tickets",
+      "suggestions": [
+        "detroit symphony orchestra tickets",
+        "detroit symphony orchestra tickets price",
+        "detroit symphony orchestra ticket office",
+        "detroit symphony orchestra student tickets",
+        "detroit symphony orchestra season tickets",
+        "are detroit symphony orchestra tickets refundable",
+        "detroit symphony orchestra home alone tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "ron-taylor",
+      "seed": "Ron Taylor tickets",
+      "suggestions": [
+        "ron taylor tickets",
+        "ron taylor comedian tickets",
+        "ron taylor chicago tickets",
+        "ron taylor netflix special tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "gary-owen",
+      "seed": "Gary Owen tickets",
+      "suggestions": [
+        "gary owen tickets",
+        "gary owen tickets 2026",
+        "gary owen tickets near me",
+        "gary owen tickets houston",
+        "gary owen tickets san jose",
+        "gary owen tickets columbus ohio",
+        "gary owen tickets uk",
+        "gary owen tickets perth",
+        "gary owen tickets chicago",
+        "gary owen tickets dc"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-twelve-dates-of-christmas",
+      "seed": "The Twelve Dates Of Christmas tickets",
+      "suggestions": [
+        "The Twelve Dates Of Christmas tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "andre-rieu",
+      "seed": "Andre Rieu tickets",
+      "suggestions": [
+        "andre rieu tickets",
+        "andre rieu tickets 2026",
+        "andre rieu tickets usa",
+        "andre rieu tickets 2027",
+        "andre rieu tickets price",
+        "andre rieu tickets maastricht 2027",
+        "andre rieu tickets birmingham",
+        "andre rieu tickets nottingham",
+        "andre rieu tickets maastricht",
+        "andre rieu tickets glasgow 2026"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "ron-funches",
+      "seed": "Ron Funches tickets",
+      "suggestions": [
+        "ron funches tickets",
+        "ron funches tickets denver",
+        "ron funches ann arbor tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "jeff-allen",
+      "seed": "Jeff Allen tickets",
+      "suggestions": [
+        "jeff allen tickets",
+        "jeff allen tickets 2026",
+        "jeff allen comedian tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "michael-blackson",
+      "seed": "Michael Blackson tickets",
+      "suggestions": [
+        "michael blackson tickets",
+        "michael blackson tickets chicago",
+        "michael blackson toronto tickets",
+        "michael blackson show tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "adam-london-s-laughternoon",
+      "seed": "Adam London's Laughternoon tickets",
+      "suggestions": [
+        "adam london laughternoon tickets",
+        "adam london laughternoon las vegas tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "mico",
+      "seed": "Mico tickets",
+      "suggestions": [
+        "mico tickets",
+        "mico tickets 2026",
+        "mico tickets manila",
+        "mico tickets melbourne",
+        "mico tickets singapore",
+        "mico tickets philippines",
+        "mico tickets sydney",
+        "mico tickets australia",
+        "mico tickets toronto",
+        "mico tickets manila price"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "mark-normand",
+      "seed": "Mark Normand tickets",
+      "suggestions": [
+        "mark normand tickets",
+        "mark normand tickets tonight",
+        "mark normand tickets pittsburgh",
+        "mark normand tickets denver",
+        "mark normand tickets seattle",
+        "mark normand tickets minneapolis",
+        "mark normand tickets calgary",
+        "mark normand tickets winnipeg",
+        "mark normand tickets ottawa",
+        "mark normand tickets halifax"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "willi-carlisle",
+      "seed": "Willi Carlisle tickets",
+      "suggestions": [
+        "willi carlisle tickets",
+        "willi carlisle age"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "timmy-no-brakes",
+      "seed": "Timmy No Brakes tickets",
+      "suggestions": [
+        "timmy no brakes tickets",
+        "timmy no brakes toronto tickets",
+        "timmy no brakes tour tickets",
+        "timmy no brakes chicago tickets",
+        "timmy no brakes golden ticket",
+        "timmy no brakes golden ticket episode"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "tony-rock",
+      "seed": "Tony Rock tickets",
+      "suggestions": [
+        "tony rock tickets",
+        "kill tony little rock tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "gabriel-rutledge",
+      "seed": "Gabriel Rutledge tickets",
+      "suggestions": [
+        "gabriel rutledge tickets",
+        "gabriel rutledge reviews"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "l-a-comedy-club-butch-bradley",
+      "seed": "L.A. Comedy Club: Butch Bradley tickets",
+      "suggestions": [
+        "L.A. Comedy Club: Butch Bradley tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "harry-styles",
+      "seed": "Harry Styles tickets",
+      "suggestions": [
+        "harry styles tickets",
+        "harry styles tickets msg",
+        "harry styles tickets new york",
+        "harry styles tickets madison square garden",
+        "harry styles tickets 2027",
+        "harry styles tickets 2026",
+        "harry styles tickets chicago",
+        "harry styles tickets tonight",
+        "harry styles tickets dallas",
+        "harry styles tickets stubhub"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "craig-conant",
+      "seed": "Craig Conant tickets",
+      "suggestions": [
+        "craig conant tickets",
+        "craig conant tickets 2026",
+        "craig conant tickets 2025",
+        "craig conant tickets uk",
+        "craig conant tickets australia",
+        "craig conant tickets edmonton",
+        "craig conant tickets tonight",
+        "craig conant tickets okc",
+        "craig conant tickets madison wi",
+        "craig conant sydney tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "akeem-ali",
+      "seed": "Akeem Ali tickets",
+      "suggestions": [
+        "akeem ali tickets",
+        "akeem ali tickets atlanta",
+        "akeem ali tickets dallas",
+        "akeem ali tickets chicago",
+        "akeem ali concerts",
+        "akeem ali tour tickets",
+        "akeem ali concert tickets",
+        "akeem ali vip tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "ringling-bros-and-barnum-bailey-circus",
+      "seed": "Ringling Bros. and Barnum & Bailey Circus tickets",
+      "suggestions": [
+        "ringling bros and barnum & bailey circus tickets",
+        "ringling bros and barnum & bailey circus discount tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "bachman-turner-overdrive",
+      "seed": "Bachman-Turner Overdrive tickets",
+      "suggestions": [
+        "bachman-turner overdrive tickets",
+        "bachman turner overdrive concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "motown-extreme-review",
+      "seed": "Motown Extreme Review tickets",
+      "suggestions": [
+        "Motown Extreme Review tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "eric-andre",
+      "seed": "Eric Andre tickets",
+      "suggestions": [
+        "eric andre tickets",
+        "eric andre tour",
+        "eric andre tour 2026",
+        "eric andre tour 2025"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "deray-davis",
+      "seed": "DeRay Davis tickets",
+      "suggestions": [
+        "deray davis tickets",
+        "deray davis tickets tonight",
+        "deray davis tickets detroit",
+        "deray davis tickets las vegas",
+        "deray davis tickets chicago",
+        "deray davis improv tickets",
+        "deray davis comedy tickets",
+        "deray davis mgm tickets",
+        "deray davis dallas tickets",
+        "deray davis funny bone tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "saint-levant",
+      "seed": "Saint Levant tickets",
+      "suggestions": [
+        "saint levant tickets",
+        "saint levant tickets nyc",
+        "saint levant tickets chicago",
+        "saint levant tickets detroit",
+        "saint levant tickets miami",
+        "saint levant tickets brooklyn",
+        "saint levant tickets dallas",
+        "saint levant tickets houston",
+        "saint levant tickets boston",
+        "saint levant tickets san diego"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "matthew-bourne-s-cinderella",
+      "seed": "Matthew Bourne's Cinderella tickets",
+      "suggestions": [
+        "matthew bourne cinderella tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "matthew-broussard",
+      "seed": "Matthew Broussard tickets",
+      "suggestions": [
+        "matthew broussard tickets",
+        "matthew broussard boston tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-fab-four-the-ultimate-tribute",
+      "seed": "The Fab Four - The Ultimate Tribute tickets",
+      "suggestions": [
+        "the fab four the ultimate tribute tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "milwaukee-symphony-orchestra",
+      "seed": "Milwaukee Symphony Orchestra tickets",
+      "suggestions": [
+        "milwaukee symphony orchestra tickets",
+        "milwaukee symphony orchestra tickets price",
+        "milwaukee symphony orchestra ticket office",
+        "milwaukee symphony orchestra student tickets",
+        "milwaukee symphony orchestra season tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "jackson-dean",
+      "seed": "Jackson Dean tickets",
+      "suggestions": [
+        "jackson dean tickets",
+        "jackson dean tour",
+        "jackson dean tour 2026",
+        "jackson dean tour 2025",
+        "jackson dean tour dates 2026",
+        "jackson dean tour dates",
+        "jackson dean tour australia",
+        "jackson dean tour 2026 schedule",
+        "jackson dean tour canada",
+        "jackson dean tour dates 2025"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "james-and-the-giant-peach",
+      "seed": "James and The Giant Peach tickets",
+      "suggestions": [
+        "James and The Giant Peach tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "slow-pulp",
+      "seed": "Slow Pulp tickets",
+      "suggestions": [
+        "slow pulp tickets",
+        "slow pulp tickets denver",
+        "slow pulp tickets dallas",
+        "slow pulp tickets boston",
+        "slow pulp tickets los angeles",
+        "slow pulp tickets fonda",
+        "slow pulp tickets chicago",
+        "slow pulp tickets nyc",
+        "slow pulp concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "romeo-and-juliet",
+      "seed": "Romeo and Juliet tickets",
+      "suggestions": [
+        "romeo and juliet tickets",
+        "romeo and juliet tickets verona",
+        "romeo and juliet tickets london",
+        "romeo and juliet tickets sadie sink",
+        "romeo and juliet tickets liverpool"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "shen-yun",
+      "seed": "Shen Yun tickets",
+      "suggestions": [
+        "shen yun tickets",
+        "shen yun tickets 2026",
+        "shen yun tickets 2027",
+        "shen yun tickets nyc",
+        "shen yun tickets near me",
+        "shen yun tickets price",
+        "shen yun tickets toronto",
+        "shen yun tickets birmingham",
+        "shen yun tickets glasgow",
+        "shen yun tickets 2027 prices"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "bingo-loco",
+      "seed": "Bingo Loco tickets",
+      "suggestions": [
+        "bingo loco tickets",
+        "bingo loco tickets near me",
+        "bingo loco tickets resale",
+        "bingo loco tickets for sale",
+        "bingo loco tickets dublin",
+        "bingo loco tickets edmonton",
+        "bingo loco tickets melbourne",
+        "bingo loco tickets tampa",
+        "bingo loco tickets toronto",
+        "bingo loco tickets belfast"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "mojo-brookzz",
+      "seed": "Mojo Brookzz tickets",
+      "suggestions": [
+        "mojo brookzz tickets",
+        "mojo brookzz tickets 2026",
+        "mojo brookzz tickets nyc",
+        "mojo brookzz tickets london",
+        "mojo brookzz tickets uk",
+        "mojo brookzz tickets 2025",
+        "mojo brookzz tickets chicago",
+        "mojo brookzz tickets atlanta",
+        "mojo brookzz tickets houston",
+        "mojo brookzz tickets price"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "marshall-thundering-herd-mens-basketball",
+      "seed": "Marshall Thundering Herd Mens Basketball tickets",
+      "suggestions": [
+        "marshall thundering herd men's basketball vs georgia state panthers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "wofford-terriers-mens-basketball",
+      "seed": "Wofford Terriers Mens Basketball tickets",
+      "suggestions": [
+        "Wofford Terriers Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "coastal-carolina-chanticleers-mens-basketball",
+      "seed": "Coastal Carolina Chanticleers Mens Basketball tickets",
+      "suggestions": [
+        "Coastal Carolina Chanticleers Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "vmi-keydets-mens-basketball",
+      "seed": "VMI Keydets Mens Basketball tickets",
+      "suggestions": [
+        "VMI Keydets Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "samford-bulldogs-mens-basketball",
+      "seed": "Samford Bulldogs Mens Basketball tickets",
+      "suggestions": [
+        "Samford Bulldogs Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "central-arkansas-bears-mens-basketball",
+      "seed": "Central Arkansas Bears Mens Basketball tickets",
+      "suggestions": [
+        "Central Arkansas Bears Mens Basketball tickets",
+        "queens royals men's basketball vs central arkansas bears men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "oral-roberts-golden-eagles-mens-basketball",
+      "seed": "Oral Roberts Golden Eagles Mens Basketball tickets",
+      "suggestions": [
+        "oral roberts golden eagles men's basketball vs omaha mavericks men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "southern-indiana-screaming-eagles-mens-basketball",
+      "seed": "Southern Indiana Screaming Eagles Mens Basketball tickets",
+      "suggestions": [
+        "southern indiana screaming eagles men's basketball vs butler bulldogs men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "lsu-new-orleans-privateers-mens-basketball",
+      "seed": "LSU New Orleans Privateers Mens Basketball tickets",
+      "suggestions": [
+        "LSU New Orleans Privateers Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "loyola-maryland-greyhounds-mens-basketball",
+      "seed": "Loyola Maryland Greyhounds Mens Basketball tickets",
+      "suggestions": [
+        "Loyola Maryland Greyhounds Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "dartmouth-big-green-mens-basketball",
+      "seed": "Dartmouth Big Green Mens Basketball tickets",
+      "suggestions": [
+        "Dartmouth Big Green Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "brown-bears-mens-basketball",
+      "seed": "Brown Bears Mens Basketball tickets",
+      "suggestions": [
+        "Brown Bears Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "tennessee-tech-golden-eagles-mens-basketball",
+      "seed": "Tennessee Tech Golden Eagles Mens Basketball tickets",
+      "suggestions": [
+        "Tennessee Tech Golden Eagles Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "utah-tech-trailblazers-mens-basketball",
+      "seed": "Utah Tech Trailblazers Mens Basketball tickets",
+      "suggestions": [
+        "utah tech trailblazers men's basketball vs creighton bluejays men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "vermont-catamounts-mens-basketball",
+      "seed": "Vermont Catamounts Mens Basketball tickets",
+      "suggestions": [
+        "Vermont Catamounts Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "yale-bulldogs-mens-basketball",
+      "seed": "Yale Bulldogs Mens Basketball tickets",
+      "suggestions": [
+        "Yale Bulldogs Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "louisiana-monroe-warhawks-mens-basketball",
+      "seed": "Louisiana Monroe Warhawks Mens Basketball tickets",
+      "suggestions": [
+        "Louisiana Monroe Warhawks Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "navy-midshipmen-mens-basketball",
+      "seed": "Navy Midshipmen Mens Basketball tickets",
+      "suggestions": [
+        "Navy Midshipmen Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "lipscomb-bisons-mens-basketball",
+      "seed": "Lipscomb Bisons Mens Basketball tickets",
+      "suggestions": [
+        "Lipscomb Bisons Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "eastern-washington-eagles-mens-basketball",
+      "seed": "Eastern Washington Eagles Mens Basketball tickets",
+      "suggestions": [
+        "Eastern Washington Eagles Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "rider-broncs-mens-basketball",
+      "seed": "Rider Broncs Mens Basketball tickets",
+      "suggestions": [
+        "rider broncs men's basketball vs siena saints men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "quinnipiac-bobcats-mens-basketball",
+      "seed": "Quinnipiac Bobcats Mens Basketball tickets",
+      "suggestions": [
+        "quinnipiac bobcats men's basketball vs siena saints men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "northwestern-state-demons-mens-basketball",
+      "seed": "Northwestern State Demons Mens Basketball tickets",
+      "suggestions": [
+        "Northwestern State Demons Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "saint-peter-s-peacocks-mens-basketball",
+      "seed": "Saint Peter's Peacocks Mens Basketball tickets",
+      "suggestions": [
+        "Saint Peter's Peacocks Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "utah-state-aggies-mens-basketball",
+      "seed": "Utah State Aggies Mens Basketball tickets",
+      "suggestions": [
+        "utah state aggies men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "grand-canyon-lopes-mens-basketball",
+      "seed": "Grand Canyon Lopes Mens Basketball tickets",
+      "suggestions": [
+        "Grand Canyon Lopes Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "high-point-panthers-mens-basketball",
+      "seed": "High Point Panthers Mens Basketball tickets",
+      "suggestions": [
+        "High Point Panthers Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "troy-trojans-mens-basketball",
+      "seed": "Troy Trojans Mens Basketball tickets",
+      "suggestions": [
+        "Troy Trojans Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "weber-state-wildcats-mens-basketball",
+      "seed": "Weber State Wildcats Mens Basketball tickets",
+      "suggestions": [
+        "Weber State Wildcats Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "east-carolina-pirates-mens-basketball",
+      "seed": "East Carolina Pirates Mens Basketball tickets",
+      "suggestions": [
+        "East Carolina Pirates Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "jacksonville-state-gamecocks-mens-basketball",
+      "seed": "Jacksonville State Gamecocks Mens Basketball tickets",
+      "suggestions": [
+        "Jacksonville State Gamecocks Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "umass-lowell-river-hawks-mens-basketball",
+      "seed": "UMass Lowell River Hawks Mens Basketball tickets",
+      "suggestions": [
+        "umass lowell river hawks men's basketball vs bradley braves men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "south-carolina-gamecocks-mens-basketball",
+      "seed": "South Carolina Gamecocks Mens Basketball tickets",
+      "suggestions": [
+        "South Carolina Gamecocks Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "college-of-charleston-cougars-mens-basketball",
+      "seed": "College of Charleston Cougars Mens Basketball tickets",
+      "suggestions": [
+        "college of charleston cougars men's basketball vs towson tigers men's basketball tickets",
+        "college of charleston cougars men's basketball vs northern kentucky norse men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "chattanooga-mocs-mens-basketball",
+      "seed": "Chattanooga Mocs Mens Basketball tickets",
+      "suggestions": [
+        "chattanooga mocs men's basketball tickets",
+        "the citadel bulldogs men's basketball vs chattanooga mocs men's basketball tickets",
+        "chattanooga mocs basketball roster"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "byu-cougars-mens-basketball",
+      "seed": "BYU Cougars Mens Basketball tickets",
+      "suggestions": [
+        "byu cougars men's basketball tickets",
+        "byu cougars men's basketball vs cincinnati bearcats men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "virginia-tech-hokies-mens-basketball",
+      "seed": "Virginia Tech Hokies Mens Basketball tickets",
+      "suggestions": [
+        "virginia tech hokies men's basketball tickets",
+        "virginia tech hokies men's basketball vs louisville cardinals men's basketball tickets",
+        "virginia tech hokies men's basketball vs clemson tigers men's basketball tickets",
+        "virginia tech hokies men's basketball vs syracuse orange men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "hampton-pirates-mens-basketball",
+      "seed": "Hampton Pirates Mens Basketball tickets",
+      "suggestions": [
+        "hampton university men's basketball tickets",
+        "hampton pirates basketball vs towson tigers men's basketball tickets",
+        "hampton pirates basketball vs grambling state tigers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "william-mary-tribe-mens-basketball",
+      "seed": "William & Mary Tribe Mens Basketball tickets",
+      "suggestions": [
+        "William & Mary Tribe Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "arkansas-state-red-wolves-mens-basketball",
+      "seed": "Arkansas State Red Wolves Mens Basketball tickets",
+      "suggestions": [
+        "james madison basketball vs arkansas state red wolves men's basketball tickets",
+        "troy trojans men's basketball vs arkansas state red wolves men's basketball tickets",
+        "arkansas state red wolves men's basketball vs georgia state panthers men's basketball tickets",
+        "texas state bobcats men's basketball vs arkansas state red wolves men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "hawaii-rainbow-warriors-mens-basketball",
+      "seed": "Hawaii Rainbow Warriors Mens Basketball tickets",
+      "suggestions": [
+        "hawaii rainbow warriors men's basketball tickets",
+        "hawaii rainbow warriors men's basketball vs oregon ducks men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "arkansas-razorbacks-mens-basketball",
+      "seed": "Arkansas Razorbacks Mens Basketball tickets",
+      "suggestions": [
+        "arkansas razorbacks mens basketball tickets",
+        "arkansas razorbacks men's basketball season tickets",
+        "fresno state basketball vs arkansas razorbacks men's basketball tickets",
+        "arkansas razorbacks men's basketball vs florida gators men's basketball tickets",
+        "houston cougars men's basketball vs arkansas razorbacks men's basketball tickets",
+        "vanderbilt commodores men's basketball vs arkansas razorbacks men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "cincinnati-bearcats-mens-basketball",
+      "seed": "Cincinnati Bearcats Mens Basketball tickets",
+      "suggestions": [
+        "cincinnati bearcats men's basketball tickets",
+        "cincinnati bearcats men's basketball season tickets",
+        "louisville cardinals men's basketball vs cincinnati bearcats men's basketball tickets",
+        "byu cougars men's basketball vs cincinnati bearcats men's basketball tickets",
+        "dayton flyers men's basketball vs cincinnati bearcats men's basketball tickets",
+        "houston cougars men's basketball vs cincinnati bearcats men's basketball tickets",
+        "cincinnati bearcats men's basketball vs clemson tigers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "wake-forest-demon-deacons-mens-basketball",
+      "seed": "Wake Forest Demon Deacons Mens Basketball tickets",
+      "suggestions": [
+        "wake forest demon deacons men's basketball tickets",
+        "wake forest demon deacons men's basketball vs michigan wolverines men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "lipscomb-bisons",
+      "seed": "Lipscomb Bisons tickets",
+      "suggestions": [
+        "lipscomb university tickets",
+        "why is lipscomb the bisons"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "kansas-city-roos",
+      "seed": "Kansas City Roos tickets",
+      "suggestions": [
+        "kansas city roos basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "michigan-wolverines-mens-basketball",
+      "seed": "Michigan Wolverines Mens Basketball tickets",
+      "suggestions": [
+        "michigan wolverines mens basketball tickets",
+        "uconn huskies men's basketball vs michigan wolverines men's basketball tickets",
+        "howard bison men's basketball vs michigan wolverines men's basketball tickets",
+        "michigan wolverines men's basketball vs oregon ducks men's basketball tickets",
+        "purdue boilermakers men's basketball vs michigan wolverines men's basketball tickets",
+        "wisconsin badgers men's basketball vs michigan wolverines men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "uab-blazers-mens-basketball",
+      "seed": "UAB Blazers Mens Basketball tickets",
+      "suggestions": [
+        "UAB Blazers Mens Basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "north-alabama-lions-mens-basketball",
+      "seed": "North Alabama Lions Mens Basketball tickets",
+      "suggestions": [
+        "north alabama lions men's basketball vs clemson tigers men's basketball tickets",
+        "north alabama lions men's basketball vs austin peay governors men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "little-rock-trojans",
+      "seed": "Little Rock Trojans tickets",
+      "suggestions": [
+        "little rock trojans tickets",
+        "little rock trojans basketball tickets",
+        "little rock trojans baseball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "arkansas-pine-bluff-golden-lions",
+      "seed": "Arkansas Pine Bluff Golden Lions tickets",
+      "suggestions": [
+        "arkansas pine bluff golden lions football vs missouri tigers football tickets",
+        "arkansas pine bluff golden lions football vs bethune cookman football tickets",
+        "arkansas pine bluff golden lions football vs southern jaguars football tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "boise-state-broncos-mens-basketball",
+      "seed": "Boise State Broncos Mens Basketball tickets",
+      "suggestions": [
+        "boise state broncos men's basketball tickets",
+        "sdsu basketball vs boise state broncos men's basketball tickets",
+        "air force basketball vs boise state broncos men's basketball tickets",
+        "colorado state basketball vs boise state broncos men's basketball tickets",
+        "boise state broncos men's basketball vs fresno state basketball tickets",
+        "utah state basketball vs boise state broncos men's basketball tickets",
+        "boise state broncos men's basketball vs san diego state basketball tickets",
+        "san jose state basketball vs boise state broncos men's basketball tickets",
+        "boise state broncos men's basketball vs butler bulldogs men's basketball tickets",
+        "duquesne dukes men's basketball vs boise state broncos men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "wisconsin-herd",
+      "seed": "Wisconsin Herd tickets",
+      "suggestions": [
+        "wisconsin herd tickets",
+        "wisconsin herd tickets price",
+        "wisconsin herd ticket office",
+        "wisconsin herd basketball tickets",
+        "wisconsin herd season tickets",
+        "wisconsin herd oshkosh tickets",
+        "wisconsin herd single game tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "binghamton-bearcats",
+      "seed": "Binghamton Bearcats tickets",
+      "suggestions": [
+        "binghamton university tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "purdue-boilermakers-mens-basketball",
+      "seed": "Purdue Boilermakers Mens Basketball tickets",
+      "suggestions": [
+        "purdue boilermakers mens basketball tickets",
+        "purdue boilermakers men's basketball vs michigan wolverines men's basketball tickets",
+        "miami hurricanes men's basketball vs purdue boilermakers men's basketball tickets",
+        "purdue boilermakers men's basketball vs nebraska cornhuskers men's basketball tickets",
+        "northwestern wildcats men's basketball vs purdue boilermakers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "umbc-retrievers",
+      "seed": "UMBC Retrievers tickets",
+      "suggestions": [
+        "umbc retrievers tickets",
+        "umbc retrievers basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "morehead-state-eagles-mens-basketball",
+      "seed": "Morehead State Eagles Mens Basketball tickets",
+      "suggestions": [
+        "morehead state eagles men's basketball vs clemson tigers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "grand-forks-nd",
+      "seed": "Grand Forks concert tickets",
+      "suggestions": [
+        "Grand Forks concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "morgantown-wv",
+      "seed": "Morgantown concert tickets",
+      "suggestions": [
+        "Morgantown concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "ronks-pa",
+      "seed": "Ronks concert tickets",
+      "suggestions": [
+        "Ronks concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "north-little-rock-ar",
+      "seed": "North Little Rock concert tickets",
+      "suggestions": [
+        "North Little Rock concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "laval-qc",
+      "seed": "Laval concert tickets",
+      "suggestions": [
+        "Laval concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "dubuque-ia",
+      "seed": "Dubuque concert tickets",
+      "suggestions": [
+        "Dubuque concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "lincolnshire-il",
+      "seed": "Lincolnshire concert tickets",
+      "suggestions": [
+        "Lincolnshire concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "bradenton-fl",
+      "seed": "Bradenton concert tickets",
+      "suggestions": [
+        "Bradenton concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "university-park-pa",
+      "seed": "University Park concert tickets",
+      "suggestions": [
+        "University Park concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "saginaw-mi",
+      "seed": "Saginaw concert tickets",
+      "suggestions": [
+        "Saginaw concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "oshawa-on",
+      "seed": "Oshawa concert tickets",
+      "suggestions": [
+        "oshawa concert tickets",
+        "candlelight concert oshawa tickets",
+        "oshawa arena concerts"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "stillwater-ok",
+      "seed": "Stillwater concert tickets",
+      "suggestions": [
+        "Stillwater concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "beverly-ma",
+      "seed": "Beverly concert tickets",
+      "suggestions": [
+        "Beverly concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "kenner-la",
+      "seed": "Kenner concert tickets",
+      "suggestions": [
+        "Kenner concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "bend-or",
+      "seed": "Bend concert tickets",
+      "suggestions": [
+        "bend concert tickets",
+        "bend oregon concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "topeka-ks",
+      "seed": "Topeka concert tickets",
+      "suggestions": [
+        "topeka concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "east-haddam-ct",
+      "seed": "East Haddam concert tickets",
+      "suggestions": [
+        "East Haddam concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "rio-rancho-nm",
+      "seed": "Rio Rancho concert tickets",
+      "suggestions": [
+        "Rio Rancho concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "peterborough-on",
+      "seed": "Peterborough concert tickets",
+      "suggestions": [
+        "peterborough concert tickets",
+        "peterborough candlelight concert tickets",
+        "peterborough cathedral concerts tickets",
+        "peterborough concerts 2025 tickets",
+        "peterborough cathedral candlelight concert tickets",
+        "peterborough singers christmas concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "salisbury-md",
+      "seed": "Salisbury concert tickets",
+      "suggestions": [
+        "salisbury cathedral concert tickets",
+        "salisbury university concert tickets",
+        "salisbury cathedral candlelight concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "wheeling-wv",
+      "seed": "Wheeling concert tickets",
+      "suggestions": [
+        "Wheeling concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "bridgewater-nj",
+      "seed": "Bridgewater concert tickets",
+      "suggestions": [
+        "Bridgewater concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "hampton-va",
+      "seed": "Hampton concert tickets",
+      "suggestions": [
+        "hampton concert tickets",
+        "hampton university concert tickets",
+        "hampton homecoming concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "lakewood-nj",
+      "seed": "Lakewood concert tickets",
+      "suggestions": [
+        "Lakewood concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "fishers-in",
+      "seed": "Fishers concert tickets",
+      "suggestions": [
+        "fishers high school choir concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "moncton-nb",
+      "seed": "Moncton concert tickets",
+      "suggestions": [
+        "moncton concert tickets",
+        "moncton casino concert tickets",
+        "candlelight concert moncton tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "glendale-az",
+      "seed": "Glendale concert tickets",
+      "suggestions": [
+        "bruno mars glendale concert tickets",
+        "glendale arena concerts"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "mississauga-on",
+      "seed": "Mississauga concert tickets",
+      "suggestions": [
+        "candlelight concert mississauga tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "oxford-ms",
+      "seed": "Oxford concert tickets",
+      "suggestions": [
+        "oxford concert tickets",
+        "oxford coffee concerts tickets",
+        "candlelight concert oxford tickets",
+        "ella langley oxford concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "muncie-in",
+      "seed": "Muncie concert tickets",
+      "suggestions": [
+        "Muncie concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "gatineau-qc",
+      "seed": "Gatineau concert tickets",
+      "suggestions": [
+        "Gatineau concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "north-augusta-sc",
+      "seed": "North Augusta concert tickets",
+      "suggestions": [
+        "North Augusta concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "rapid-city-sd",
+      "seed": "Rapid City concert tickets",
+      "suggestions": [
+        "Rapid City concert tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "asbury-park-nj",
+      "seed": "Asbury Park concert tickets",
+      "suggestions": [
+        "asbury park concert tickets",
+        "asbury park music festival tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "checota-powerhouse-theater-milwaukee-repertory-theater-milwaukee",
+      "seed": "Checota Powerhouse Theater - Milwaukee Repertory Theater tickets",
+      "suggestions": [
+        "Checota Powerhouse Theater - Milwaukee Repertory Theater tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-underground-theater-at-mgm-grand-las-vegas",
+      "seed": "The Underground Theater at MGM Grand tickets",
+      "suggestions": [
+        "The Underground Theater at MGM Grand tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-strat-theater-at-stratosphere-las-vegas-las-vegas",
+      "seed": "The Strat Theater At Stratosphere Las Vegas tickets",
+      "suggestions": [
+        "The Strat Theater At Stratosphere Las Vegas tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "amaturo-theater-at-broward-ctr-for-the-perf-arts-fort-lauderdale",
+      "seed": "Amaturo Theater at Broward Ctr For The Perf Arts tickets",
+      "suggestions": [
+        "Amaturo Theater at Broward Ctr For The Perf Arts tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-sigpro-studio-the-villages",
+      "seed": "The SigPro Studio tickets",
+      "suggestions": [
+        "the sigpro studio tickets",
+        "the sigpro studio the villages tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "rubicon-theatre-ventura",
+      "seed": "Rubicon Theatre tickets",
+      "suggestions": [
+        "rubicon theatre tickets",
+        "rubicon theatre tickets price",
+        "rubicon theatre tickets discount"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "blue-gate-music-hall-shipshewana",
+      "seed": "Blue Gate Music Hall tickets",
+      "suggestions": [
+        "blue gate music hall tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "theater-am-potsdamer-platz-berlin",
+      "seed": "Theater Am Potsdamer Platz tickets",
+      "suggestions": [
+        "theater am potsdamer platz tickets",
+        "theater am potsdamer platz tickets kaufen",
+        "theater potsdamer platz tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "john-w-engeman-theater-northport",
+      "seed": "John W. Engeman Theater tickets",
+      "suggestions": [
+        "john w engeman theatre at northport tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "comedy-zone-greensboro-greensboro",
+      "seed": "Comedy Zone - Greensboro tickets",
+      "suggestions": [
+        "comedy zone greensboro tickets",
+        "comedy zone greensboro nc",
+        "comedy zone greensboro nc seating chart",
+        "comedy zone greensboro nc schedule",
+        "comedy zone greensboro nc capacity",
+        "comedy zone greensboro nc tonight",
+        "comic zone greensboro nc",
+        "comedy club greensboro nc"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "sight-sound-theatres-pa-ronks",
+      "seed": "Sight & Sound Theatres - PA tickets",
+      "suggestions": [
+        "sight and sound theater pa tickets",
+        "sight and sound theater pennsylvania tickets",
+        "sight & sound theater lancaster pennsylvania tickets",
+        "sight & sound millennium theatre tickets pa",
+        "how much are sight and sound theater tickets",
+        "sight and sound theater ticket prices",
+        "sight and sound pa ticket prices",
+        "how much are sight and sound tickets",
+        "sight and sound theater lancaster pa ticket prices"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "mystere-theatre-at-treasure-island-las-vegas-las-vegas",
+      "seed": "Mystere Theatre At Treasure Island - Las Vegas tickets",
+      "suggestions": [
+        "Mystere Theatre At Treasure Island - Las Vegas tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "emerald-city-comedy-club-seattle",
+      "seed": "Emerald City Comedy Club tickets",
+      "suggestions": [
+        "emerald city comedy club tickets",
+        "emerald city comedy club free tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "benchmark-international-arena-tampa",
+      "seed": "Benchmark International Arena tickets",
+      "suggestions": [
+        "benchmark international arena tickets",
+        "benchmark international arena ticket office",
+        "benchmark international arena ticket sales",
+        "benchmark international arena ticket office hours",
+        "benchmark international arena parking tickets",
+        "benchmark international arena suite tickets",
+        "benchmark international arena tampa tickets",
+        "benchmark international arena rush tickets",
+        "benchmark international arena march madness tickets",
+        "benchmark international arena event today tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-theatre-at-the-hippodrome-casino-london",
+      "seed": "The Theatre at the Hippodrome Casino tickets",
+      "suggestions": [
+        "The Theatre at the Hippodrome Casino tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "alexis-park-resort-hotel-las-vegas",
+      "seed": "Alexis Park Resort Hotel tickets",
+      "suggestions": [
+        "Alexis Park Resort Hotel tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "millennium-hudson-theatre-new-york",
+      "seed": "Millennium Hudson Theatre tickets",
+      "suggestions": [
+        "Millennium Hudson Theatre tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "jewel-box-stage-at-hale-centre-theatre-sandy",
+      "seed": "Jewel Box Stage At Hale Centre Theatre tickets",
+      "suggestions": [
+        "Jewel Box Stage At Hale Centre Theatre tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "gil-cates-theater-at-geffen-playhouse-los-angeles",
+      "seed": "Gil Cates Theater At Geffen Playhouse tickets",
+      "suggestions": [
+        "Gil Cates Theater At Geffen Playhouse tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "bugsy-s-cabaret-at-flamingo-hotel-las-vegas",
+      "seed": "Bugsy's Cabaret at Flamingo Hotel tickets",
+      "suggestions": [
+        "Bugsy's Cabaret at Flamingo Hotel tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "festival-stage-alabama-shakespeare-festival-montgomery",
+      "seed": "Festival Stage - Alabama Shakespeare Festival tickets",
+      "suggestions": [
+        "Festival Stage - Alabama Shakespeare Festival tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "alabama-theatre-sc-myrtle-beach",
+      "seed": "Alabama Theatre - SC tickets",
+      "suggestions": [
+        "Alabama Theatre - SC tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "tony-roney-s-at-starters-bar-grill-detroit",
+      "seed": "Tony Roney's at Starters Bar & Grill tickets",
+      "suggestions": [
+        "Tony Roney's at Starters Bar & Grill tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "blue-gate-performing-arts-center-shipshewana",
+      "seed": "Blue Gate Performing Arts Center tickets",
+      "suggestions": [
+        "blue gate performing arts center tickets",
+        "blue gate performing arts center tickets price",
+        "blue gate performing arts center ticket office",
+        "blue gate performing arts center events",
+        "blue gate performing arts center schedule",
+        "blue gate theater upcoming events"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "gilliam-stage-at-barter-theatre-abingdon",
+      "seed": "Gilliam Stage At Barter Theatre tickets",
+      "suggestions": [
+        "Gilliam Stage At Barter Theatre tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "710-main-theatre-buffalo",
+      "seed": "710 Main Theatre tickets",
+      "suggestions": [
+        "710 Main Theatre tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "lyric-opera-house-il-chicago",
+      "seed": "Lyric Opera House - IL tickets",
+      "suggestions": [
+        "Lyric Opera House - IL tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "nikos-taverna-at-the-o2-london",
+      "seed": "Nikos Taverna At The O2 tickets",
+      "suggestions": [
+        "Nikos Taverna At The O2 tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "comedy-at-the-carlson-main-showroom-rochester",
+      "seed": "Comedy at The Carlson - Main Showroom tickets",
+      "suggestions": [
+        "Comedy at The Carlson - Main Showroom tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ahern-luxury-boutique-hotel-las-vegas",
+      "seed": "Ahern Luxury Boutique Hotel tickets",
+      "suggestions": [
+        "Ahern Luxury Boutique Hotel tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "uihlein-hall-at-marcus-center-milwaukee",
+      "seed": "Uihlein Hall At Marcus Center tickets",
+      "suggestions": [
+        "uihlein hall at marcus center tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "charles-bach-wonders-theatre-myrtle-beach",
+      "seed": "Charles Bach Wonders Theatre tickets",
+      "suggestions": [
+        "charles bach wonders theatre magic show myrtle beach sc tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "mercury-lounge-ny-new-york",
+      "seed": "Mercury Lounge - NY tickets",
+      "suggestions": [
+        "mercury lounge - ny tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "detroit-symphony-orchestra-hall-detroit",
+      "seed": "Detroit Symphony Orchestra Hall tickets",
+      "suggestions": [
+        "Detroit Symphony Orchestra Hall tickets"
+      ],
+      "pulledAt": "2026-10-16T00:00:00Z"
     }
   ]
 }
