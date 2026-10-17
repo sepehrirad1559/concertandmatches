@@ -1,6 +1,6 @@
 {
   "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-10-16T00:00:00Z",
+  "pulledAt": "2026-10-17T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -24341,6 +24341,706 @@
         "Detroit Symphony Orchestra Hall tickets"
       ],
       "pulledAt": "2026-10-16T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "red-velvet-burlesque-show",
+      "seed": "Red Velvet Burlesque Show tickets",
+      "suggestions": [
+        "red velvet burlesque show tickets",
+        "red velvet burlesque show charlotte tickets",
+        "red velvet burlesque show miami tickets",
+        "red velvet burlesque show knoxville tickets",
+        "red velvet burlesque show denver tickets",
+        "red velvet burlesque show scottsdale tickets",
+        "red velvet burlesque show orlando tickets",
+        "red velvet burlesque show chicago tickets",
+        "red velvet burlesque show atlantic city tickets",
+        "red velvet burlesque show las vegas tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "joe-dombrowski",
+      "seed": "Joe Dombrowski tickets",
+      "suggestions": [
+        "joe dombrowski tickets",
+        "joe dombrowski tickets boston",
+        "joe dombrowski tickets chicago",
+        "joe dombrowski edmonton tickets",
+        "joe dombrowski comedian tickets",
+        "joe dombrowski slc tickets",
+        "joe dombrowski tour tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "david-koechner",
+      "seed": "David Koechner tickets",
+      "suggestions": [
+        "david koechner tickets",
+        "david koechner tour dates",
+        "david koechner shows"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "hans-zimmer",
+      "seed": "Hans Zimmer tickets",
+      "suggestions": [
+        "hans zimmer tickets",
+        "hans zimmer tickets 2027",
+        "hans zimmer tickets price",
+        "hans zimmer tickets 2026",
+        "hans zimmer tickets melbourne",
+        "hans zimmer tickets sydney",
+        "hans zimmer tickets uk",
+        "hans zimmer tickets brisbane",
+        "hans zimmer tickets perth",
+        "hans zimmer tickets london"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "polishing-shakespeare",
+      "seed": "Polishing Shakespeare tickets",
+      "suggestions": [
+        "polishing shakespeare tickets",
+        "polishing rate"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "as-i-lay-dying",
+      "seed": "As I Lay Dying tickets",
+      "suggestions": [
+        "as i lay dying tickets",
+        "as i lay dying meaning",
+        "what is the point of as i lay dying",
+        "as i lay dying confined meaning",
+        "as i lay dying explained"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "outlander-in-concert",
+      "seed": "Outlander in Concert tickets",
+      "suggestions": [
+        "outlander in concert tickets",
+        "outlander in concert tickets price",
+        "outlander in concert tickets edinburgh",
+        "outlander in concert tickets usa",
+        "outlander in concert ticketswap",
+        "outlander in concert 2026 tickets",
+        "outlander in concert 2026 tickets price",
+        "outlander in concert canada tickets",
+        "outlander in concert uk tickets",
+        "outlander concert tour tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "amherst-ma",
+      "seed": "Amherst concert tickets",
+      "suggestions": [
+        "umass amherst concert tickets",
+        "umass amherst spring concert tickets",
+        "umass amherst fall concert tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "east-rutherford-nj",
+      "seed": "East Rutherford concert tickets",
+      "suggestions": [
+        "east rutherford bts concert tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "college-park-md",
+      "seed": "College Park concert tickets",
+      "suggestions": [
+        "college park christmas concert 2025 tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "champaign-il",
+      "seed": "Champaign concert tickets",
+      "suggestions": [
+        "uiuc concert tickets",
+        "how much is too much for a concert ticket"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "walnut-creek-ca",
+      "seed": "Walnut Creek concert tickets",
+      "suggestions": [
+        "walnut creek concert tickets",
+        "walnut creek amphitheatre concerts",
+        "live music in walnut creek tonight"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "idaho-falls-id",
+      "seed": "Idaho Falls concert tickets",
+      "suggestions": [
+        "idaho falls concert tickets",
+        "twin falls fair concert tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "notre-dame-in",
+      "seed": "Notre Dame concert tickets",
+      "suggestions": [
+        "notre dame concert tickets",
+        "notre dame paris concert tickets",
+        "notre dame organ concert tickets",
+        "acdc notre dame concert tickets",
+        "notre dame cathedral concert tickets",
+        "notre dame stadium concert tickets",
+        "notre dame concerts 2026 tickets",
+        "hunchback of notre dame concert tickets",
+        "luke combs notre dame concert tickets",
+        "zach bryan notre dame concert tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "orono-me",
+      "seed": "Orono concert tickets",
+      "suggestions": [
+        "orono fair concert tickets",
+        "orono fair 2026 concert tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "eastern-kentucky-colonels-mens-basketball",
+      "seed": "Eastern Kentucky Colonels Mens Basketball tickets",
+      "suggestions": [
+        "eastern kentucky colonels men's basketball vs northern kentucky norse men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "maryland-terrapins-mens-basketball",
+      "seed": "Maryland Terrapins Mens Basketball tickets",
+      "suggestions": [
+        "maryland terrapins men's basketball tickets",
+        "maryland terrapins men's basketball vs iowa hawkeyes men's basketball tickets",
+        "maryland terrapins men's basketball vs oregon ducks men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "marquette-golden-eagles-mens-basketball",
+      "seed": "Marquette Golden Eagles Mens Basketball tickets",
+      "suggestions": [
+        "marquette golden eagles men's basketball tickets",
+        "dayton flyers basketball vs marquette golden eagles men's basketball tickets",
+        "uconn huskies men's basketball vs marquette golden eagles men's basketball tickets",
+        "butler bulldogs men's basketball vs marquette golden eagles men's basketball tickets",
+        "marquette golden eagles men's basketball vs providence friars men's basketball tickets",
+        "marquette golden eagles men's basketball vs georgetown hoyas men's basketball tickets",
+        "marquette golden eagles men's basketball vs creighton bluejays men's basketball tickets",
+        "villanova wildcats men's basketball vs marquette golden eagles men's basketball tickets",
+        "maryland terrapins men's basketball vs marquette golden eagles men's basketball tickets",
+        "xavier musketeers men's basketball vs marquette golden eagles men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "creighton-bluejays-mens-basketball",
+      "seed": "Creighton Bluejays Mens Basketball tickets",
+      "suggestions": [
+        "creighton bluejays men's basketball tickets",
+        "creighton bluejays men's basketball tickets",
+        "creighton university men's basketball tickets",
+        "uconn huskies men's basketball vs creighton bluejays men's basketball tickets",
+        "villanova wildcats men's basketball vs creighton bluejays men's basketball tickets",
+        "providence friars men's basketball vs creighton bluejays men's basketball tickets",
+        "butler bulldogs men's basketball vs creighton bluejays men's basketball tickets",
+        "creighton bluejays men's basketball vs georgetown hoyas men's basketball tickets",
+        "xavier musketeers men's basketball vs creighton bluejays men's basketball tickets",
+        "nicholls colonels men's basketball vs creighton bluejays men's basketball tickets",
+        "oregon ducks men's basketball vs creighton bluejays men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "dayton-flyers-mens-basketball",
+      "seed": "Dayton Flyers Mens Basketball tickets",
+      "suggestions": [
+        "dayton flyers mens basketball tickets",
+        "dayton flyers men's basketball season tickets",
+        "dayton flyers basketball vs virginia cavaliers men's basketball tickets",
+        "dayton flyers men's basketball vs cincinnati bearcats men's basketball tickets",
+        "vcu rams men's basketball vs dayton flyers men's basketball tickets",
+        "duquesne dukes men's basketball vs dayton flyers men's basketball tickets",
+        "loyola ramblers men's basketball vs dayton flyers men's basketball tickets",
+        "davidson wildcats men's basketball vs dayton flyers men's basketball tickets",
+        "fordham rams men's basketball vs dayton flyers men's basketball tickets",
+        "liberty flames men's basketball vs dayton flyers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "providence-friars-mens-basketball",
+      "seed": "Providence Friars Mens Basketball tickets",
+      "suggestions": [
+        "providence friars men's basketball tickets",
+        "providence college men's basketball tickets",
+        "providence friars men's basketball season tickets",
+        "providence college men's basketball season tickets",
+        "providence college men's basketball student tickets",
+        "uconn huskies men's basketball vs providence friars men's basketball tickets",
+        "georgetown hoyas men's basketball vs providence friars men's basketball tickets",
+        "providence friars men's basketball vs creighton bluejays men's basketball tickets",
+        "villanova wildcats men's basketball vs providence friars men's basketball tickets",
+        "xavier musketeers men's basketball vs providence friars men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "rhode-island-rams-mens-basketball",
+      "seed": "Rhode Island Rams Mens Basketball tickets",
+      "suggestions": [
+        "rhode island rams men's basketball tickets",
+        "rhode island rams men's basketball tickets vs providence friars men's basketball tickets",
+        "rhode island rams men's basketball tickets vs dayton flyers men's basketball tickets",
+        "rhode island rams men's basketball tickets vs george mason patriots men's basketball tickets",
+        "rhode island rams men's basketball tickets vs george washington revolutionaries men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "south-dakota-coyotes-mens-basketball",
+      "seed": "South Dakota Coyotes Mens Basketball tickets",
+      "suggestions": [
+        "south dakota coyotes men's basketball vs creighton bluejays men's basketball tickets",
+        "omaha mavericks men's basketball vs south dakota coyotes men's basketball tickets",
+        "south dakota coyotes schedule"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "east-tennessee-state-buccaneers-mens-basketball",
+      "seed": "East Tennessee State Buccaneers Mens Basketball tickets",
+      "suggestions": [
+        "furman paladins men's basketball vs east tennessee state buccaneers men's basketball tickets",
+        "east tennessee state buccaneers men's basketball vs dayton flyers men's basketball tickets",
+        "states with basketball teams"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "little-rock-trojans-mens-basketball",
+      "seed": "Little Rock Trojans Mens Basketball tickets",
+      "suggestions": [
+        "little rock trojans men's basketball vs milwaukee panthers men's basketball tickets",
+        "little rock trojans men's basketball vs marquette golden eagles men's basketball tickets",
+        "little rock trojans men's basketball vs murray state racers men's basketball tickets",
+        "little rock trojans men's basketball vs ball state cardinals men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "gardner-webb-runnin-bulldogs-mens-basketball",
+      "seed": "Gardner-Webb Runnin' Bulldogs Mens Basketball tickets",
+      "suggestions": [
+        "gardner webb runnin bulldogs men's basketball vs tennessee volunteers men's basketball tickets",
+        "gardner webb runnin bulldogs men's basketball vs clemson tigers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "ohio-state-buckeyes-mens-basketball",
+      "seed": "Ohio State Buckeyes Mens Basketball tickets",
+      "suggestions": [
+        "ohio state buckeyes men's basketball tickets",
+        "ohio state university men's basketball tickets",
+        "ohio state men's basketball ticket office",
+        "michigan wolverines men's basketball vs ohio state buckeyes men's basketball tickets",
+        "indiana hoosiers men's basketball vs ohio state buckeyes men's basketball tickets",
+        "purdue boilermakers men's basketball vs ohio state buckeyes men's basketball tickets",
+        "ucla bruins men's basketball vs ohio state buckeyes men's basketball tickets",
+        "virginia cavaliers men's basketball vs ohio state buckeyes men's basketball tickets",
+        "nebraska cornhuskers men's basketball vs ohio state buckeyes men's basketball tickets",
+        "wisconsin badgers men's basketball vs ohio state buckeyes men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "unc-asheville-bulldogs",
+      "seed": "UNC Asheville Bulldogs tickets",
+      "suggestions": [
+        "unc asheville basketball tickets",
+        "unc asheville men's basketball tickets",
+        "unc asheville basketball season tickets",
+        "unc asheville women's basketball tickets",
+        "unc asheville application deadline"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "denver-pioneers",
+      "seed": "Denver Pioneers tickets",
+      "suggestions": [
+        "denver pioneers tickets",
+        "du pioneers tickets",
+        "denver pioneers ticket account",
+        "denver pioneers ticket office",
+        "denver pioneers hockey tickets",
+        "denver pioneers basketball tickets",
+        "denver pioneers lacrosse tickets",
+        "denver pioneers soccer tickets",
+        "denver pioneers hockey season tickets",
+        "denver pioneers ice hockey tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "vermont-catamounts",
+      "seed": "Vermont Catamounts tickets",
+      "suggestions": [
+        "vermont basketball tickets",
+        "vt basketball tickets",
+        "vt basketball tickets student",
+        "vermont catamounts hockey tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "mount-st-mary-s-mountaineers",
+      "seed": "Mount St. Mary's Mountaineers tickets",
+      "suggestions": [
+        "mount st mary's university tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "xavier-musketeers-mens-basketball",
+      "seed": "Xavier Musketeers Mens Basketball tickets",
+      "suggestions": [
+        "xavier musketeers men's basketball tickets",
+        "xavier university men's basketball tickets",
+        "xavier university men's basketball season tickets",
+        "xavier musketeers men's basketball vs butler bulldogs men's basketball tickets",
+        "xavier musketeers men's basketball vs creighton bluejays men's basketball tickets",
+        "xavier musketeers men's basketball vs providence friars men's basketball tickets",
+        "xavier musketeers men's basketball vs georgetown hoyas men's basketball tickets",
+        "xavier musketeers men's basketball vs uconn huskies men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "boston-university-terriers",
+      "seed": "Boston University Terriers tickets",
+      "suggestions": [
+        "boston university terriers tickets",
+        "boston university terriers hockey tickets",
+        "dogs like boston terrier",
+        "dogs similar to boston terrier"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "louisville-cardinals-mens-basketball",
+      "seed": "Louisville Cardinals Mens Basketball tickets",
+      "suggestions": [
+        "louisville cardinals mens basketball tickets",
+        "louisville cardinals men's basketball season tickets",
+        "montana grizzlies basketball vs louisville cardinals men's basketball tickets",
+        "kentucky wildcats men's basketball vs louisville cardinals men's basketball tickets",
+        "louisville cardinals men's basketball vs cincinnati bearcats men's basketball tickets",
+        "louisville cardinals men's basketball vs tennessee volunteers men's basketball tickets",
+        "memphis tigers men's basketball vs louisville cardinals men's basketball tickets",
+        "syracuse orange men's basketball vs louisville cardinals men's basketball tickets",
+        "smu mustangs men's basketball vs louisville cardinals men's basketball tickets",
+        "virginia cavaliers men's basketball vs louisville cardinals men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "bellarmine-knights-mens-basketball",
+      "seed": "Bellarmine Knights Mens Basketball tickets",
+      "suggestions": [
+        "bellarmine knights men's basketball vs kentucky wildcats men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "st-thomas-tommies-mens-basketball",
+      "seed": "St. Thomas Tommies Mens Basketball tickets",
+      "suggestions": [
+        "st thomas tommies men's basketball vs omaha mavericks men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "omaha-mavericks-mens-basketball",
+      "seed": "Omaha Mavericks Mens Basketball tickets",
+      "suggestions": [
+        "omaha mavericks men's basketball vs oregon ducks men's basketball tickets",
+        "denver pioneers men's basketball vs omaha mavericks men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "seton-hall-pirates-mens-basketball",
+      "seed": "Seton Hall Pirates Mens Basketball tickets",
+      "suggestions": [
+        "seton hall pirates men's basketball tickets",
+        "villanova wildcats men's basketball vs seton hall pirates men's basketball tickets",
+        "uconn huskies men's basketball vs seton hall pirates men's basketball tickets",
+        "seton hall pirates men's basketball vs georgetown hoyas men's basketball tickets",
+        "creighton bluejays men's basketball vs seton hall pirates men's basketball tickets",
+        "seton hall pirates men's basketball vs providence friars men's basketball tickets",
+        "butler bulldogs men's basketball vs seton hall pirates men's basketball tickets",
+        "xavier musketeers men's basketball vs seton hall pirates men's basketball tickets",
+        "monmouth hawks men's basketball vs seton hall pirates men's basketball tickets",
+        "seton hall pirates men's basketball vs marquette golden eagles men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "south-dakota-state-jackrabbits-mens-basketball",
+      "seed": "South Dakota State Jackrabbits Mens Basketball tickets",
+      "suggestions": [
+        "south dakota state jackrabbits men's basketball vs oregon ducks men's basketball tickets",
+        "south dakota state jackrabbits men's basketball vs milwaukee panthers men's basketball tickets",
+        "south dakota state jackrabbits men's basketball vs omaha mavericks men's basketball tickets",
+        "south dakota state jackrabbits men's basketball vs ball state cardinals men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "memphis-tigers-mens-basketball",
+      "seed": "Memphis Tigers Mens Basketball tickets",
+      "suggestions": [
+        "memphis tigers men's basketball tickets",
+        "memphis tigers men's basketball season tickets",
+        "memphis tigers men's basketball vs louisville cardinals men's basketball tickets",
+        "memphis tigers game time"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "ut-martin-skyhawks-mens-basketball",
+      "seed": "UT Martin Skyhawks Mens Basketball tickets",
+      "suggestions": [
+        "ut martin skyhawks men's basketball vs florida state seminoles men's basketball tickets",
+        "ut martin skyhawks men's basketball vs tennessee state tigers men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "drury-lane-theatre-royal-london",
+      "seed": "Drury Lane Theatre Royal tickets",
+      "suggestions": [
+        "royal drury lane theatre tickets",
+        "theatre royal drury lane tickets price",
+        "theatre royal drury lane access tickets",
+        "theatre royal drury lane hercules tickets",
+        "theatre royal drury lane disabled tickets",
+        "theatre royal drury lane tour tickets",
+        "theatre royal drury lane london tickets",
+        "theatre royal drury lane sting tickets",
+        "theatre royal drury lane standing tickets",
+        "theatre royal drury lane frozen tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "casa-manana-fort-worth",
+      "seed": "Casa Manana tickets",
+      "suggestions": [
+        "casa ma\u00f1ana tickets",
+        "casa ma\u00f1ana tickets price",
+        "casa ma\u00f1ana tickets fort worth",
+        "casa manana ticket office",
+        "casa manana season tickets",
+        "casa ma\u00f1ana discount tickets",
+        "casa manana wizard of oz tickets",
+        "casa manana hours",
+        "casa manana menu with prices"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "southern-alberta-jubilee-auditorium-calgary",
+      "seed": "Southern Alberta Jubilee Auditorium tickets",
+      "suggestions": [
+        "southern alberta jubilee auditorium tickets",
+        "southern alberta jubilee auditorium box office",
+        "southern alberta jubilee auditorium season tickets",
+        "southern alberta jubilee auditorium box office hours"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "tennessee-theatre-knoxville",
+      "seed": "Tennessee Theatre tickets",
+      "suggestions": [
+        "tennessee theatre tickets",
+        "tennessee theatre ticket office",
+        "tennessee williams theatre tickets",
+        "tennessee theatre season tickets",
+        "tennessee valley theatre tickets",
+        "tennessee theatre broadway season tickets",
+        "tennessee williams theatre company tickets",
+        "how much is a ticket to tennessee",
+        "can you pay a ticket online in tennessee"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "punch-line-comedy-club-houston-houston",
+      "seed": "Punch Line Comedy Club - Houston tickets",
+      "suggestions": [
+        "punch line comedy club houston tx",
+        "comedy clubs in houston",
+        "punchline comedy lounge events",
+        "where is the punchline comedy club",
+        "comedy clubs in houston tonight"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "fishers-event-center-fishers",
+      "seed": "Fishers Event Center tickets",
+      "suggestions": [
+        "fishers event center tickets",
+        "fishers event center ticket office",
+        "fishers event center ticket office phone number",
+        "fishers event center ticket manager",
+        "fishers event center ticket office hours",
+        "fishers event center ticket login",
+        "fishers event center box office",
+        "fishers event center parking tickets",
+        "fishers event center season tickets",
+        "fishers event center fuel tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "orange-blossom-opry-weirsdale",
+      "seed": "Orange Blossom Opry tickets",
+      "suggestions": [
+        "orange blossom opry tickets",
+        "orange blossom opry tickets 2026",
+        "orange blossom opry tickets price",
+        "orange blossom opry tickets 2026 usa",
+        "orange blossom opry tickets for sale",
+        "orange blossom opry tickets price weirsdale fl",
+        "orange blossom opry tickets discount",
+        "orange blossom opry tickets 2026 florida",
+        "orange blossom opry tickets price usa",
+        "orange blossom opry ticket sales weirsdale fl"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "skyline-comedy-cafe-appleton",
+      "seed": "Skyline Comedy Cafe tickets",
+      "suggestions": [
+        "skyline comedy club tickets",
+        "skyline comedy club free tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "casey-s-center-des-moines",
+      "seed": "Casey's Center tickets",
+      "suggestions": [
+        "casey's center tickets",
+        "casey's center ticket office",
+        "casey's center ticket office hours",
+        "casey's center ticket office phone number",
+        "casey's center ticket sales",
+        "solanus casey center tickets",
+        "casey's center parking tickets",
+        "casey's event center tickets",
+        "casey's center concert tickets",
+        "journey tickets casey's center"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "sight-sound-theatres-mo-branson",
+      "seed": "Sight & Sound Theatres - MO tickets",
+      "suggestions": [
+        "sight & sound theater branson missouri tickets",
+        "how much are sight and sound theater tickets",
+        "sight and sound theater ticket prices",
+        "how much are sight and sound tickets",
+        "sight and sound ticket prices"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "6th-proctor-tacoma-comedy-club-tacoma",
+      "seed": "6th & Proctor - Tacoma Comedy Club tickets",
+      "suggestions": [
+        "tacoma comedy club 6th and proctor tickets"
+      ],
+      "pulledAt": "2026-10-17T00:00:00Z"
     }
   ]
 }
