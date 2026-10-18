@@ -1,6 +1,6 @@
 {
   "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-10-17T00:00:00Z",
+  "pulledAt": "2026-10-18T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -103,15 +103,15 @@
         "hamilton tickets",
         "hamilton tickets broadway",
         "hamilton tickets nyc",
-        "hamilton tickets okc",
         "hamilton tickets atlanta",
+        "hamilton tickets okc",
         "hamilton tickets new york",
         "hamilton tickets san antonio",
-        "hamilton tickets fort worth",
+        "hamilton tickets dc",
         "hamilton tickets broadway nyc",
-        "hamilton tickets london"
+        "hamilton tickets orlando"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -129,7 +129,7 @@
         "wicked tickets orpheum",
         "wicked tickets des moines"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -147,7 +147,7 @@
         "the lion king tickets cheap",
         "the lion king tickets price"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -165,7 +165,7 @@
         "come from away tickets vancouver",
         "come from away tickets calgary"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -183,7 +183,7 @@
         "a christmas carol tickets old vic",
         "a christmas carol tickets calgary"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -201,7 +201,7 @@
         "disney on ice tickets age",
         "disney on ice tickets indianapolis"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -219,7 +219,7 @@
         "dallas cowboys tickets stubhub",
         "dallas cowboys tickets tickpick"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -228,16 +228,16 @@
       "suggestions": [
         "chicago bulls tickets",
         "chicago bulls tickets 2026",
-        "chicago bulls tickets price",
         "chicago bulls tickets 2027",
-        "chicago bulls tickets october 2026",
-        "chicago bulls tickets on sale",
-        "chicago bulls tickets ticketmaster",
-        "chicago bulls tickets united center",
+        "chicago bulls tickets price",
+        "chicago bulls tickets for sale",
         "chicago bulls tickets release date",
-        "chicago bulls tickets 2026 price"
+        "chicago bulls tickets preseason",
+        "chicago bulls tickets october 2026",
+        "chicago bulls tickets united center",
+        "chicago bulls tickets summer league"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -255,7 +255,7 @@
         "milwaukee brewers tickets senior discount",
         "milwaukee brewers tickets phone number"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -273,7 +273,7 @@
         "las vegas shows discount tickets",
         "las vegas shows 2025 tickets"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -291,7 +291,7 @@
         "alan jackson nashville concert tickets",
         "bruno mars nashville concert tickets"
       ],
-      "pulledAt": "2026-09-08T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -317,8 +317,8 @@
       "seed": "Magic Mike Live tickets",
       "suggestions": [
         "magic mike live tickets",
-        "magic mike live tickets las vegas",
         "magic mike live tickets london",
+        "magic mike live tickets las vegas",
         "magic mike live tickets nyc",
         "magic mike live tickets new york",
         "magic mike live tickets cheap",
@@ -327,7 +327,7 @@
         "magic mike show tickets las vegas",
         "magic mike show tickets price"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -345,7 +345,7 @@
         "blue man group tickets london",
         "blue man group tickets uk"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -363,7 +363,7 @@
         "six the musical tickets uk",
         "six the musical tickets edinburgh"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -381,7 +381,7 @@
         "les miserables tickets usa",
         "les miserables tickets tuacahn"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -399,7 +399,7 @@
         "hadestown tickets seattle",
         "hadestown tickets pittsburgh"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -411,7 +411,7 @@
         "flamenco show tickets barcelona",
         "flamenco show tickets seville"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -429,7 +429,7 @@
         "the phantom of the opera tickets nyc",
         "the phantom of the opera tickets los angeles"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -447,7 +447,7 @@
         "paddington the musical tickets june 2026",
         "paddington the musical tickets tonight"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -465,7 +465,7 @@
         "little shop of horrors tickets lottery",
         "little shop of horrors rush tickets"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -483,7 +483,7 @@
         "mamma mia tickets nyc",
         "mamma mia tickets dc"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -501,7 +501,7 @@
         "jabbawockeez tickets price",
         "jabbawockeez tickets tonight"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -519,7 +519,7 @@
         "the outsiders tickets discount",
         "the outsiders tickets dallas"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -535,9 +535,9 @@
         "absinthe tickets caesars palace",
         "absinthe tickets caesars",
         "absinthe tickets reddit",
-        "absinthe tickets price"
+        "absinthe tickets sale"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -555,7 +555,7 @@
         "oh mary tickets seattle",
         "oh mary tickets tonight"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -573,7 +573,7 @@
         "the book of mormon tickets toronto",
         "the book of mormon tickets today"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -587,7 +587,7 @@
         "michael jackson one by cirque du soleil review",
         "o cirque du soleil las vegas reviews"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -605,7 +605,7 @@
         "cirque du soleil o tickets stubhub",
         "cirque du soleil o show tickets"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -623,7 +623,7 @@
         "cabaret tickets cheap",
         "cabaret tickets tonight"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -641,7 +641,7 @@
         "moulin rouge show ticket price",
         "moulin rouge dinner show tickets"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -659,7 +659,7 @@
         "the mousetrap tickets tonight",
         "the mousetrap tickets review"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -677,7 +677,7 @@
         "matilda the musical tickets discount",
         "matilda the musical tickets glasgow"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -729,7 +729,7 @@
         "ariana grande montreal concert tickets",
         "olivia dean montreal concert tickets"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -742,7 +742,7 @@
         "candlelight concert portland tickets",
         "concerts in portland coming up"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -758,7 +758,7 @@
         "seattle concert events",
         "seattle arena concerts"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -785,7 +785,7 @@
         "katseye phoenix concert tickets",
         "phoenix concerts 2026 tickets"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -801,7 +801,7 @@
         "how much are indy tickets",
         "live nation concerts indianapolis"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -818,7 +818,7 @@
         "noah kahan minneapolis concert tickets",
         "minneapolis arena concerts"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -928,15 +928,15 @@
         "salt lake city concert tickets",
         "salt lake city concert tickets 2026",
         "salt lake city temple tour tickets",
-        "benson boone salt lake city concert tickets",
         "zach bryan salt lake city concert tickets",
+        "benson boone salt lake city concert tickets",
         "post malone salt lake city concert tickets",
         "candlelight concert salt lake city tickets",
         "train concert tickets salt lake city",
         "cheap concert tickets salt lake city",
         "olivia dean concert tickets salt lake city"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -971,7 +971,7 @@
         "forrest frank louisville concert tickets",
         "louisville gardens concerts"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -988,7 +988,7 @@
         "chris brown houston concert tickets",
         "houston arena concerts"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -1044,7 +1044,7 @@
         "new york knicks tickets november 2026",
         "new york knicks tickets price finals"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -1062,7 +1062,7 @@
         "miami heat tickets presale code",
         "miami heat tickets tickpick"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -1080,7 +1080,7 @@
         "toronto raptors tickets scotiabank arena",
         "toronto raptors tickets ticketmaster"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -1098,7 +1098,7 @@
         "charlotte hornets tickets tonight",
         "charlotte hornets tickets stubhub"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -1109,14 +1109,14 @@
         "orlando magic tickets 2026",
         "orlando magic tickets 2027",
         "orlando magic tickets price",
+        "orlando magic tickets season",
+        "orlando magic tickets cheap",
         "orlando magic tickets presale",
-        "orlando magic tickets home",
-        "orlando magic tickets october 2026",
         "orlando magic tickets uk",
         "orlando magic tickets ticketmaster",
         "orlando magic tickets 2025"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -1134,7 +1134,7 @@
         "atlanta hawks tickets cheap",
         "atlanta hawks tickets ticketmaster"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -1146,7 +1146,7 @@
         "indianapolis pacers tickets",
         "indiana pacers season tickets"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -1164,7 +1164,7 @@
         "philadelphia 76ers game tickets",
         "how much are the sixers tickets"
       ],
-      "pulledAt": "2026-09-30T00:00:00Z"
+      "pulledAt": "2026-10-18T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -25041,6 +25041,1456 @@
         "tacoma comedy club 6th and proctor tickets"
       ],
       "pulledAt": "2026-10-17T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "niagara-purple-eagles",
+      "seed": "Niagara Purple Eagles tickets",
+      "suggestions": [
+        "niagara purple eagles hockey tickets",
+        "niagara parks adventure pass promo code"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "hofstra-pride",
+      "seed": "Hofstra Pride tickets",
+      "suggestions": [
+        "hofstra pride basketball tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "iona-gaels",
+      "seed": "Iona Gaels tickets",
+      "suggestions": [
+        "iona basketball tickets",
+        "what is a gael iona",
+        "iona gaels schedule"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "quinnipiac-bobcats",
+      "seed": "Quinnipiac Bobcats tickets",
+      "suggestions": [
+        "quinnipiac university tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "belmont-bruins",
+      "seed": "Belmont Bruins tickets",
+      "suggestions": [
+        "belmont university tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "winthrop-eagles",
+      "seed": "Winthrop Eagles tickets",
+      "suggestions": [
+        "winthrop eagles tickets",
+        "winthrop eagles basketball tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "georgia-southern-eagles-mens-basketball",
+      "seed": "Georgia Southern Eagles Mens Basketball tickets",
+      "suggestions": [
+        "georgia southern eagles men's basketball vs georgia state panthers men's basketball tickets",
+        "georgia southern eagles men's basketball vs florida state seminoles men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-heart",
+      "seed": "The Heart tickets",
+      "suggestions": [
+        "the heart tickets",
+        "the heart tour",
+        "the heart tour 2026",
+        "the heart tour 2025",
+        "the black heart tickets",
+        "the normal heart tickets",
+        "the band heart tickets",
+        "head and the heart tickets",
+        "whisper of the heart tickets",
+        "affair of the heart tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "saosin",
+      "seed": "Saosin tickets",
+      "suggestions": [
+        "saosin tickets",
+        "saosin tickets manila",
+        "saosin tickets sydney",
+        "saosin tickets melbourne",
+        "saosin tickets cebu",
+        "saosin tickets brisbane",
+        "saosin tickets perth",
+        "saosin tickets nz",
+        "saosin tickets adelaide",
+        "saosin tickets orlando"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "scrooge-the-musical",
+      "seed": "Scrooge The Musical tickets",
+      "suggestions": [
+        "scrooge the musical tickets",
+        "scrooge the musical glasgow tickets",
+        "scrooge the musical tacoma tickets",
+        "scrooge the musical 2025 tickets",
+        "scrooge the musical tacoma tickets price",
+        "scrooge the musical 2026 tickets",
+        "marti pellow scrooge the musical tickets",
+        "scrooge the musical champion center tickets",
+        "scrooge the musical 2026 tour tickets",
+        "scrooge the musical glasgow 2026 tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "clue-live-on-stage",
+      "seed": "Clue - Live On Stage tickets",
+      "suggestions": [
+        "clue live on stage tickets",
+        "how to get tickets to a chelsea game",
+        "plays on stage near me",
+        "how to get tickets to strictly live shows"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "braxton-keith",
+      "seed": "Braxton Keith tickets",
+      "suggestions": [
+        "braxton keith tickets",
+        "braxton keith tickets okc",
+        "braxton keith tickets san antonio",
+        "braxton keith tickets corpus christi",
+        "braxton keith tickets dallas",
+        "braxton keith billy bob's texas",
+        "braxton keith tickets lubbock",
+        "braxton keith tickets mission tx",
+        "braxton keith tickets fort worth",
+        "braxton keith tickets near me"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "yaelokre",
+      "seed": "Yaelokre tickets",
+      "suggestions": [
+        "yaelokre tickets",
+        "yaelokre tickets price",
+        "yaelokre tickets 2026",
+        "yaelokre tickets uk",
+        "yaelokre tickets chicago",
+        "yaelokre tickets north carolina",
+        "yaelokre tickets london",
+        "yaelokre tickets boston",
+        "yaelokre tickets orlando",
+        "yaelokre tickets dc"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "sleeping-beauty-pantomime",
+      "seed": "Sleeping Beauty (Pantomime) tickets",
+      "suggestions": [
+        "sleeping beauty pantomime tickets",
+        "sleeping beauty theatre tickets",
+        "sleeping beauty pantomime london tickets",
+        "sleeping beauty panto london tickets",
+        "sleeping beauty panto 2025 tickets",
+        "sleeping beauty pantomime chatham 2025 tickets",
+        "sleeping beauty panto kilmarnock 2025 tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-interrupters",
+      "seed": "The Interrupters tickets",
+      "suggestions": [
+        "the interrupters tickets",
+        "the interrupters tour 2026 tickets",
+        "the interrupters tour 2025 tickets",
+        "the interrupters uk tour tickets",
+        "the interrupters tour 2025 uk tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "turnover",
+      "seed": "Turnover tickets",
+      "suggestions": [
+        "turnover tickets",
+        "turnover tickets las vegas",
+        "turnover tickets ventura",
+        "turnover tickets fort worth",
+        "turnover tickets london",
+        "turnover tickets bristol",
+        "turnover tickets mcallen tx",
+        "turnover tickets manchester",
+        "turnover tickets leeds",
+        "turnover tickets olympia"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "foy-vance",
+      "seed": "Foy Vance tickets",
+      "suggestions": [
+        "foy vance tickets",
+        "foy vance tickets belfast",
+        "foy vance tickets london",
+        "foy vance tickets vancouver",
+        "foy vance manchester tickets",
+        "foy vance galway tickets",
+        "foy vance fleadh tickets",
+        "foy vance bristol tickets",
+        "foy vance duke of york tickets",
+        "foy vance custom house square tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "pigeons-playing-ping-pong",
+      "seed": "Pigeons Playing Ping Pong tickets",
+      "suggestions": [
+        "pigeons playing ping pong tickets",
+        "pigeons playing ping pong tickets tonight",
+        "pigeons playing ping pong tour tickets",
+        "pigeons playing ping pong boston tickets",
+        "pigeons playing ping pong baltimore tickets",
+        "pigeons playing ping pong buffalo tickets",
+        "pigeons playing ping pong denver tickets",
+        "pigeons playing ping pong setlist"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "stick-man",
+      "seed": "Stick Man tickets",
+      "suggestions": [
+        "stick man tickets",
+        "stick man tickets london",
+        "stick man tickets leeds",
+        "stick figure tickets",
+        "stick figure tickets 2026",
+        "stick figure tickets 2027",
+        "stick figure tickets tampa",
+        "stick figure tickets san diego",
+        "stick figure tickets red rocks",
+        "stick figure tickets west palm beach"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "ian-bagg",
+      "seed": "Ian Bagg tickets",
+      "suggestions": [
+        "ian bagg tickets",
+        "ian bagg tickets glasgow",
+        "ian bagg tickets terrace bc",
+        "ian bagg tickets vancouver",
+        "ian bagg tickets calgary",
+        "ian bagg tickets toronto",
+        "ian bagg tickets edmonton",
+        "ian bagg tickets ottawa",
+        "ian bagg tickets 2026",
+        "ian bagg ticket prices"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "peppa-pig-s-big-family-show",
+      "seed": "Peppa Pig's Big Family Show! tickets",
+      "suggestions": [
+        "peppa pig's big family show tickets",
+        "how much is a family ticket to peppa pig world",
+        "what is peppa pig's favorite food",
+        "how many family members does peppa pig have",
+        "what animals are peppa pig's friends"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "michelle-branch",
+      "seed": "Michelle Branch tickets",
+      "suggestions": [
+        "michelle branch tickets",
+        "michelle branch tickets chicago",
+        "michelle branch tickets seattle",
+        "michelle branch tickets los angeles",
+        "michelle branch tickets nyc",
+        "michelle branch tickets san francisco",
+        "michelle branch tickets philly",
+        "michelle branch tickets minneapolis",
+        "michelle branch tickets las vegas",
+        "michelle branch tickets stone pony"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "from-ashes-to-new",
+      "seed": "From Ashes To New tickets",
+      "suggestions": [
+        "from ashes to new tickets",
+        "from ashes to new tickets hamburg",
+        "from ashes to new tickets koln",
+        "from ashes to new vip tickets",
+        "from ashes to new tour tickets",
+        "from ashes to new concert tickets",
+        "from ashes to new harrisburg tickets",
+        "from ashes to new australia tickets",
+        "from ashes to new grand rapids tickets",
+        "from ashes to new tour 2026 tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "lucille-lortel-new-york",
+      "seed": "Lucille Lortel tickets",
+      "suggestions": [
+        "lucille lortel tickets",
+        "lucille lortel rush tickets",
+        "lucille lortel awards tickets",
+        "data lucille lortel tickets",
+        "lucille lortel discount tickets",
+        "lucille lortel student tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "harold-pinter-theatre-london",
+      "seed": "Harold Pinter Theatre tickets",
+      "suggestions": [
+        "harold pinter theatre tickets",
+        "harold pinter theatre tickets romeo and juliet",
+        "harold pinter theatre tickets price",
+        "harold pinter theatre ticket returns",
+        "harold pinter theatre ticket exchange",
+        "harold pinter theatre standing tickets",
+        "harold pinter theatre access tickets",
+        "harold pinter theatre cheap tickets",
+        "harold pinter theatre day tickets",
+        "harold pinter theatre rush tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "phoenix-theatre-london-london",
+      "seed": "Phoenix Theatre - London tickets",
+      "suggestions": [
+        "phoenix theatre london tickets",
+        "phoenix cinema london tickets",
+        "phoenix theatre london access tickets",
+        "phoenix theatre london stranger things tickets",
+        "phoenix theatre london carer ticket",
+        "phoenix theatre london contact",
+        "phoenix theatre box office hours",
+        "phoenix theatre london phone number",
+        "phoenix theater hours",
+        "parking near phoenix theatre london"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "enmarket-arena-savannah",
+      "seed": "Enmarket Arena tickets",
+      "suggestions": [
+        "enmarket arena tickets",
+        "enmarket arena tickets savannah ga",
+        "enmarket arena ticket office",
+        "enmarket arena ticket office hours",
+        "enmarket arena ticket sales",
+        "enmarket arena parking tickets",
+        "enmarket arena shuttle tickets",
+        "enmarket arena rodeo tickets",
+        "enmarket arena season tickets",
+        "enmarket arena concert tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "chase-field-phoenix",
+      "seed": "Chase Field tickets",
+      "suggestions": [
+        "chase field tickets",
+        "chase field tickets box office",
+        "chase field tickets today",
+        "chase field tickets price",
+        "chase field tickets tonight",
+        "chase field tickets kids",
+        "chase stadium tickets",
+        "chase stadium tickets price",
+        "chase stadium tickets fort lauderdale",
+        "chase field ticket office"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "proctors-theatre-schenectady",
+      "seed": "Proctors Theatre tickets",
+      "suggestions": [
+        "proctors theatre tickets",
+        "theatre ticket cancellations"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "vystar-veterans-memorial-arena-jacksonville",
+      "seed": "VyStar Veterans Memorial Arena tickets",
+      "suggestions": [
+        "vystar veterans memorial arena tickets",
+        "vystar veterans memorial arena ticket office",
+        "vystar veterans memorial arena parking tickets",
+        "vystar veterans memorial arena rules",
+        "directions to vystar veterans memorial arena",
+        "is vystar veterans memorial arena indoors",
+        "vystar veterans memorial arena jobs"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "zanies-comedy-club-rosemont-rosemont",
+      "seed": "Zanies Comedy Club - Rosemont tickets",
+      "suggestions": [
+        "zanies comedy club rosemont tickets",
+        "zanies comedy club rosemont tickets price",
+        "zanies comedy night club tickets rosemont",
+        "zanies comedy club dress code"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "loandepot-park-miami",
+      "seed": "loanDepot park tickets",
+      "suggestions": [
+        "loandepot park tickets",
+        "loandepot park tickets price",
+        "loandepot park tickets wbc",
+        "loandepot park ticket office",
+        "loandepot park miami tickets",
+        "loandepot park marlins tickets",
+        "loandepot parking garage tickets",
+        "loandepot park winter classic tickets",
+        "pnc club loandepot park tickets",
+        "loandepot park world baseball classic tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "fenway-park-boston",
+      "seed": "Fenway Park tickets",
+      "suggestions": [
+        "fenway park tickets",
+        "fenway park tickets 2026",
+        "fenway park tickets red sox",
+        "fenway park tickets noah kahan",
+        "fenway park tickets tour",
+        "fenway park tickets today",
+        "fenway park tickets tonight",
+        "fenway park tickets price",
+        "fenway park tickets concerts",
+        "fenway park tickets baseball"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "climate-pledge-arena-seattle",
+      "seed": "Climate Pledge Arena tickets",
+      "suggestions": [
+        "climate pledge arena tickets",
+        "climate pledge arena ticket office",
+        "climate pledge arena suite tickets",
+        "climate pledge arena ufc tickets",
+        "climate pledge arena kraken tickets",
+        "climate pledge arena parking tickets",
+        "climate pledge arena rush tickets",
+        "tours climate pledge arena seattle tickets",
+        "climate pledge arena cost",
+        "climate pledge arena concerts"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "saenger-theatre-new-orleans-new-orleans",
+      "seed": "Saenger Theatre - New Orleans tickets",
+      "suggestions": [
+        "saenger theatre new orleans tickets",
+        "saenger theatre new orleans concert",
+        "saenger theatre new orleans season tickets",
+        "saenger theatre new orleans events",
+        "saenger theatre new orleans capacity"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "yankee-stadium-bronx",
+      "seed": "Yankee Stadium tickets",
+      "suggestions": [
+        "yankee stadium tickets",
+        "yankee stadium tickets price",
+        "yankee stadium tickets liverpool",
+        "yankee stadium tickets 2026",
+        "yankee stadium tickets jay z",
+        "yankee stadium tickets for kids",
+        "yankee stadium tickets tour",
+        "yankee stadium tickets behind home plate",
+        "yankee stadium tickets for jay z concert",
+        "yankee stadium ticket office"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "american-family-field-milwaukee",
+      "seed": "American Family Field tickets",
+      "suggestions": [
+        "american family field tickets",
+        "american family field ticket office",
+        "american family field ticket office hours",
+        "american family field ticket prices",
+        "american family field ticket office phone number",
+        "american family field parking tickets",
+        "american family field brewers tickets",
+        "banana ball american family field tickets",
+        "american family field savannah bananas tickets",
+        "american family field age for tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "tropicana-field-st-petersburg",
+      "seed": "Tropicana Field tickets",
+      "suggestions": [
+        "tropicana field tickets",
+        "tropicana field ticket office",
+        "tropicana field parking tickets",
+        "tropicana field rays tickets",
+        "tropicana field baseball tickets",
+        "tropicana field tours tickets",
+        "162 landing tropicana field tickets",
+        "tropicana field all inclusive tickets",
+        "maintenx skydeck tropicana field tickets",
+        "baldwin group club tropicana field tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "t-mobile-arena-las-vegas",
+      "seed": "T-Mobile Arena tickets",
+      "suggestions": [
+        "t-mobile arena tickets",
+        "t mobile arena tickets las vegas",
+        "t mobile arena tickets ufc",
+        "t mobile arena tickets today",
+        "t mobile arena kansas city tickets",
+        "t mobile arena tickets tonight",
+        "t mobile arena tickets price",
+        "t mobile stadium tickets",
+        "t mobile arena ticket office",
+        "t mobile arena ticket sales"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "nationals-park-washington",
+      "seed": "Nationals Park tickets",
+      "suggestions": [
+        "nationals park tickets",
+        "nationals stadium tickets",
+        "nationals park ticket office",
+        "nationals park seats",
+        "nationals park seats how many",
+        "nationals park tour tickets",
+        "nationals park si tickets club",
+        "noah kahan nationals park tickets",
+        "winter wonderfest nationals park tickets",
+        "geico garage nationals park tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "wrigley-field-chicago",
+      "seed": "Wrigley Field tickets",
+      "suggestions": [
+        "wrigley field tickets",
+        "wrigley field tickets 2026",
+        "wrigley field tickets cubs",
+        "wrigley field tickets volleyball",
+        "wrigley field tickets price",
+        "wrigley field tickets 2027",
+        "wrigley field tickets noah kahan",
+        "wrigley field tickets concert",
+        "wrigley field tickets tour",
+        "wrigley field tickets nebraska volleyball"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-neptune-theatre-seattle",
+      "seed": "The Neptune Theatre tickets",
+      "suggestions": [
+        "the neptune theatre tickets",
+        "neptune theatre promo code"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "oriole-park-at-camden-yards-baltimore",
+      "seed": "Oriole Park At Camden Yards tickets",
+      "suggestions": [
+        "oriole park at camden yards tickets",
+        "oriole park at camden yards ticket office",
+        "oriole park at camden yards tours tickets",
+        "oriole park at camden yards events",
+        "oriole park at camden yards capacity",
+        "oriole park at camden yards dimensions",
+        "who owns oriole park at camden yards"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "amica-mutual-pavilion-providence",
+      "seed": "Amica Mutual Pavilion tickets",
+      "suggestions": [
+        "amica mutual pavilion tickets",
+        "amica mutual pavilion ticket office",
+        "amica mutual insurance customer service"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "boettcher-concert-hall-denver",
+      "seed": "Boettcher Concert Hall tickets",
+      "suggestions": [
+        "boettcher concert hall tickets",
+        "boettcher concert hall ticket office",
+        "boettcher concert hall box office",
+        "boettcher concert hall box office hours",
+        "boettcher concert hall dress code",
+        "august hall concerts",
+        "what are advance tickets for concerts",
+        "concert hall at victoria hall events"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "winspear-opera-house-dallas",
+      "seed": "Winspear Opera House tickets",
+      "suggestions": [
+        "winspear opera house tickets",
+        "winspear opera house tickets price",
+        "dallas opera house tickets",
+        "winspear opera house ticket office",
+        "winspear opera house parking tickets",
+        "winspear opera house season tickets",
+        "winspear opera house nutcracker tickets",
+        "winspear opera house student tickets",
+        "winspear opera house dallas tickets",
+        "winspear opera house rush tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "t-mobile-park-seattle",
+      "seed": "T-Mobile Park tickets",
+      "suggestions": [
+        "t-mobile park tickets",
+        "t mobile park tickets mariners",
+        "t mobile park tickets price",
+        "t mobile park tickets seattle",
+        "t mobile park tickets today",
+        "t mobile park ticket office",
+        "t mobile park ticket age",
+        "t mobile park ticket map",
+        "t mobile park ticket office hours",
+        "t mobile park ticket view"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "busch-stadium-st-louis",
+      "seed": "Busch Stadium tickets",
+      "suggestions": [
+        "busch stadium tickets",
+        "busch stadium tickets cardinals",
+        "busch stadium tickets savannah bananas",
+        "busch stadium ticket office",
+        "busch stadium ticket office hours",
+        "busch stadium ticket office phone number",
+        "busch stadium tour tickets",
+        "busch stadium parking tickets",
+        "busch stadium suite tickets",
+        "busch stadium all inclusive tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "citizens-bank-park-philadelphia",
+      "seed": "Citizens Bank Park tickets",
+      "suggestions": [
+        "citizens bank park tickets",
+        "citizens bank park tickets phillies",
+        "citizens bank park tickets noah kahan",
+        "citizens bank park ticket office",
+        "citizens bank park ticket office phone number",
+        "citizens bank park ticket office hours",
+        "citizens bank park tour tickets",
+        "citizens bank park all star game tickets",
+        "citizens bank park standing room only tickets",
+        "can you buy tickets at citizens bank park"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "las-vegas-ballpark-las-vegas",
+      "seed": "Las Vegas Ballpark tickets",
+      "suggestions": [
+        "las vegas ballpark tickets",
+        "las vegas baseball tickets",
+        "las vegas stadium tickets",
+        "las vegas ballpark pool tickets",
+        "enchant las vegas ballpark tickets",
+        "las vegas stadium tour tickets",
+        "las vegas baseball season tickets",
+        "las vegas allegiant stadium tickets",
+        "what time do gates open at las vegas ballpark",
+        "las vegas ballpark bag policy"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "pnc-park-pittsburgh",
+      "seed": "PNC Park tickets",
+      "suggestions": [
+        "pnc park tickets",
+        "pnc park tickets pirates",
+        "pnc park tickets noah kahan",
+        "pnc park ticket office",
+        "pnc park ticket prices",
+        "pnc park ticket map",
+        "pnc park seats",
+        "pnc park seats under cover",
+        "pnc park seats in the shade",
+        "pnc park seats map"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ford-s-theatre-washington",
+      "seed": "Ford's Theatre tickets",
+      "suggestions": [
+        "ford's theatre tickets",
+        "ford's theatre tickets online",
+        "ford's theatre tickets price",
+        "ford's theatre tickets online free",
+        "ford's theatre tickets 1776",
+        "ford's theatre tickets christmas carol",
+        "ford's theatre tickets tour",
+        "ford theatre tickets dc",
+        "ford's theatre museum tickets",
+        "ford's theatre show tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "target-field-minneapolis",
+      "seed": "Target Field tickets",
+      "suggestions": [
+        "target field tickets",
+        "target field tickets 2026",
+        "target field tickets today",
+        "target field tickets twins",
+        "target field tickets noah kahan",
+        "target field tickets tim mcgraw",
+        "target field tickets my chemical romance",
+        "wrigley field tickets",
+        "wrigley field tickets 2026",
+        "wrigley field tickets cubs"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "progressive-field-cleveland",
+      "seed": "Progressive Field tickets",
+      "suggestions": [
+        "progressive field tickets",
+        "progressive stadium tickets",
+        "progressive field ticket office",
+        "progressive field ticket prices",
+        "progressive field ticket office phone number",
+        "progressive field ticket age",
+        "progressive field ticket map",
+        "progressive field ticket sales",
+        "progressive field tours tickets",
+        "progressive field district tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "charleston-music-hall-charleston",
+      "seed": "Charleston Music Hall tickets",
+      "suggestions": [
+        "charleston music hall tickets",
+        "charleston music farm tickets",
+        "charleston music hall ticket office",
+        "charleston music hall ticket office hours",
+        "charleston music hall concerts",
+        "charleston music hall concerts 2026",
+        "charleston music hall season tickets",
+        "charleston music farm concerts",
+        "charleston music hall upcoming concerts",
+        "charleston music hall events"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "chase-center-san-francisco",
+      "seed": "Chase Center tickets",
+      "suggestions": [
+        "chase center tickets",
+        "chase center tickets warriors",
+        "chase center tickets for valkyries for kids",
+        "chase center tickets concerts",
+        "chase center tickets muni",
+        "chase center tickets valkyries",
+        "chase center tickets price",
+        "chase center tickets tonight",
+        "chase center tickets olivia dean",
+        "chase center tickets today"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "centre-bell-montreal",
+      "seed": "Centre Bell tickets",
+      "suggestions": [
+        "centre bell tickets",
+        "centre bell tickets canadiens",
+        "centre bell tickets price",
+        "centre bell tickets hockey",
+        "centre bell tickets habs",
+        "centre bell tickets watch party",
+        "centre bell tickets tonight",
+        "centre bell tickets evenko",
+        "centre bell tickets montreal",
+        "centre bell tickets game 7"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "sohoplace-london",
+      "seed": "@sohoplace tickets",
+      "suggestions": [
+        "@sohoplace tickets",
+        "soho place tickets",
+        "soho place access tickets",
+        "sohoplace rush tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "miami-improv-miami",
+      "seed": "Miami Improv tickets",
+      "suggestions": [
+        "miami improv tickets",
+        "miami improv free tickets",
+        "miami improv doral tickets",
+        "miami improv free tickets promo code",
+        "miami improv vip tickets",
+        "mojo brooks miami improv tickets",
+        "miami improv dress code",
+        "miami improv drink prices"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "orpheum-theatre-vancouver-vancouver",
+      "seed": "Orpheum Theatre - Vancouver tickets",
+      "suggestions": [
+        "orpheum theatre vancouver tickets",
+        "queen elizabeth theatre vancouver tickets",
+        "orpheum theatre vancouver concert",
+        "orpheum theatre vancouver box office",
+        "queen elizabeth theatre vancouver ticketmaster",
+        "queen elizabeth theatre vancouver box office",
+        "queen elizabeth theatre vancouver concert",
+        "queen elizabeth theatre vancouver concert capacity",
+        "queen elizabeth theatre vancouver season tickets",
+        "queen elizabeth theatre vancouver rush tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "angel-stadium-anaheim",
+      "seed": "Angel Stadium tickets",
+      "suggestions": [
+        "angel stadium tickets",
+        "angel stadium tickets price",
+        "angel stadium tickets seating chart",
+        "angel stadium tickets for kids",
+        "anaheim stadium tickets",
+        "angel stadium ticket office",
+        "angels stadium ticket office hours",
+        "angel stadium parking tickets",
+        "angel stadium suite tickets",
+        "angels stadium tour tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "high-roller-wheel-at-the-linq-las-vegas",
+      "seed": "High Roller Wheel At the LINQ tickets",
+      "suggestions": [
+        "high roller wheel at the linq tickets",
+        "high roller observation wheel tickets at the linq",
+        "high roller wheel admission ticket at the linq",
+        "what is the high roller at the linq",
+        "how long is the linq high roller ride"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "rogers-arena-vancouver",
+      "seed": "Rogers Arena tickets",
+      "suggestions": [
+        "rogers arena tickets",
+        "rogers arena tickets canucks",
+        "rogers place tickets",
+        "rogers place tickets oilers",
+        "rogers arena ticket centre",
+        "rogers arena club seats benefits",
+        "rogers arena bag policy",
+        "what are club seats at rogers arena",
+        "rogers arena concerts"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "union-stage-dc-washington",
+      "seed": "Union Stage - DC tickets",
+      "suggestions": [
+        "union stage dc tickets",
+        "union stage dc schedule"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "keller-auditorium-portland",
+      "seed": "Keller Auditorium tickets",
+      "suggestions": [
+        "keller auditorium tickets",
+        "keller auditorium tickets online",
+        "keller auditorium tickets discount",
+        "keller auditorium tickets harry potter",
+        "keller auditorium tickets price",
+        "keller theater tickets",
+        "keller auditorium ticket office",
+        "keller auditorium ticket sales",
+        "keller auditorium ticket office phone number",
+        "keller auditorium season tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "gramercy-theatre-new-york",
+      "seed": "Gramercy Theatre tickets",
+      "suggestions": [
+        "gramercy theatre tickets",
+        "freya skye gramercy theatre tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ovo-hydro-glasgow",
+      "seed": "OVO Hydro tickets",
+      "suggestions": [
+        "ovo hydro tickets",
+        "ovo hydro tickets login",
+        "ovo hydro tickets price",
+        "ovo hydro tickets obama",
+        "ovo hydro tickets glasgow",
+        "ovo hydro tickets online",
+        "ovo hydro tickets kevin bridges",
+        "ovo hydro ticket office",
+        "ovo hydro accessible tickets",
+        "ovo hydro accessible tickets phone number"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "grand-ole-opry-house-nashville",
+      "seed": "Grand Ole Opry House tickets",
+      "suggestions": [
+        "grand ole opry house tickets",
+        "grand ole opry house ticket office",
+        "grand ole opry tour hours",
+        "grand ole opry museum hours",
+        "grand ole opry visiting hours"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-carolina-opry-theater-myrtle-beach",
+      "seed": "The Carolina Opry Theater tickets",
+      "suggestions": [
+        "the carolina opry theater tickets",
+        "how much are opry tickets",
+        "how much do carolina opry performers make"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "bon-secours-wellness-arena-greenville",
+      "seed": "Bon Secours Wellness Arena tickets",
+      "suggestions": [
+        "bon secours wellness arena tickets",
+        "bon secours wellness arena ticket office",
+        "bon secours wellness arena ticket office hours",
+        "vip parking bon secours wellness arena tickets",
+        "bon secours wellness arena march madness tickets",
+        "alabama tickets bon secours wellness arena",
+        "journey tickets bon secours wellness arena",
+        "ncaa tickets bon secours wellness arena",
+        "ghost tickets bon secours wellness arena",
+        "lil wayne tickets bon secours wellness arena"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "coca-cola-coliseum-toronto",
+      "seed": "Coca-Cola Coliseum tickets",
+      "suggestions": [
+        "coca-cola coliseum tickets",
+        "coca cola coliseum tickets price",
+        "coca cola coliseum ticket office",
+        "coca cola coliseum ticket upgrade",
+        "coca cola coliseum toronto tempo tickets",
+        "coca cola coliseum phone number",
+        "directions to coca cola coliseum"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "brooklyn-paramount-brooklyn",
+      "seed": "Brooklyn Paramount tickets",
+      "suggestions": [
+        "brooklyn paramount tickets",
+        "brooklyn paramount ticket prices",
+        "brooklyn paramount ticket office",
+        "robyn brooklyn paramount tickets",
+        "geese brooklyn paramount tickets",
+        "slayyyter brooklyn paramount tickets",
+        "dijon brooklyn paramount tickets",
+        "metric brooklyn paramount tickets",
+        "jade brooklyn paramount tickets",
+        "brooklyn paramount balcony tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "warner-theatre-dc-washington",
+      "seed": "Warner Theatre - DC tickets",
+      "suggestions": [
+        "warner theatre dc tickets",
+        "warner theater dc events",
+        "warner theater dc schedule",
+        "warner theater box office hours",
+        "warner theater box office phone number",
+        "warner theater concerts"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "dcu-center-worcester",
+      "seed": "DCU Center tickets",
+      "suggestions": [
+        "dcu center tickets",
+        "dcu center ticket office",
+        "dcu center ticket view",
+        "journey dcu center tickets",
+        "dcu center hockey tickets",
+        "dcu center worcester tickets",
+        "dcu center railers tickets",
+        "pbr dcu center tickets",
+        "dcu center group tickets",
+        "dcu center circus tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "phoenix-symphony-hall-phoenix",
+      "seed": "Phoenix Symphony Hall tickets",
+      "suggestions": [
+        "phoenix symphony hall tickets",
+        "phoenix symphony hall nutcracker tickets",
+        "phoenix symphony hall parking tickets",
+        "phoenix symphony dress code"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "aladdin-theater-portland",
+      "seed": "Aladdin Theater tickets",
+      "suggestions": [
+        "aladdin theater tickets",
+        "aladdin theater tickets portland",
+        "aladdin theatre tickets",
+        "aladdin tickets theatre royal",
+        "aladdin theater box office",
+        "angine de poitrine aladdin theater tickets",
+        "what theatre is aladdin on broadway",
+        "what theatre is aladdin in"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "roy-thomson-hall-toronto",
+      "seed": "Roy Thomson Hall tickets",
+      "suggestions": [
+        "roy thomson hall tickets",
+        "roy thomson hall tickets box office",
+        "roy thomson hall tickets home alone",
+        "roy thomson hall tickets call to the bar",
+        "roy thomson hall harry potter tickets",
+        "roy thomson hall ticket office",
+        "roy thomson hall ticket refund",
+        "roy thomson hall ticket fees",
+        "roy thomson hall rush tickets",
+        "roy thomson hall discount tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "bok-center-tulsa",
+      "seed": "BOK Center tickets",
+      "suggestions": [
+        "bok center tickets tulsa",
+        "bok center ticket office",
+        "bok center ticket office hours",
+        "bok center ticket map",
+        "bok center ticket sales",
+        "ghost bok center tickets",
+        "bok center concert tickets",
+        "staind bok center tickets",
+        "bok center suite tickets",
+        "bok center pbr tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "blue-cross-arena-rochester",
+      "seed": "Blue Cross Arena tickets",
+      "suggestions": [
+        "blue cross arena tickets",
+        "blue cross arena ticket office",
+        "blue cross arena ticket office hours",
+        "blue cross arena ticket manager",
+        "blue cross arena ticket office phone number",
+        "blue cross arena ticket sales",
+        "blue cross arena amerks tickets",
+        "pentatonix blue cross arena tickets sale",
+        "billy strings blue cross arena tickets",
+        "blue cross arena section v basketball tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "cobb-energy-performing-arts-centre-atlanta",
+      "seed": "Cobb Energy Performing Arts Centre tickets",
+      "suggestions": [
+        "cobb energy performing arts centre tickets",
+        "cobb energy performing arts centre box office",
+        "cobb energy performing arts centre box office hours"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "huntington-center-toledo",
+      "seed": "Huntington Center tickets",
+      "suggestions": [
+        "huntington center tickets",
+        "huntington theater tickets",
+        "huntington center ticket office",
+        "huntington civic center tickets",
+        "huntington center upcoming events"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "queen-elizabeth-theatre-vancouver-vancouver",
+      "seed": "Queen Elizabeth Theatre - Vancouver tickets",
+      "suggestions": [
+        "queen elizabeth theatre vancouver tickets",
+        "queen elizabeth theatre vancouver ticketmaster",
+        "queen elizabeth theatre vancouver box office",
+        "queen elizabeth theatre vancouver concert",
+        "queen elizabeth theatre vancouver concert capacity",
+        "queen elizabeth theatre vancouver season tickets",
+        "queen elizabeth theatre vancouver rush tickets",
+        "queen elizabeth theatre box office phone number",
+        "queen elizabeth theatre box office hours",
+        "queen elizabeth theatre address"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "providence-performing-arts-center-providence",
+      "seed": "Providence Performing Arts Center tickets",
+      "suggestions": [
+        "providence performing arts center tickets",
+        "providence performing arts center tickets for seniors",
+        "providence performing arts center ticket office",
+        "providence performing arts center season tickets",
+        "providence performing arts center rush tickets",
+        "providence performing arts center wicked tickets",
+        "providence performing arts center shows",
+        "providence performing arts center events"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "target-center-minneapolis",
+      "seed": "Target Center tickets",
+      "suggestions": [
+        "target center tickets",
+        "target center tickets minneapolis",
+        "target center tickets timberwolves",
+        "target center tickets lynx",
+        "target center tickets today",
+        "target center tickets forrest frank",
+        "target center tickets protest",
+        "target center ticket office",
+        "target center ticket view",
+        "target center ticket office phone number"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "state-farm-arena-ga-atlanta",
+      "seed": "State Farm Arena - GA tickets",
+      "suggestions": [
+        "state farm arena ga tickets",
+        "state farm arena atlanta ga tickets",
+        "can you buy tickets at state farm arena",
+        "state farm arena rules",
+        "state farm arena schedule",
+        "state farm arena parking cost",
+        "state farm arena hours"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "citi-field-flushing",
+      "seed": "Citi Field tickets",
+      "suggestions": [
+        "citi field tickets",
+        "citi field tickets mets",
+        "citi field tickets noah kahan",
+        "citi field tickets with food included",
+        "citi field tickets concert",
+        "citi field tickets mcr",
+        "citi field tickets pr vs dr",
+        "citi field tickets fuerza regida",
+        "citi field ticket office",
+        "citi field parking tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "altria-theater-richmond-richmond",
+      "seed": "Altria Theater - Richmond tickets",
+      "suggestions": [
+        "altria theater richmond tickets",
+        "altria theater richmond va tickets",
+        "altria theater richmond va season tickets",
+        "altria theater capacity",
+        "al ahsa mall cinema ticket price"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "schermerhorn-symphony-center-nashville",
+      "seed": "Schermerhorn Symphony Center tickets",
+      "suggestions": [
+        "schermerhorn symphony center tickets",
+        "schermerhorn symphony center wedding cost",
+        "how much do symphony tickets cost"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "frontwave-arena-oceanside",
+      "seed": "Frontwave Arena tickets",
+      "suggestions": [
+        "frontwave arena tickets",
+        "frontwave arena ticket office",
+        "frontwave arena ticket sales",
+        "frontwave arena parking tickets",
+        "frontwave arena clippers tickets",
+        "frontwave arena parking tickets price",
+        "frontwave arena season tickets",
+        "frontwave arena oceanside tickets",
+        "frontwave arena concert tickets",
+        "frontwave arena kids tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "moody-center-atx-austin",
+      "seed": "Moody Center ATX tickets",
+      "suggestions": [
+        "moody center atx tickets",
+        "moody center austin tx tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "cobb-s-comedy-club-san-francisco",
+      "seed": "Cobb's Comedy Club tickets",
+      "suggestions": [
+        "cobb's comedy club tickets",
+        "cobbs comedy club free tickets",
+        "cobb's comedy club dress code",
+        "bars near cobb's comedy club",
+        "comedy club classes"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "pikes-peak-center-colorado-springs",
+      "seed": "Pikes Peak Center tickets",
+      "suggestions": [
+        "pikes peak center tickets",
+        "pikes peak center tickets box office",
+        "pikes peak center tickets price",
+        "pikes peak theater tickets",
+        "pikes peak center ticket office",
+        "pikes peak center ticket office hours",
+        "pikes peak center season tickets",
+        "pikes peak center nutcracker tickets",
+        "pikes peak center colorado springs tickets",
+        "pikes peak center mamma mia tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "sony-hall-new-york",
+      "seed": "Sony Hall tickets",
+      "suggestions": [
+        "sony hall tickets",
+        "sony hall tickets price",
+        "sony hall ticket price today",
+        "sony cinema hall tickets",
+        "sony hall nyc tickets",
+        "noname sony hall tickets",
+        "tuna sony hall tickets",
+        "sony hall nye tickets",
+        "sony hall discount tickets",
+        "sony music hall tickets"
+      ],
+      "pulledAt": "2026-10-18T00:00:00Z"
     }
   ]
 }
