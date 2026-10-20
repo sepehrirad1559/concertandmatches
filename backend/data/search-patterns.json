@@ -1,6 +1,6 @@
 {
  "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
- "pulledAt": "2026-10-19T00:00:00Z",
+ "pulledAt": "2026-10-20T00:00:00Z",
  "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
  "entries": [
   {
@@ -1478,7 +1478,7 @@
     "paradis latin review",
     "paradise cove promo code"
    ],
-   "pulledAt": "2026-10-19T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1496,7 +1496,7 @@
     "sphere tickets today",
     "sphere tickets tonight"
    ],
-   "pulledAt": "2026-10-19T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1521,10 +1521,13 @@
    "matchKey": "ka-theatre-at-mgm-grand-las-vegas",
    "seed": "KA Theatre at MGM Grand tickets",
    "suggestions": [
-    "KA Theatre at MGM Grand tickets",
-    "ka theatre at mgm grand hotel and casino tickets"
+    "ka theatre at mgm grand hotel and casino tickets",
+    "mgm entry ticket price",
+    "can guests at mgm signature use mgm grand pool",
+    "mgm grand theater capacity",
+    "difference between park mgm and mgm grand"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1532,18 +1535,24 @@
    "seed": "Banksy Museum New York tickets",
    "suggestions": [
     "banksy museum new york tickets",
-    "banksy museum new york city admission ticket"
+    "banksy museum new york city admission ticket",
+    "is there any banksy art in nyc",
+    "are museums free in nyc"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
    "matchKey": "spiegeltent-at-caesars-palace-las-vegas",
    "seed": "Spiegeltent at Caesars Palace tickets",
    "suggestions": [
-    "spiegeltent at caesars palace tickets"
+    "spiegeltent at caesars palace tickets",
+    "does caesars palace have free parking",
+    "is there a parking fee at caesars palace",
+    "does caesars palace charge for parking",
+    "how much does caesars palace charge for parking"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1555,9 +1564,10 @@
     "vaudeville theatre access tickets",
     "vaudeville theatre guildford tickets",
     "vaudeville theatre disabled tickets",
-    "vaudeville theatre london tickets"
+    "vaudeville theatre london tickets",
+    "what is vaudeville theatre"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1575,7 +1585,7 @@
     "savoy theatre disabled tickets",
     "savoy theatre disabled tickets price"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1583,9 +1593,10 @@
    "seed": "Magic Mike Live - New York tickets",
    "suggestions": [
     "magic mike live new york tickets",
-    "magic mike live show new york tickets"
+    "magic mike live show new york tickets",
+    "how much are magic mike tickets"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1593,12 +1604,17 @@
    "seed": "Prince Edward Theatre tickets",
    "suggestions": [
     "prince edward theatre tickets",
+    "prince of wales theatre tickets",
     "prince edward theatre box office",
     "prince edward theatre access tickets",
     "prince edward theatre disabled tickets",
-    "prince edward theatre beetlejuice tickets"
+    "prince edward theatre beetlejuice tickets",
+    "prince edward theatre access tickets prices",
+    "prince of wales theatre ticket office",
+    "prince of wales theatre box office",
+    "prince of wales theatre cannock tickets"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1606,9 +1622,12 @@
    "seed": "Centro Cultural Flamenco Madrid tickets",
    "suggestions": [
     "centro cultural flamenco madrid tickets",
-    "centro cultural flamenco madrid admission ticket"
+    "centro cultural flamenco madrid admission ticket",
+    "spanish language schools in madrid",
+    "spanish language schools in mexico city",
+    "cultural events in madrid"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -1626,7 +1645,7 @@
     "indoor balloon museum nyc tickets",
     "balloon museum nyc pier 36 tickets"
    ],
-   "pulledAt": "2026-09-30T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "artist",
@@ -3942,10 +3961,15 @@
     "st. james theatre tickets",
     "st james theatre ticket office",
     "st james theatre wellington tickets",
+    "st james theatre times & tickets",
+    "st james theatre wellington tickets prices",
     "st james theatre nyc tickets",
-    "st james theatre london tickets"
+    "st james theatre london tickets",
+    "st james cavalier cinema tickets",
+    "st james quarter cinema tickets",
+    "st james theatre movie times & tickets"
    ],
-   "pulledAt": "2026-10-02T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -8268,9 +8292,10 @@
     "hippodrome casino tickets",
     "how much are hippodrome tickets",
     "hippodrome dress code london",
-    "where is the hippodrome in london"
+    "where is the hippodrome in london",
+    "how much is london tickets"
    ],
-   "pulledAt": "2026-10-05T00:00:00Z"
+   "pulledAt": "2026-10-20T00:00:00Z"
   },
   {
    "matchType": "venue",
@@ -26852,6 +26877,310 @@
     "the improv houston tx"
    ],
    "pulledAt": "2026-10-19T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "john-splithoff",
+   "seed": "John Splithoff tickets",
+   "suggestions": [
+    "john splithoff tickets",
+    "john splithoff tickets auckland",
+    "john splithoff tickets nz",
+    "john splithoff tickets sydney",
+    "john splithoff tickets melbourne",
+    "john splithoff concert tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "pentatonix",
+   "seed": "Pentatonix tickets",
+   "suggestions": [
+    "pentatonix tickets",
+    "pentatonix tickets 2026",
+    "pentatonix tickets pittsburgh",
+    "pentatonix tickets lincoln ne",
+    "pentatonix tickets atlanta",
+    "pentatonix tickets christmas",
+    "pentatonix tickets cleveland",
+    "pentatonix tickets baltimore",
+    "pentatonix tickets lubbock",
+    "pentatonix tickets milwaukee"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "lord-huron",
+   "seed": "Lord Huron tickets",
+   "suggestions": [
+    "lord huron tickets",
+    "lord huron tickets chicago",
+    "lord huron tickets boston",
+    "lord huron tickets atlanta",
+    "lord huron tickets dc",
+    "lord huron tickets beech mountain",
+    "lord huron tickets san antonio",
+    "lord huron tickets seattle",
+    "lord huron tickets grand rapids",
+    "lord huron tickets cincinnati"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "miami-redhawks",
+   "seed": "Miami Redhawks tickets",
+   "suggestions": [
+    "miami redhawks tickets",
+    "miami redhawks tickets basketball",
+    "miami university tickets",
+    "miami university tickets football",
+    "miami ohio tickets basketball",
+    "miami university tickets basketball"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "drexel-dragons",
+   "seed": "Drexel Dragons tickets",
+   "suggestions": [
+    "Drexel Dragons tickets",
+    "drexel university tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "fairfield-stags",
+   "seed": "Fairfield Stags tickets",
+   "suggestions": [
+    "fairfield stags tickets",
+    "fairfield university tickets",
+    "fairfield university tickets basketball"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "edward-waters-tigers",
+   "seed": "Edward Waters Tigers tickets",
+   "suggestions": [
+    "edward waters college football tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "maryland-eastern-shore-hawks",
+   "seed": "Maryland Eastern Shore Hawks tickets",
+   "suggestions": [
+    "maryland eastern shore hawks men's basketball vs binghamton bearcats tickets",
+    "what type of hawks are in maryland",
+    "what division is maryland eastern shore",
+    "are there hawks in maryland"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "middle-tennessee-blue-raiders-mens-basketball",
+   "seed": "Middle Tennessee Blue Raiders Mens Basketball tickets",
+   "suggestions": [
+    "middle tennessee blue raiders men's basketball vs louisiana tech basketball tickets",
+    "middle tennessee blue raiders men's basketball vs utep miners men's basketball tickets",
+    "middle tennessee blue raiders football schedule",
+    "how much are basketball tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "richmond-spiders-mens-basketball",
+   "seed": "Richmond Spiders Mens Basketball tickets",
+   "suggestions": [
+    "richmond spiders men's basketball tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "unc-wilmington-seahawks-mens-basketball",
+   "seed": "UNC Wilmington Seahawks Mens Basketball tickets",
+   "suggestions": [
+    "unc wilmington seahawks men's basketball vs towson tigers men's basketball tickets",
+    "campbell fighting camels men's basketball vs unc wilmington seahawks men's basketball tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "cleveland-charge",
+   "seed": "Cleveland Charge tickets",
+   "suggestions": [
+    "cleveland charge tickets",
+    "cleveland charge tickets price",
+    "cleveland charge season tickets",
+    "cleveland charge game tickets",
+    "cleveland charge group tickets",
+    "cleveland charge schedule",
+    "cleveland charge roster",
+    "how to pay a cleveland traffic ticket online"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "pittsburg-state-gorillas",
+   "seed": "Pittsburg State Gorillas tickets",
+   "suggestions": [
+    "pittsburg state gorillas tickets",
+    "pitt state gorillas tickets",
+    "pittsburg state gorillas football tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "radford-highlanders",
+   "seed": "Radford Highlanders tickets",
+   "suggestions": [
+    "radford university tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "minot-state-beavers",
+   "seed": "Minot State Beavers tickets",
+   "suggestions": [
+    "minot state beavers hockey tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "villanova-wildcats-mens-basketball",
+   "seed": "Villanova Wildcats Mens Basketball tickets",
+   "suggestions": [
+    "villanova wildcats men's basketball tickets",
+    "uconn huskies men's basketball vs villanova wildcats men's basketball tickets",
+    "villanova wildcats men's basketball vs georgetown hoyas men's basketball tickets",
+    "villanova wildcats men's basketball vs creighton bluejays men's basketball tickets",
+    "villanova wildcats men's basketball vs butler bulldogs men's basketball tickets",
+    "villanova wildcats men's basketball vs providence friars men's basketball tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "penn-state-nittany-lions-mens-basketball",
+   "seed": "Penn State Nittany Lions Mens Basketball tickets",
+   "suggestions": [
+    "harvard basketball vs penn state nittany lions men's basketball tickets",
+    "penn state nittany lions men's basketball vs pittsburgh panthers men's basketball tickets",
+    "michigan wolverines men's basketball vs penn state nittany lions men's basketball tickets",
+    "iowa hawkeyes men's basketball vs penn state nittany lions men's basketball tickets",
+    "usc trojans men's basketball vs penn state nittany lions men's basketball tickets",
+    "ucla bruins men's basketball vs penn state nittany lions men's basketball tickets",
+    "penn state nittany lions men's basketball vs oregon ducks men's basketball tickets",
+    "navy midshipmen men's basketball vs penn state nittany lions men's basketball tickets",
+    "fairfield stags men's basketball vs penn state nittany lions men's basketball tickets",
+    "michigan state spartans men's basketball vs penn state nittany lions men's basketball tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "radford-highlanders-mens-basketball",
+   "seed": "Radford Highlanders Mens Basketball tickets",
+   "suggestions": [
+    "radford university men's basketball tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "clark-atlanta-panthers",
+   "seed": "Clark Atlanta Panthers tickets",
+   "suggestions": [
+    "clark atlanta university tickets",
+    "clark atlanta university football tickets",
+    "clark atlanta university homecoming tickets",
+    "clark atlanta university tailgate tickets",
+    "clark atlanta university basketball tickets",
+    "clark atlanta early action deadline",
+    "clark atlanta university payment plan",
+    "clark atlanta university early action deadline"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "saint-petersburg-fl",
+   "seed": "Saint Petersburg concert tickets",
+   "suggestions": [
+    "st pete concert tickets",
+    "st petersburg concerts 2025 tickets",
+    "kanye west st petersburg concert tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "saint-louis-mo",
+   "seed": "Saint Louis concert tickets",
+   "suggestions": [
+    "st louis concert tickets",
+    "st louis arch tour tickets",
+    "chris brown st louis concert tickets",
+    "live nation st louis concerts"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "red-deer-ab",
+   "seed": "Red Deer concert tickets",
+   "suggestions": [
+    "red deer concerts 2025 tickets",
+    "candlelight concert red deer tickets",
+    "red deer concerts"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "midland-tx",
+   "seed": "Midland concert tickets",
+   "suggestions": [
+    "midland concert tickets",
+    "midland concert tickets 2026",
+    "midland concert tickets 2025",
+    "midland concert tickets el paso tx",
+    "midland tour tickets",
+    "midland concert ticket giveaway",
+    "midland band concert tickets",
+    "midland texas concert tickets",
+    "midland concert el paso tickets",
+    "midland county fair concert tickets"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "prince-george-bc",
+   "seed": "Prince George concert tickets",
+   "suggestions": [
+    "prince george concert tickets",
+    "prince george concerts 2025 tickets",
+    "candlelight concert prince george tickets",
+    "royal gorge ticket promo code",
+    "how much are tickets for george strait concert"
+   ],
+   "pulledAt": "2026-10-20T00:00:00Z"
   }
  ]
 }
