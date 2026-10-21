@@ -1,6 +1,6 @@
 {
  "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
- "pulledAt": "2026-10-20T00:00:00Z",
+ "pulledAt": "2026-10-21T00:00:00Z",
  "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
  "entries": [
   {
@@ -27181,6 +27181,878 @@
     "how much are tickets for george strait concert"
    ],
    "pulledAt": "2026-10-20T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "charles-bach-wonders",
+   "seed": "Charles Bach Wonders tickets",
+   "suggestions": [
+    "Charles Bach Wonders tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "dita-von-teese",
+   "seed": "Dita Von Teese tickets",
+   "suggestions": [
+    "dita von teese tickets",
+    "dita von teese tickets las vegas",
+    "dita von teese tickets sydney",
+    "dita von teese tickets brisbane",
+    "dita von teese tickets london",
+    "dita von teese tickets melbourne",
+    "dita von teese tickets nocturnelle",
+    "dita von teese tour",
+    "dita von teese tour 2026",
+    "dita von teese tour uk"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "disney-s-pirates-of-the-caribbean-the-immersive-adventure",
+   "seed": "Disney's Pirates of the Caribbean - The Immersive Adventure tickets",
+   "suggestions": [
+    "secret cinema presents disney's pirates of the caribbean the immersive adventure tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "midnight",
+   "seed": "Midnight tickets",
+   "suggestions": [
+    "midnight tickets",
+    "midnight tickets off broadway",
+    "midnight tickets nyc",
+    "midnight tickets todrick hall",
+    "midnight tickets broadway",
+    "tickets midnight til morning",
+    "midnight til morning tickets",
+    "tickets midnight mafia",
+    "midnight sun tickets",
+    "midnight generation tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "warriors",
+   "seed": "Warriors tickets",
+   "suggestions": [
+    "warriors tickets",
+    "warriors tickets broadway",
+    "warriors tickets 2026",
+    "warriors tickets 2027",
+    "warriors tickets 2026-27",
+    "warriors tickets price",
+    "warriors tickets chase center",
+    "warriors tickets hawaii",
+    "warriors tickets musical",
+    "warriors tickets for sale"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "hercules",
+   "seed": "Hercules tickets",
+   "suggestions": [
+    "hercules tickets london",
+    "hercules tickets",
+    "hercules tickets west end",
+    "hercules tickets theatre",
+    "hercules tickets cheap",
+    "hercules tickets kids week",
+    "hercules tickets today",
+    "hercules tickets drury lane",
+    "hercules tickets london west end",
+    "hercules tickets musical"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-lord-of-the-rings-a-musical-tale",
+   "seed": "The Lord of the Rings - A Musical Tale tickets",
+   "suggestions": [
+    "The Lord of the Rings - A Musical Tale tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "enchant-christmas-experience",
+   "seed": "Enchant Christmas Experience tickets",
+   "suggestions": [
+    "Enchant Christmas Experience tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "michael-blaustein",
+   "seed": "Michael Blaustein tickets",
+   "suggestions": [
+    "michael blaustein tickets",
+    "michael blaustein tickets 2026",
+    "michael blaustein tickets near me",
+    "michael blaustein tickets calgary",
+    "michael blaustein tickets toronto",
+    "michael blaustein tickets chicago",
+    "michael blaustein tickets cleveland",
+    "michael blaustein tickets charlotte",
+    "michael blaustein tickets atlantic city",
+    "michael blaustein tickets vancouver"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "bad-dates-endgame",
+   "seed": "Bad Dates: Endgame tickets",
+   "suggestions": [
+    "Bad Dates: Endgame tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "mexodus",
+   "seed": "Mexodus tickets",
+   "suggestions": [
+    "mexodus tickets",
+    "mexodus tickets nyc",
+    "mexodus tickets discount",
+    "mexodus tickets pasadena",
+    "mexodus tickets pasadena playhouse",
+    "mexodus tickets chicago",
+    "mexodus tickets broadway",
+    "mexodus tickets tonight",
+    "mexodus rush tickets",
+    "mexodus musical tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-gingerbread-kid",
+   "seed": "The Gingerbread Kid tickets",
+   "suggestions": [
+    "The Gingerbread Kid tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "all-the-world-s-a-stage",
+   "seed": "All the World's a Stage tickets",
+   "suggestions": [
+    "All the World's a Stage tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "kevin-nealon",
+   "seed": "Kevin Nealon tickets",
+   "suggestions": [
+    "kevin nealon tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "jp-coletta-s-rock-n-roll-piano-man",
+   "seed": "JP Coletta's Rock 'N' Roll Piano Man tickets",
+   "suggestions": [
+    "JP Coletta's Rock 'N' Roll Piano Man tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "ruby-waters",
+   "seed": "Ruby Waters tickets",
+   "suggestions": [
+    "ruby waters tickets",
+    "ruby waters tickets vancouver",
+    "ruby waters concert tickets",
+    "ruby waters edmonton tickets",
+    "ruby waters denver tickets",
+    "ruby waters toronto tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-snowman",
+   "seed": "The Snowman tickets",
+   "suggestions": [
+    "the snowman tickets",
+    "the snowman tickets 2025",
+    "the snowman tickets london",
+    "the snowman tickets peacock theatre",
+    "the snowman tickets 2026",
+    "the snowman theatre tickets",
+    "the snowman edinburgh tickets",
+    "frosty the snowman tickets",
+    "the snowman cheap tickets",
+    "jeezy the snowman tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "sienna-spiro",
+   "seed": "Sienna Spiro tickets",
+   "suggestions": [
+    "sienna spiro tickets",
+    "sienna spiro tickets 2027",
+    "sienna spiro tickets atlanta",
+    "sienna spiro tickets dallas",
+    "sienna spiro tickets boston",
+    "sienna spiro tickets amex",
+    "sienna spiro tickets austin",
+    "sienna spiro tickets sugarland",
+    "sienna spiro tickets presale",
+    "sienna spiro tickets 2026"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "unlock-d",
+   "seed": "Unlock'd tickets",
+   "suggestions": [
+    "unlock tickets on ticketmaster",
+    "how to unlock tickets",
+    "unlock tickets on ticketek",
+    "unlock magic tickets",
+    "ticketek unlock tickets password",
+    "unlock hidden tickets posh",
+    "character unlock tickets duel links",
+    "unlock rush tickets",
+    "zillow unlock tickets",
+    "character unlock tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "tusk-tribute-to-fleetwood-mac",
+   "seed": "Tusk - Tribute To Fleetwood Mac tickets",
+   "suggestions": [
+    "Tusk - Tribute To Fleetwood Mac tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "anthony-rodia",
+   "seed": "Anthony Rodia tickets",
+   "suggestions": [
+    "anthony rodia tickets",
+    "anthony rodia tickets 2026",
+    "anthony rodia tickets nj",
+    "anthony rodia tickets paramount",
+    "anthony rodia tickets rutherford nj",
+    "anthony rodia tickets long island",
+    "anthony rodia tickets 2025",
+    "anthony rodia tickets atlantic city",
+    "anthony rodia tickets toronto",
+    "anthony rodia tickets governor's comedy club"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "bill-bellamy",
+   "seed": "Bill Bellamy tickets",
+   "suggestions": [
+    "bill bellamy tickets",
+    "bill bellamy tickets killeen tx",
+    "bill bellamy mgm tickets",
+    "bill bellamy comedy tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "the-arcadian-wild",
+   "seed": "The Arcadian Wild tickets",
+   "suggestions": [
+    "the arcadian wild tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "artist",
+   "matchKey": "calvin-harris",
+   "seed": "Calvin Harris tickets",
+   "suggestions": [
+    "calvin harris tickets",
+    "calvin harris tickets chicago",
+    "calvin harris tickets presale",
+    "calvin harris tickets seattle",
+    "calvin harris tickets oakland",
+    "calvin harris tickets san diego",
+    "calvin harris tickets boston",
+    "calvin harris tickets nyc",
+    "calvin harris tickets los angeles",
+    "calvin harris tickets houston"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "oral-roberts-golden-eagles",
+   "seed": "Oral Roberts Golden Eagles tickets",
+   "suggestions": [
+    "Oral Roberts Golden Eagles tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "njit-highlanders",
+   "seed": "NJIT Highlanders tickets",
+   "suggestions": [
+    "NJIT Highlanders tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "tulane-green-wave-mens-basketball",
+   "seed": "Tulane Green Wave Mens Basketball tickets",
+   "suggestions": [
+    "Tulane Green Wave Mens Basketball tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "unc-wilmington-seahawks",
+   "seed": "UNC Wilmington Seahawks tickets",
+   "suggestions": [
+    "UNC Wilmington Seahawks tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "umass-minutemen-mens-basketball",
+   "seed": "UMass Minutemen Mens Basketball tickets",
+   "suggestions": [
+    "UMass Minutemen Mens Basketball tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "bowie-state-bulldogs",
+   "seed": "Bowie State Bulldogs tickets",
+   "suggestions": [
+    "Bowie State Bulldogs tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "central-washington-wildcats",
+   "seed": "Central Washington Wildcats tickets",
+   "suggestions": [
+    "Central Washington Wildcats tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "manhattan-jaspers",
+   "seed": "Manhattan Jaspers tickets",
+   "suggestions": [
+    "Manhattan Jaspers tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "harvard-crimson-mens-basketball",
+   "seed": "Harvard Crimson Mens Basketball tickets",
+   "suggestions": [
+    "Harvard Crimson Mens Basketball tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "west-georgia-wolves-mens-basketball",
+   "seed": "West Georgia Wolves Mens Basketball tickets",
+   "suggestions": [
+    "West Georgia Wolves Mens Basketball tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "oakland-golden-grizzlies",
+   "seed": "Oakland Golden Grizzlies tickets",
+   "suggestions": [
+    "Oakland Golden Grizzlies tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "bellarmine-knights",
+   "seed": "Bellarmine Knights tickets",
+   "suggestions": [
+    "bellarmine knights tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "fort-hays-state-tigers",
+   "seed": "Fort Hays State Tigers tickets",
+   "suggestions": [
+    "Fort Hays State Tigers tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "charleston-southern-buccaneers-mens-basketball",
+   "seed": "Charleston Southern Buccaneers Mens Basketball tickets",
+   "suggestions": [
+    "Charleston Southern Buccaneers Mens Basketball tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "allen-yellow-jackets",
+   "seed": "Allen Yellow Jackets tickets",
+   "suggestions": [
+    "Allen Yellow Jackets tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "virginia-union-panthers",
+   "seed": "Virginia Union Panthers tickets",
+   "suggestions": [
+    "Virginia Union Panthers tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "queens-royals-mens-basketball",
+   "seed": "Queens Royals Mens Basketball tickets",
+   "suggestions": [
+    "Queens Royals Mens Basketball tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "ut-arlington-mavericks",
+   "seed": "UT Arlington Mavericks tickets",
+   "suggestions": [
+    "UT Arlington Mavericks tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "canisius-golden-griffins",
+   "seed": "Canisius Golden Griffins tickets",
+   "suggestions": [
+    "Canisius Golden Griffins tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "team",
+   "matchKey": "american-university-eagles",
+   "seed": "American University Eagles tickets",
+   "suggestions": [
+    "American University Eagles tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "brookfield-wi",
+   "seed": "Brookfield concert tickets",
+   "suggestions": [
+    "brookfield zoo concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "hamden-ct",
+   "seed": "Hamden concert tickets",
+   "suggestions": [
+    "hampden concert tickets",
+    "does ticketmaster mail tickets",
+    "can you call ticketmaster to buy tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "centerville-ut",
+   "seed": "Centerville concert tickets",
+   "suggestions": [
+    "Centerville concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "jonesboro-ar",
+   "seed": "Jonesboro concert tickets",
+   "suggestions": [
+    "Jonesboro concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "cedar-falls-ia",
+   "seed": "Cedar Falls concert tickets",
+   "suggestions": [
+    "cedar rapids concert tickets",
+    "cedar rapids concert chorale tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "bozeman-mt",
+   "seed": "Bozeman concert tickets",
+   "suggestions": [
+    "Bozeman concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "manhattan-ks",
+   "seed": "Manhattan concert tickets",
+   "suggestions": [
+    "nyc concert tickets",
+    "nyc concert tickets 2026",
+    "concert in times square today",
+    "concerts in manhattan today",
+    "manhattan school of music concerts"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "hillsboro-or",
+   "seed": "Hillsboro concert tickets",
+   "suggestions": [
+    "Hillsboro concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "loveland-co",
+   "seed": "Loveland concert tickets",
+   "suggestions": [
+    "Loveland concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "fairfax-va",
+   "seed": "Fairfax concert tickets",
+   "suggestions": [
+    "Fairfax concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "la-mirada-ca",
+   "seed": "La Mirada concert tickets",
+   "suggestions": [
+    "La Mirada concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "beloit-wi",
+   "seed": "Beloit concert tickets",
+   "suggestions": [
+    "Beloit concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "manchester-ct",
+   "seed": "Manchester concert tickets",
+   "suggestions": [
+    "manchester concert tickets",
+    "manchester concert tickets 2026",
+    "manchester gig tickets",
+    "england concert tickets",
+    "katseye manchester concert tickets",
+    "gunna manchester concert tickets",
+    "manchester cathedral candlelight concert tickets",
+    "harry styles manchester concert tickets",
+    "manchester o2 concerts",
+    "what happened at the manchester concert"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "norman-ok",
+   "seed": "Norman concert tickets",
+   "suggestions": [
+    "norman brown concert tickets",
+    "chris norman concert tickets",
+    "luke combs norman concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "piscataway-nj",
+   "seed": "Piscataway concert tickets",
+   "suggestions": [
+    "Piscataway concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "lowell-ma",
+   "seed": "Lowell concert tickets",
+   "suggestions": [
+    "Lowell concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "woonsocket-ri",
+   "seed": "Woonsocket concert tickets",
+   "suggestions": [
+    "Woonsocket concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "conroe-tx",
+   "seed": "Conroe concert tickets",
+   "suggestions": [
+    "Conroe concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "city",
+   "matchKey": "saint-cloud-mn",
+   "seed": "Saint Cloud concert tickets",
+   "suggestions": [
+    "Saint Cloud concert tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "new-world-stages-stage-4-new-york",
+   "seed": "New World Stages: Stage 4 tickets",
+   "suggestions": [
+    "New World Stages: Stage 4 tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "peace-concert-hall-at-the-peace-center-sc-greenville",
+   "seed": "Peace Concert Hall At The Peace Center - SC tickets",
+   "suggestions": [
+    "Peace Concert Hall At The Peace Center - SC tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "westgate-cabaret-at-westgate-las-vegas-resort-casino-las-vegas",
+   "seed": "Westgate Cabaret At Westgate Las Vegas Resort & Casino tickets",
+   "suggestions": [
+    "Westgate Cabaret At Westgate Las Vegas Resort & Casino tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "michael-r-klein-theatre-washington",
+   "seed": "Michael R. Klein Theatre tickets",
+   "suggestions": [
+    "Michael R. Klein Theatre tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "the-comedy-vault-batavia",
+   "seed": "The Comedy Vault tickets",
+   "suggestions": [
+    "The Comedy Vault tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "the-comedy-loft-of-dc-washington",
+   "seed": "The Comedy Loft of DC tickets",
+   "suggestions": [
+    "The Comedy Loft of DC tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "morrison-center-for-the-performing-arts-boise",
+   "seed": "Morrison Center For The Performing Arts tickets",
+   "suggestions": [
+    "morrison center for the performing arts tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "lillian-s-wells-hall-at-the-parker-fort-lauderdale",
+   "seed": "Lillian S. Wells Hall at The Parker tickets",
+   "suggestions": [
+    "lillian s. wells hall at the parker tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "courtyard-theater-at-chicago-shakespeare-theatre-chicago",
+   "seed": "Courtyard Theater at Chicago Shakespeare Theatre tickets",
+   "suggestions": [
+    "Courtyard Theater at Chicago Shakespeare Theatre tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "cap-city-comedy-club-austin",
+   "seed": "Cap City Comedy Club tickets",
+   "suggestions": [
+    "cap city comedy club tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "cincinnati-playhouse-in-the-park-rouse-theatre-cincinnati",
+   "seed": "Cincinnati Playhouse In The Park - Rouse Theatre tickets",
+   "suggestions": [
+    "Cincinnati Playhouse In The Park - Rouse Theatre tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "waxlax-stage-at-riverside-theatre-fl-vero-beach",
+   "seed": "Waxlax Stage at Riverside Theatre - FL tickets",
+   "suggestions": [
+    "Waxlax Stage at Riverside Theatre - FL tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "whitney-hall-at-the-kentucky-center-louisville",
+   "seed": "Whitney Hall at The Kentucky Center tickets",
+   "suggestions": [
+    "Whitney Hall at The Kentucky Center tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "main-stage-at-theatresquared-fayetteville",
+   "seed": "Main Stage at TheatreSquared tickets",
+   "suggestions": [
+    "Main Stage at TheatreSquared tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "wembley-park-theatre-wembley",
+   "seed": "Wembley Park Theatre tickets",
+   "suggestions": [
+    "wembley park theatre tickets",
+    "wembley park theatre box office",
+    "troubadour wembley park theatre tickets",
+    "troubadour wembley park theatre box office",
+    "troubadour wembley park theatre access tickets",
+    "park theatre box office hours",
+    "wembley park closing time"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "gateway-playhouse-bellport",
+   "seed": "Gateway Playhouse tickets",
+   "suggestions": [
+    "gateway playhouse tickets",
+    "gateway playhouse tickets for seniors price",
+    "gateway playhouse tickets price",
+    "gateway playhouse tickets for seniors",
+    "gateway playhouse tickets for seniors price near me",
+    "gateway playhouse tickets haunted house",
+    "gateway playhouse tickets online",
+    "gateway playhouse tickets discount",
+    "gateway playhouse tickets for seniors price reddit",
+    "gateway theater tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "carnegie-hall-isaac-stern-auditorium-new-york",
+   "seed": "Carnegie Hall - Isaac Stern Auditorium tickets",
+   "suggestions": [
+    "carnegie hall isaac stern auditorium tickets"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
+  },
+  {
+   "matchType": "venue",
+   "matchKey": "turner-theater-franklin",
+   "seed": "Turner Theater tickets",
+   "suggestions": [
+    "turner theater tickets",
+    "tina turner theatre tickets",
+    "tina turner theatre tickets london",
+    "tina turner theatre tickets manchester"
+   ],
+   "pulledAt": "2026-10-21T00:00:00Z"
   }
  ]
 }
