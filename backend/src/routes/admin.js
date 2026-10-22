@@ -529,6 +529,7 @@ router.post('/schema/add-click-tracking', async (req, res) => {
         device_type TEXT,
         referrer TEXT,
         session_id TEXT,
+        ip_address TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS idx_click_events_created_at ON click_events (created_at);
@@ -539,6 +540,32 @@ router.post('/schema/add-click-tracking', async (req, res) => {
     res.json({ success: true, message: 'click_events table created (or already existed)' });
   } catch (error) {
     console.error('Error adding click tracking table:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Follow-up migration (2026-10-22): the click-count anomaly investigation
+// found ~199K logged clicks with NO referrer and NO landing page -- a
+// script hitting /go/event/:id directly, never visiting the real site --
+// but click_events had no way to identify WHICH IPs were doing it, so
+// there was nothing concrete to add to BLOCKED_IPS (routes/redirect.js).
+// This adds the missing column for existing databases that already ran
+// add-click-tracking above before ip_address existed.
+router.post('/schema/add-click-ip-tracking', async (req, res) => {
+  const providedKey = req.headers['x-sync-key'];
+  const expectedKey = process.env.SYNC_SECRET_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({ error: 'SYNC_SECRET_KEY is not configured on the server' });
+  }
+  if (!providedKey || providedKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid or missing sync key' });
+  }
+
+  try {
+    await pool.query(`ALTER TABLE click_events ADD COLUMN IF NOT EXISTS ip_address TEXT;`);
+    res.json({ success: true, message: 'click_events.ip_address added (or already existed)' });
+  } catch (error) {
+    console.error('Error adding click_events.ip_address column:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -1746,9 +1773,21 @@ router.get('/analytics/clicks', requireAdminAccess, async (req, res) => {
 // a session id). Read-only, same auth as the rest of this file.
 router.get('/analytics/click-detail', requireAdminAccess, async (req, res) => {
   try {
-    const [byReferrer, bySession, byLandingPage, recentSample] = await Promise.all([
+    const [byReferrer, byIp, bySession, byLandingPage, recentSample] = await Promise.all([
       pool.query(`
         SELECT COALESCE(NULLIF(referrer, ''), '(none)') AS referrer, COUNT(*)::int AS count
+        FROM click_events
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 20
+      `),
+      // Added alongside the ip_address column (2026-10-22 click-fraud
+      // investigation) -- the referrer/session breakdowns below already
+      // showed this was bot traffic, but gave no concrete IPs to add to
+      // BLOCKED_IPS (routes/redirect.js). Rows logged before this column
+      // existed show up as '(unknown)', not falsely attributed to one IP.
+      pool.query(`
+        SELECT COALESCE(NULLIF(ip_address, ''), '(unknown)') AS ip_address, COUNT(*)::int AS count
         FROM click_events
         GROUP BY 1
         ORDER BY count DESC
@@ -1772,7 +1811,7 @@ router.get('/analytics/click-detail', requireAdminAccess, async (req, res) => {
         LIMIT 20
       `),
       pool.query(`
-        SELECT created_at, source, event_title, city, state, device_type, referrer, session_id
+        SELECT created_at, source, event_title, city, state, device_type, referrer, session_id, ip_address
         FROM click_events
         ORDER BY created_at DESC
         LIMIT 30
@@ -1782,6 +1821,7 @@ router.get('/analytics/click-detail', requireAdminAccess, async (req, res) => {
     res.json({
       success: true,
       byReferrer: byReferrer.rows,
+      byIp: byIp.rows,
       bySession: bySession.rows,
       byLandingPage: byLandingPage.rows,
       recentSample: recentSample.rows,

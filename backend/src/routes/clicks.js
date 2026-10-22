@@ -32,9 +32,9 @@ router.post('/', async (req, res) => {
     const referrer = req.get('referer') || null;
 
     await pool.query(
-      `INSERT INTO click_events (event_row_id, source, event_title, city, state, landing_page, device_type, referrer, session_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [safeEventRowId, source || null, title || null, city || null, state || null, landingPage || null, deviceType, referrer, sessionId || null]
+      `INSERT INTO click_events (event_row_id, source, event_title, city, state, landing_page, device_type, referrer, session_id, ip_address)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [safeEventRowId, source || null, title || null, city || null, state || null, landingPage || null, deviceType, referrer, sessionId || null, req.ip || null]
     );
 
     res.status(204).end();

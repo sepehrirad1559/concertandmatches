@@ -190,8 +190,8 @@ router.get('/event/:eventRowId', async (req, res) => {
 
     try {
       await pool.query(
-        `INSERT INTO click_events (event_row_id, source, event_title, city, state, landing_page, device_type, referrer, session_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        `INSERT INTO click_events (event_row_id, source, event_title, city, state, landing_page, device_type, referrer, session_id, ip_address)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
         [
           row.id,
           row.source,
@@ -202,6 +202,7 @@ router.get('/event/:eventRowId', async (req, res) => {
           detectDeviceType(req.get('user-agent')),
           req.get('referer') || null,
           req.query.sid || null,
+          req.ip || null,
         ]
       );
     } catch (logError) {
@@ -249,8 +250,8 @@ router.get('/:offerId', async (req, res) => {
     // actual redirect to the seller.
     try {
       await pool.query(
-        `INSERT INTO click_events (event_row_id, source, event_title, city, state, landing_page, device_type, referrer, session_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        `INSERT INTO click_events (event_row_id, source, event_title, city, state, landing_page, device_type, referrer, session_id, ip_address)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
         [
           offer.source_event_row_id || null,
           offer.provider_name,
@@ -261,6 +262,7 @@ router.get('/:offerId', async (req, res) => {
           /Tablet|iPad/i.test(req.get('user-agent') || '') ? 'tablet' : /Mobi|Android|iPhone/i.test(req.get('user-agent') || '') ? 'mobile' : 'desktop',
           req.get('referer') || null,
           req.query.sid || null,
+          req.ip || null,
         ]
       );
     } catch (logError) {
