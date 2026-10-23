@@ -270,90 +270,16 @@ async function runScheduledEventSync() {
 // load), which is fine here since this already runs as a backgrounded job
 // with its own concurrency guard (isEventSyncRunning above), not an
 // HTTP-triggered request under Railway's proxy timeout.
-console.log('🔄 Running scheduled Ticketmaster sync (full worldwide catalog, every segment)...');
+// Ticketmaster + SeatGeek scheduled sync DISABLED (2026-10-23, "we no
+// longer promote Ticketmaster/SeatGeek events" -- see config/
+// sourceVisibility.js for the matching display-side hide, which covers
+// the events these jobs already stored; this is what stops MORE of their
+// events from being pulled in going forward). The provider modules
+// (services/ticketmaster.js, services/seatgeek.js) and the manual
+// POST /admin/sync/ticketmaster|seatgeek routes are untouched in case
+// this needs to be reversed again -- see sourceVisibility.js's history
+// comment for how many times that's already happened.
 let startedAt = new Date();
-try {
-  const tmResult = await syncAllTicketmasterEvents();
-  console.log('Ticketmaster sync result:', tmResult);
-  await logProviderSync({
-    providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
-    recordsReceived: tmResult.totalEvents ?? null,
-    status: tmResult.success ? 'success' : 'error',
-    errorMessage: tmResult.error ?? (tmResult.apiErrorCount > 0 ? `${tmResult.apiErrorCount} API error(s): ${JSON.stringify(tmResult.sampleApiErrors)}` : null),
-  });
-} catch (err) {
-  console.error('Ticketmaster sync failed:', err);
-  await logProviderSync({ providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
-}
-
-console.log('🔄 Backfilling Ticketmaster prices...');
-startedAt = new Date();
-try {
-  // Bumped 300 -> 3000 (2026-09-27): the worldwide-coverage expansion added
-  // ~30,000 unpriced international Ticketmaster rows overnight (discovery
-  // returns priceRanges for only a fraction of events; the rest need this
-  // per-event detail-endpoint backfill). At 300/day that backlog would take
-  // ~100 days to clear even once; at 3000/day (4/sec throttle -> ~12.5 min
-  // runtime, well within a background job) it clears in under 2 weeks.
-  // Safe to raise: backfillMissingPrices already detects Ticketmaster's daily
-  // quota exhaustion and stops the batch early with a clear log message
-  // rather than failing silently, so an overly large number just means an
-  // early, well-logged stop rather than a broken run.
-  const tmPriceResult = await backfillTicketmasterPrices(3000);
-  console.log('Ticketmaster price backfill result:', tmPriceResult);
-  await logProviderSync({
-    providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
-    recordsUpdated: tmPriceResult.updated ?? null,
-    status: tmPriceResult.success ? 'success' : 'error',
-    errorMessage: tmPriceResult.error ?? null,
-  });
-} catch (err) {
-  console.error('Ticketmaster price backfill failed:', err);
-  await logProviderSync({ providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
-}
-
-// SeatGeek discovery + price backfill — restored 2026-10-10 alongside
-// Ticketmaster, same region-segmented sync the manual POST /admin/sync/
-// seatgeek route already used (perState=300, see that route's comment for
-// why it's segmented by US state/Canadian province rather than one flat
-// call). Mirrors the Ticketmaster block above: discovery first, then a
-// bounded per-event price backfill for whatever discovery left unpriced.
-console.log('🔄 Running scheduled SeatGeek sync (region-segmented)...');
-startedAt = new Date();
-try {
-  const sgResult = await syncSeatGeekEvents(300);
-  console.log('SeatGeek sync result:', sgResult);
-  await logProviderSync({
-    providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
-    recordsReceived: sgResult.totalEvents ?? null,
-    status: sgResult.success ? 'success' : 'error',
-    errorMessage: sgResult.error ?? (sgResult.apiErrorCount > 0 ? `${sgResult.apiErrorCount} API error(s): ${JSON.stringify(sgResult.sampleApiErrors)}` : null),
-  });
-} catch (err) {
-  console.error('SeatGeek sync failed:', err);
-  await logProviderSync({ providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
-}
-
-console.log('🔄 Backfilling SeatGeek prices...');
-startedAt = new Date();
-try {
-  // Same 3000/day bound as Ticketmaster's backfill above, same reasoning:
-  // a fresh region-segmented discovery run can leave a large number of rows
-  // unpriced (SeatGeek's discovery payload doesn't always include a price),
-  // and backfillMissingPrices already detects quota exhaustion and stops
-  // early with a clear log rather than failing silently.
-  const sgPriceResult = await backfillSeatGeekPrices(3000);
-  console.log('SeatGeek price backfill result:', sgPriceResult);
-  await logProviderSync({
-    providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
-    recordsUpdated: sgPriceResult.updated ?? null,
-    status: sgPriceResult.success ? 'success' : 'error',
-    errorMessage: sgPriceResult.error ?? null,
-  });
-} catch (err) {
-  console.error('SeatGeek price backfill failed:', err);
-  await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
-}
 
 console.log('🔄 Running scheduled TicketNetwork sync...');
 startedAt = new Date();

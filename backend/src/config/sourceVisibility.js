@@ -5,10 +5,13 @@
 // Ticketmaster itself separately discontinued 2026-10-08 — both reversed
 // 2026-10-10 (explicit user request: business model is to pull availability
 // and price range from all three major sellers — Ticketmaster, TicketNetwork,
-// and SeatGeek — and show customers the price range across them). All three
-// real sources plus 'curated' are active again; null would mean "no
-// restriction" and isn't needed while this is a real, deliberate allowlist.
-export const ACTIVE_SOURCES = ['ticketmaster', 'ticketnetwork', 'seatgeek', 'curated'];
+// and SeatGeek — and show customers the price range across them). Reversed
+// again 2026-10-23 ("we no longer promote Ticketmaster/SeatGeek events" —
+// this time paired with turning off their scheduled sync jobs too, see
+// index.js's runScheduledEventSync, not just hiding already-synced rows
+// here). null would mean "no restriction" and isn't needed while this is a
+// real, deliberate allowlist.
+export const ACTIVE_SOURCES = ['ticketnetwork', 'curated'];
 
 // Appends a `source = ANY(...)` condition to an existing WHERE clause
 // string, pushing ACTIVE_SOURCES onto `params` and returning the next free
