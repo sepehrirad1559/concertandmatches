@@ -63,6 +63,17 @@ const SITE_ORIGIN = 'https://www.concertandmatches.com';
 function buildSitemapEventsWhere() {
   let sitemapWhere = 'WHERE date >= NOW()';
   sitemapWhere = appendPricedOnlyFilter(sitemapWhere);
+  // Exclude events with no seller link at all (source_url never populated —
+  // distinct from "unpriced", which appendPricedOnlyFilter's comment
+  // already explains is normal and NOT hidden). These rows still render a
+  // real page (getMergedEventById/prerender.js show a "no confirmed ticket
+  // seller yet" notice rather than 404ing, since a cross-source merge might
+  // still supply a link from another row), but there is nothing timely or
+  // actionable there for a crawler to index — exactly the same class of
+  // thin/Soft-404-prone page as an already-past event, just a different
+  // cause. Reported 2026-10-23: "Dinosaur Adventure - Madison" was being
+  // indexed/linked with no seller and no way to buy.
+  sitemapWhere += ` AND source_url IS NOT NULL AND source_url != ''`;
   const sitemapParams = [];
   if (ACTIVE_SOURCES) {
     sitemapWhere += ` AND source = ANY($1::text[])`;
