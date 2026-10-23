@@ -1186,6 +1186,11 @@ async function listEventsFromRawEventsTable(req, res) {
     // file's header comment.
     whereClause = appendPricedOnlyFilter(whereClause);
 
+    // PERMANENT (2026-10-23, see getMergedEventById's matching check): never
+    // list an event with no seller link at all — same reasoning as the
+    // discover-sections filter above fetchDiscoverCandidates.
+    whereClause += ` AND source_url IS NOT NULL AND source_url != ''`;
+
     // Distance from the customer's location, via the Haversine formula. Only
     // events with stored venue coordinates get a real value; others come
     // back NULL and sort to the end rather than being excluded.
@@ -1311,6 +1316,23 @@ async function getMergedEventById(eventRowId) {
   // has real content (title, venue, date) worth showing/indexing, and for
   // Ticketmaster in particular the event is very likely genuinely on sale,
   // just not yet price-backfilled.
+  //
+  // Reinstated 2026-10-23, but for a DIFFERENT and narrower condition than
+  // the one disabled above: not "unpriced" (still allowed), but "literally
+  // no seller link on any merged offer" (source_url empty everywhere).
+  // mergeEventsAcrossSources always pushes at least one offer per merged
+  // event (the base row itself, even with a null source_url) — so
+  // "offers.length === 0" (what an earlier, incomplete pass at this same
+  // fix checked, in prerender.js) can never actually be true and never
+  // caught this. Reported live twice: "Dinosaur Adventure - Madison" and
+  // "Waterloo Black Hawks at Madison Capitols", both showing a full page
+  // with "We don't have a confirmed ticket seller link" and no way to buy.
+  // These still show up in the canonical listing layer's "has a confirmed
+  // seller" gate (not reachable via search/browse), but nothing stopped a
+  // direct/bookmarked/sitemap-discovered link from rendering them anyway.
+  const hasConfirmedSellerLink = result.offers.some((o) => o.source_url);
+  if (!hasConfirmedSellerLink) return null;
+
   return result;
 }
 
@@ -1391,6 +1413,13 @@ async function fetchDiscoverCandidates(dbPool, { lat, lng, categoryRule = null, 
   // out/pulled) events in any discover section either. Unpriced-but-still-
   // listed events are shown (2026-09-27) — see that file's header comment.
   whereClause = appendPricedOnlyFilter(whereClause);
+
+  // PERMANENT (2026-10-23, see getMergedEventById's matching check): never
+  // surface an event with no seller link at all in a homepage discover
+  // section — same "Dinosaur Adventure"/"Waterloo Black Hawks" class of
+  // dead-end page, just reached by being shown on the homepage instead of
+  // a direct link. Distinct from "unpriced" above, which is fine to show.
+  whereClause += ` AND source_url IS NOT NULL AND source_url != ''`;
 
   if (categoryRule) {
     const built = buildCategoryWhere(categoryRule, paramCount, params);

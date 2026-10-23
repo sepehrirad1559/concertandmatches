@@ -175,16 +175,17 @@ router.get('/event/:pathParam', async (req, res) => {
     // least one priced offer. City is included only when known; price only
     // when at least one offer has a real min_price, so this never
     // fabricates a number.
+    // No-seller-link events (source_url empty on every merged offer) are
+    // now caught upstream in getMergedEventById, which returns null for
+    // them — same 404 path as "event not found" above, rather than this
+    // route ever seeing one to special-case. (2026-10-23: an earlier,
+    // incomplete pass at this fix checked `offers.length === 0` here, which
+    // can never be true — mergeEventsAcrossSources always pushes at least
+    // one offer per event, even one with a null source_url — so it never
+    // actually caught the reported "Dinosaur Adventure"/"Waterloo Black
+    // Hawks" pages. See events.js's hasConfirmedSellerLink for the real
+    // check, and sitemap.js for the matching sitemap-side exclusion.)
     const offers = Array.isArray(event.offers) ? event.offers : [];
-    // No seller link at all (not merely unpriced — see
-    // config/priceVisibility.js's appendPricedOnlyFilter comment on why
-    // "unpriced" alone is normal and expected, especially for Ticketmaster).
-    // A page like this has nothing timely/actionable for a crawler, same
-    // Soft-404 shape as an already-past event just a different cause (see
-    // isPastEvent above and sitemap.js's matching source_url exclusion,
-    // both added together 2026-10-23 after a reported live example —
-    // "Dinosaur Adventure - Madison" — with no buy link at all).
-    const hasNoSellerLink = offers.length === 0;
     const pricedOffers = offers.filter((o) => o.min_price != null);
     const startingPrice = pricedOffers.length > 0
       ? Math.min(...pricedOffers.map((o) => Number(o.min_price)))
@@ -334,7 +335,7 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta name="twitter:title" content="${xmlEscape(title)}" />
 <meta name="twitter:description" content="${xmlEscape(description)}" />
 <meta name="twitter:image" content="${xmlEscape(event.image_url || 'https://www.concertandmatches.com/og-image.png')}" />
-<meta name="robots" content="${(isPastEvent || hasNoSellerLink) ? 'noindex, follow' : 'index, follow'}" />
+<meta name="robots" content="${isPastEvent ? 'noindex, follow' : 'index, follow'}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>`;
 
