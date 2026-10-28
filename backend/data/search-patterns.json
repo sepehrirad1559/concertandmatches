@@ -1,6 +1,6 @@
 {
   "source": "Google Autocomplete Suggest API (suggestqueries.google.com) — real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model — every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-10-26T00:00:00Z",
+  "pulledAt": "2026-10-28T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -2399,9 +2399,12 @@
         "dallas mavericks tickets go on sale",
         "dallas mavericks tickets on sale",
         "dallas mavericks tickets prices",
-        "dallas mavericks tickets vs lakers"
+        "dallas mavericks tickets vs lakers",
+        "dallas stars tickets",
+        "dallas stars tickets 2026",
+        "dallas stars tickets 2025"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2419,7 +2422,7 @@
         "phoenix suns basketball tickets",
         "phoenix suns vs knicks tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2437,7 +2440,7 @@
         "brooklyn nets tickets game",
         "knicks vs brooklyn nets tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2447,7 +2450,7 @@
         "los angeles clippers tickets",
         "los angeles clippers season tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2465,7 +2468,7 @@
         "las vegas raiders season tickets",
         "las vegas raiders football tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2483,7 +2486,7 @@
         "chicago bears tickets christmas day",
         "chicago bears tickets cheap"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2497,10 +2500,11 @@
         "new york giants tickets ticketmaster",
         "new york giants tickets 2025",
         "new york giants tickets price",
+        "new york giants tickets december",
         "new york giants tickets seatgeek",
         "new york giants tickets preseason"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2515,9 +2519,10 @@
         "houston texans tickets tickpick",
         "houston texans tickets app",
         "houston texans tickets wembley",
-        "houston texans tickets 2025"
+        "houston texans tickets 2025",
+        "houston astros tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2535,7 +2540,7 @@
         "kansas city chiefs season tickets",
         "kansas city chiefs game tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2553,7 +2558,7 @@
         "los angeles rams vs carolina panthers tickets",
         "detroit lions vs los angeles rams tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2571,7 +2576,7 @@
         "philadelphia eagles tickets london 2026",
         "philadelphia eagles tickets ticketmaster"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2584,11 +2589,12 @@
         "indianapolis colts tickets no fees",
         "indianapolis colts tickets london",
         "indianapolis colts tickets 2025",
+        "indiana colts tickets",
         "indianapolis colts season tickets",
         "indianapolis colts football tickets",
         "indianapolis colts game tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2606,7 +2612,7 @@
         "tennessee titans tickets seatgeek",
         "tennessee titans tickets stubhub"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2624,7 +2630,7 @@
         "seattle seahawks tickets 2025 season",
         "seattle seahawks tickets today"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2642,7 +2648,7 @@
         "buffalo bills tickets 2026 season",
         "buffalo bills tickets 2026 for sale"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2660,7 +2666,7 @@
         "detroit lions tickets 2027",
         "detroit lions tickets in munich germany"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2675,9 +2681,10 @@
         "denver broncos tickets cheap",
         "denver broncos tickets half price",
         "denver broncos tickets military discount",
+        "denver broncos tickets login",
         "denver broncos tickets 2026 season"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2692,9 +2699,10 @@
         "pittsburgh steelers tickets 2025",
         "pittsburgh steelers tickets vs bengals",
         "pittsburgh steelers season tickets",
-        "pittsburgh steelers vs chargers tickets"
+        "pittsburgh steelers vs chargers tickets",
+        "seahawks vs pittsburgh steelers tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2708,9 +2716,11 @@
         "washington commanders tickets uk",
         "washington commanders tickets 2025",
         "washington commanders season tickets",
-        "washington commanders vs chargers tickets"
+        "seahawks vs washington commanders tickets",
+        "washington commanders vs chargers tickets",
+        "washington commanders training camp tickets 2026"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2724,9 +2734,11 @@
         "green bay packers tickets for sale",
         "green bay packers tickets 2027",
         "green bay packers tickets price",
-        "green bay packers tickets lambeau field"
+        "green bay packers tickets lambeau field",
+        "green bay packers tickets login",
+        "green bay packers tickets waiting list"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2738,9 +2750,12 @@
         "jacksonville jaguars tickets orlando",
         "jacksonville jaguars tickets london",
         "jacksonville jaguars tickets 2027",
-        "jacksonville jaguars tickets wembley"
+        "jacksonville jaguars tickets wembley",
+        "buffalo bills vs jacksonville jaguars tickets",
+        "jacksonville jaguars vs denver broncos tickets",
+        "how much are jacksonville jaguar tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2752,9 +2767,13 @@
         "minnesota vikings tickets for sale",
         "minnesota vikings tickets mexico city",
         "minnesota vikings tickets 2026 season",
-        "minnesota vikings tickets 2025"
+        "minnesota vikings tickets 2025",
+        "mn vikings tickets",
+        "mn vikings tickets 2025",
+        "mn vikings tickets preseason",
+        "mn vikings tickets training camp"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2766,9 +2785,13 @@
         "cleveland browns tickets preseason",
         "cleveland browns tickets price",
         "cleveland browns tickets for sale",
-        "cleveland browns tickets 2025"
+        "cleveland browns tickets 2025",
+        "cleveland cavaliers tickets",
+        "cleveland browns vs chicago bears tickets",
+        "buffalo bills vs cleveland browns tickets",
+        "baltimore ravens vs cleveland browns tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2786,7 +2809,7 @@
         "cincinnati bengals season tickets",
         "cincinnati bengals football tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2804,7 +2827,7 @@
         "arizona cardinals vs seahawks tickets",
         "arizona cardinals single game tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2820,7 +2843,7 @@
         "san francisco 49ers game tickets",
         "san francisco 49ers schedule 2026 tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2838,7 +2861,7 @@
         "miami dolphins tickets parking",
         "miami dolphins tickets 2025"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2856,7 +2879,7 @@
         "baltimore ravens practice tickets",
         "baltimore ravens vs bengals tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2868,9 +2891,13 @@
         "los angeles chargers tickets 2025",
         "los angeles chargers season tickets",
         "los angeles chargers game tickets",
-        "nfl los angeles chargers tickets"
+        "nfl los angeles chargers tickets",
+        "49ers vs los angeles chargers tickets",
+        "los angeles chargers vs seahawks tickets",
+        "steelers vs los angeles chargers tickets",
+        "los angeles chargers training camp tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2881,9 +2908,14 @@
         "new york jets tickets 2026",
         "new york jets tickets prices",
         "new york jets tickets 2025",
-        "new york jets season tickets"
+        "new york jets season tickets",
+        "new york jets vs bengals tickets",
+        "new york giants vs jets tickets",
+        "new york jets vs baltimore ravens tickets",
+        "new york jets vs pittsburgh steelers tickets",
+        "philadelphia eagles vs new york jets tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2901,7 +2933,7 @@
         "atlanta falcons tickets stubhub",
         "atlanta falcons tickets for sale"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2914,9 +2946,12 @@
         "tampa bay buccaneers tickets face value",
         "tampa bay buccaneers tickets 2025",
         "tampa bay bucs tickets 2026",
-        "tampa bay buccaneers season tickets"
+        "tampa bay buccaneers season tickets",
+        "49ers vs tampa bay buccaneers tickets",
+        "tampa bay buccaneers vs bengals tickets",
+        "tampa bay buccaneers pirate ship tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2928,9 +2963,13 @@
         "new england patriots tickets germany",
         "new england patriots tickets munich",
         "new england patriots tickets 2025",
-        "new england patriots season tickets"
+        "new england patriots season tickets",
+        "texans vs new england patriots tickets",
+        "new england patriots vs bengals tickets",
+        "chargers vs new england patriots tickets",
+        "new england patriots vs seahawks tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2948,7 +2987,7 @@
         "carolina panthers tickets cheap",
         "carolina panthers tickets preseason"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -2962,9 +3001,11 @@
         "new orleans saints tickets 2025",
         "new orleans saints tickets preseason",
         "new orleans saints ticket office",
-        "new orleans saints season tickets"
+        "new orleans saints season tickets",
+        "new orleans saints football tickets",
+        "new orleans saints game tickets"
       ],
-      "pulledAt": "2026-10-02T00:00:00Z"
+      "pulledAt": "2026-10-28T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -30373,6 +30414,467 @@
         "revolution hall portland concert capacity"
       ],
       "pulledAt": "2026-10-26T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "pageant-of-the-masters",
+      "seed": "Pageant Of The Masters tickets",
+      "suggestions": [
+        "pageant of the masters tickets",
+        "pageant of the masters tickets price",
+        "pageant of the masters tickets discount",
+        "pageant of the masters tickets 2026",
+        "pageant of the masters tickets groupon",
+        "pageant of the masters tickets laguna beach",
+        "pageant of the masters tickets costco",
+        "pageant of the masters tickets laguna",
+        "pageant of the masters tickets for tonight",
+        "pageant of the masters 2026 tickets price"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "hairball",
+      "seed": "Hairball tickets",
+      "suggestions": [
+        "hairball tickets",
+        "hairball tickets state fair",
+        "hairball tickets duluth mn",
+        "hairball tickets duluth",
+        "hairball tickets chs field",
+        "hairball tickets black bear casino",
+        "hairball tickets deadwood sd",
+        "hairball tickets 2026",
+        "hairball tickets fargo nd",
+        "hairball tickets bayfront"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-collingsworth-family",
+      "seed": "The Collingsworth Family tickets",
+      "suggestions": [
+        "the collingsworth family tickets",
+        "the collingsworth family concert tickets",
+        "where is the collingsworth family from"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "earthquake",
+      "seed": "Earthquake tickets",
+      "suggestions": [
+        "earthquake tickets",
+        "earthquake tickets 2026",
+        "earthquake tickets mgm",
+        "earthquake tickets 2025",
+        "earthquake tickets san jose",
+        "earthquake tickets tonight",
+        "earthquakes tickets today",
+        "earthquakes tickets promo code",
+        "earthquake park tickets",
+        "earthquake comedy tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "chris-distefano",
+      "seed": "Chris Distefano tickets",
+      "suggestions": [
+        "chris distefano tickets",
+        "chris distefano tickets nyc",
+        "chris distefano boston tickets",
+        "chris distefano tour dates"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "dustin-nickerson",
+      "seed": "Dustin Nickerson tickets",
+      "suggestions": [
+        "dustin nickerson tickets",
+        "dustin nickerson tickets seattle",
+        "dustin nickerson san diego tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "whitechapel",
+      "seed": "Whitechapel tickets",
+      "suggestions": [
+        "whitechapel tickets",
+        "whitechapel tickets cleveland",
+        "whitechapel tickets 2026",
+        "whitechapel tickets toronto",
+        "whitechapel tickets indianapolis",
+        "whitechapel tickets knoxville",
+        "whitechapel tickets orlando",
+        "whitechapel nashville tickets",
+        "whitechapel tickets london",
+        "whitechapel tickets nyc"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "fedexforum-memphis",
+      "seed": "FedExForum tickets",
+      "suggestions": [
+        "fedexforum tickets",
+        "fedexforum grizzlies tickets",
+        "fedexforum parking tickets",
+        "fedexforum wwe tickets",
+        "fedexforum parking garage tickets",
+        "nate bargatze fedexforum tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "state-farm-arena-atlanta",
+      "seed": "State Farm Arena tickets",
+      "suggestions": [
+        "state farm arena tickets",
+        "state farm arena ticket office",
+        "state farm arena parking tickets",
+        "state farm arena suite tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "coors-field-denver",
+      "seed": "Coors Field tickets",
+      "suggestions": [
+        "coors field tickets",
+        "coors field tickets rockies",
+        "coors field tickets noah kahan"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "rogers-centre-toronto",
+      "seed": "Rogers Centre tickets",
+      "suggestions": [
+        "rogers centre tickets",
+        "rogers centre tickets blue jays",
+        "rogers centre tickets price",
+        "rogers centre tickets watch party",
+        "rogers centre tickets toronto",
+        "rogers centre tickets jays",
+        "rogers centre ticketmaster lounge",
+        "rogers centre ticketmaster",
+        "rogers centre tour tickets",
+        "rogers centre skydome tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "kohl-center-madison",
+      "seed": "Kohl Center tickets",
+      "suggestions": [
+        "kohl center tickets",
+        "kohl center tickets dave matthews band",
+        "kohl center tickets phish",
+        "kohl center ticket office",
+        "kohl center ticket office phone number",
+        "dmb kohl center tickets",
+        "shinedown kohl center tickets",
+        "kohl center concert tickets",
+        "kohl center wrestling tickets",
+        "kohl center hockey tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "commodore-ballroom-vancouver",
+      "seed": "Commodore Ballroom tickets",
+      "suggestions": [
+        "commodore ballroom tickets",
+        "commodore ballroom vancouver tickets",
+        "commodore ballroom tonight tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "pabst-theater-milwaukee",
+      "seed": "Pabst Theater tickets",
+      "suggestions": [
+        "pabst theater tickets",
+        "pabst theater ticket office",
+        "pabst theater group tickets",
+        "pabst theater parking tickets",
+        "pabst theater milwaukee tickets",
+        "pabst theater christmas carol tickets",
+        "pabst theater box office hours"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "four-seasons-centre-toronto",
+      "seed": "Four Seasons Centre tickets",
+      "suggestions": [
+        "four seasons centre tickets",
+        "four seasons centre for the performing arts tickets",
+        "four seasons centre events"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "resch-center-green-bay",
+      "seed": "Resch Center tickets",
+      "suggestions": [
+        "resch center tickets",
+        "resch center tickets evenue",
+        "resch center ticketstar",
+        "resch center tickets green bay",
+        "resch center tickets ella langley",
+        "resch center ticket office",
+        "resch center ticket office hours",
+        "resch center ticket office phone number",
+        "resch center ticket office hours today",
+        "resch center ticket hours"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "agganis-arena-boston",
+      "seed": "Agganis Arena tickets",
+      "suggestions": [
+        "agganis arena tickets",
+        "agganis arena ticket office",
+        "agganis arena ticket manager",
+        "agganis arena ticket office hours",
+        "agganis arena ticket office phone number",
+        "agganis arena parking tickets",
+        "agganis arena student tickets",
+        "agganis arena boston tickets",
+        "agganis arena hockey tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "scotiabank-centre-halifax",
+      "seed": "Scotiabank Centre tickets",
+      "suggestions": [
+        "scotiabank centre tickets",
+        "scotiabank centre tickets halifax",
+        "scotiabank centre tickets toronto",
+        "scotiabank centre ticketmaster",
+        "scotiabank centre ticket office",
+        "scotiabank centre mooseheads tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ogden-theatre-denver",
+      "seed": "Ogden Theatre tickets",
+      "suggestions": [
+        "ogden theatre tickets",
+        "ogden theater denver tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "abravanel-hall-salt-lake-city",
+      "seed": "Abravanel Hall tickets",
+      "suggestions": [
+        "abravanel hall tickets",
+        "abravanel hall ticket office",
+        "abravanel hall ticket office phone number",
+        "abravanel hall ticket office hours",
+        "abravanel hall student tickets",
+        "abravanel hall season tickets",
+        "robert plant abravanel hall tickets",
+        "abravanel hall events",
+        "abravanel hall schedule"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "kfc-yum-center-louisville",
+      "seed": "KFC Yum! Center tickets",
+      "suggestions": [
+        "kfc yum center tickets",
+        "kfc yum center concert tickets",
+        "kfc yum center parking tickets",
+        "kfc yum center journey tickets",
+        "kfc yum center wwe tickets",
+        "megan moroney kfc yum center tickets",
+        "cody johnson kfc yum center tickets",
+        "zach top kfc yum center tickets",
+        "forrest frank kfc yum center tickets",
+        "riley green kfc yum center tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "paper-mill-playhouse-millburn",
+      "seed": "Paper Mill Playhouse tickets",
+      "suggestions": [
+        "paper mill playhouse tickets",
+        "paper mill playhouse tickets price",
+        "paper mill playhouse tickets price for seniors",
+        "paper mill playhouse tickets for seniors",
+        "paper mill playhouse tickets discount for seniors",
+        "paper mill playhouse tickets discount",
+        "paper mill playhouse tickets west side story",
+        "paper mill playhouse ticket exchange",
+        "paper mill playhouse ticket office",
+        "paper mill playhouse ticket office hours"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "cheney-stadium-tacoma",
+      "seed": "Cheney Stadium tickets",
+      "suggestions": [
+        "cheney stadium tickets",
+        "cheney stadium ticket office",
+        "cheney stadium ticket office hours",
+        "cheney stadium season tickets",
+        "cheney stadium parking tickets",
+        "cheney stadium rainiers tickets",
+        "cheney stadium banana ball tickets",
+        "cheney stadium savannah bananas tickets",
+        "cheney stadium events",
+        "cheney stadium rules"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "cowtown-coliseum-fort-worth",
+      "seed": "Cowtown Coliseum tickets",
+      "suggestions": [
+        "cowtown coliseum tickets",
+        "cowtown coliseum tickets price",
+        "cowtown coliseum tickets fort worth tx",
+        "cowtown coliseum tickets axs",
+        "cowtown coliseum tickets discount",
+        "cowtown coliseum tickets rodeo",
+        "cowtown coliseum ticket office",
+        "pbr cowtown coliseum tickets",
+        "cowtown coliseum cheap tickets",
+        "cowtown coliseum parking tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "north-charleston-coliseum-north-charleston",
+      "seed": "North Charleston Coliseum tickets",
+      "suggestions": [
+        "north charleston coliseum tickets",
+        "north charleston performing arts center tickets",
+        "north charleston coliseum ticket office",
+        "north charleston coliseum ticket office hours",
+        "north charleston coliseum ticket sales",
+        "north charleston coliseum ticket booth",
+        "north charleston coliseum ticket hours",
+        "north charleston coliseum ticket office phone number",
+        "north charleston coliseum box office",
+        "north charleston coliseum season tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "durham-bulls-athletic-park-durham",
+      "seed": "Durham Bulls Athletic Park tickets",
+      "suggestions": [
+        "durham bulls athletic park tickets",
+        "durham bulls athletic park ticket office",
+        "mlbx tickets durham bulls athletic park"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "5th-avenue-theatre-seattle",
+      "seed": "5th Avenue Theatre tickets",
+      "suggestions": [
+        "5th avenue theatre tickets",
+        "5th avenue theatre tickets discount",
+        "5th avenue theatre tickets price",
+        "5th avenue theatre tickets online",
+        "5th avenue theatre rush tickets",
+        "5th avenue theatre season tickets",
+        "5th avenue theatre seattle tickets",
+        "5th avenue theater ticket exchange",
+        "5th avenue theater ticket office",
+        "5th avenue theater elf tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "mexico-city-cdmx",
+      "seed": "Mexico City concert tickets",
+      "suggestions": [
+        "mexico city concert tickets",
+        "bts mexico city concert tickets",
+        "kanye mexico city concert tickets",
+        "ye mexico city concert tickets",
+        "mexico city concerts 2026 tickets",
+        "bad bunny mexico city concert tickets",
+        "mexico city tour bus tickets",
+        "dua lipa mexico city concert tickets",
+        "mexico city warped tour tickets",
+        "harry styles mexico city concert tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "laguna-beach-ca",
+      "seed": "Laguna Beach concert tickets",
+      "suggestions": [
+        "laguna beach movie theater tickets",
+        "jack johnson laguna beach concert tickets",
+        "candlelight concert laguna beach tickets"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "augusta-ga",
+      "seed": "Augusta concert tickets",
+      "suggestions": [
+        "augusta concert tickets",
+        "concert tickets augusta ga"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "aspen-co",
+      "seed": "Aspen concert tickets",
+      "suggestions": [
+        "aspen concert tickets",
+        "aspen ticket price",
+        "aspen concert schedule"
+      ],
+      "pulledAt": "2026-10-28T00:00:00Z"
     }
   ]
 }
