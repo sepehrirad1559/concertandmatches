@@ -734,6 +734,28 @@ async function listEventsFromCanonicalLayer(req, res) {
   // waiting on their price backfill — see priceVisibility.js) stay visible;
   // only expired events are excluded, via ce.event_date >= NOW() above.
 
+  // PERMANENT (2026-10-28, see getMergedEventById's matching check and
+  // fetchDiscoverCandidates' matching WHERE clause): never surface an event
+  // with no confirmed seller link at all — found live on the homepage's
+  // main grid (GET /, this canonical-layer path) showing "Cedar Rapids
+  // RoughRiders at Madison Capitols" with offers: [] and no price, the same
+  // bug class fixed in 177f6458 for the detail page and discover carousels.
+  // That fix never touched this path because the canonical_events/
+  // ticket_offers layer (services/canonicalize.js) has its own unconditional
+  // "insert one ticket_offers row per raw row in the merge group" step,
+  // mirroring mergeEventsAcrossSources's always-push-the-base-row behavior
+  // — so an event whose only raw row has a null source_url still gets a
+  // ticket_offers row with seller_url NULL and a non-zero offer_count.
+  // Requiring at least one offer with a non-empty seller_url (from an
+  // active provider, same ACTIVE_SOURCES condition everything else here
+  // uses) is the canonical-layer equivalent of
+  // `offers.some(o => o.source_url)`.
+  whereClause += ` AND EXISTS (
+    SELECT 1 FROM ticket_offers o2 JOIN providers p2 ON p2.id = o2.provider_id
+    WHERE o2.canonical_event_id = ce.id
+      AND o2.seller_url IS NOT NULL AND o2.seller_url != ''${activeSourcesParam ? ` AND p2.name = ANY($${activeSourcesParam}::text[])` : ''}
+  )`;
+
   // Distance from the customer, via the same Haversine expression the raw
   // path uses — copied verbatim apart from the ce. qualification, so an
   // event's reported distance_km can't drift between the two code paths.
