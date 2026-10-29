@@ -3340,6 +3340,9 @@ export default function App() {
                             <span style={{ fontWeight: 'bold', fontSize: '15px', flexShrink: 0 }}>
                               {isOfficialLink ? `Visit ${link.name}` : link.name}
                             </span>
+                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {link.isBest && (
                               <span style={{
                                 fontSize: '10px',
@@ -3350,13 +3353,11 @@ export default function App() {
                                 padding: '2px 8px',
                                 letterSpacing: '0.03em',
                                 flexShrink: 0,
+                                width: 'fit-content',
                               }}>
                                 BEST PRICE
                               </span>
                             )}
-                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {priceLabel && (
                               <span style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</span>
                             )}
