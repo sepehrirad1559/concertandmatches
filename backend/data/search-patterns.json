@@ -1,6 +1,6 @@
 {
   "source": "Google Autocomplete Suggest API (suggestqueries.google.com) — real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model — every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-10-28T00:00:00Z",
+  "pulledAt": "2026-10-29T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -30875,6 +30875,291 @@
         "aspen concert schedule"
       ],
       "pulledAt": "2026-10-28T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "balloon-museum-daydream",
+      "seed": "Balloon Museum, DAYDREAM tickets",
+      "suggestions": [
+        "balloon museum nyc daydream tickets",
+        "balloon museum nyc daydream photos tickets",
+        "daydream balloon museum tickets",
+        "balloon museum events"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "glasgow-unknown",
+      "seed": "Glasgow concert tickets",
+      "suggestions": [
+        "glasgow concert tickets",
+        "glasgow concert tickets 2026",
+        "glasgow gig tickets",
+        "glasgow concert hall tickets",
+        "royal concert hall glasgow tickets",
+        "glasgow royal concert hall tickets prices",
+        "concerts in glasgow today"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "manchester-unknown",
+      "seed": "Manchester concert tickets",
+      "suggestions": [
+        "manchester concert tickets",
+        "manchester concert tickets 2026",
+        "manchester gig tickets",
+        "england concert tickets",
+        "katseye manchester concert tickets",
+        "gunna manchester concert tickets",
+        "manchester cathedral candlelight concert tickets",
+        "harry styles manchester concert tickets",
+        "manchester o2 concerts",
+        "what happened at the manchester concert"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "rotterdam-unknown",
+      "seed": "Rotterdam concert tickets",
+      "suggestions": [
+        "rotterdam concert tickets",
+        "candlelight concert rotterdam tickets",
+        "nier concert rotterdam tickets",
+        "undertale concert rotterdam tickets",
+        "expedition 33 concert rotterdam tickets",
+        "blok3 concert rotterdam tickets",
+        "rotterdam metro tickets cost",
+        "rotterdam concert venues"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "amsterdam-unknown",
+      "seed": "Amsterdam concert tickets",
+      "suggestions": [
+        "amsterdam concert tickets",
+        "amsterdam tour tickets",
+        "amsterdam concerts 2026 tickets",
+        "harry styles amsterdam concert tickets",
+        "bruno mars amsterdam concert tickets",
+        "olivia dean amsterdam concert tickets",
+        "katseye amsterdam concert tickets",
+        "concerts on in amsterdam"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "birmingham-unknown",
+      "seed": "Birmingham concert tickets",
+      "suggestions": [
+        "birmingham concert tickets",
+        "birmingham concert tickets 2026",
+        "diljit birmingham concert tickets",
+        "dave birmingham concert tickets",
+        "birmingham al concert tickets",
+        "birmingham concerts 2025 tickets",
+        "birmingham cathedral candlelight concert tickets",
+        "benson boone birmingham concert tickets",
+        "diljit dosanjh birmingham concert tickets",
+        "javed amirkhil concert birmingham tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "berlin-unknown",
+      "seed": "Berlin concert tickets",
+      "suggestions": [
+        "berlin concert tickets",
+        "radiohead berlin concert tickets",
+        "diljit dosanjh berlin concert tickets",
+        "atif aslam berlin concert tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "alabama-a-m-bulldogs-mens-basketball",
+      "seed": "Alabama A&M Bulldogs Mens Basketball tickets",
+      "suggestions": [
+        "alabama a&m bulldogs men's basketball vs ole miss basketball tickets",
+        "alabama a&m bulldogs men's basketball vs clemson tigers men's basketball tickets",
+        "is alabama a&m a d1 school",
+        "is alabama game on abc"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "mortgage-matchup-center-phoenix",
+      "seed": "Mortgage Matchup Center tickets",
+      "suggestions": [
+        "mortgage matchup center tickets",
+        "mortgage matchup center ticket office",
+        "mortgage matchup center ticket office phone number",
+        "mortgage matchup center suite tickets",
+        "mortgage matchup center concert tickets",
+        "mortgage matchup center parking tickets",
+        "mortgage matchup center (formerly phoenix arena) tickets",
+        "does mortgage matchup center accept seatgeek tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "dublin-unknown",
+      "seed": "Dublin concert tickets",
+      "suggestions": [
+        "dublin concert tickets",
+        "candlelight concert dublin tickets",
+        "diljit dosanjh dublin concert tickets",
+        "olivia dean dublin concert tickets",
+        "metallica dublin 2026 concert tickets",
+        "dublin arena concerts"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "young-living-centre-stage-at-hale-centre-theater-sandy",
+      "seed": "Young Living Centre Stage at Hale Centre Theater tickets",
+      "suggestions": [
+        "young living centre stage hale centre theatre tickets",
+        "how much are season tickets to hale center theater"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "the-citadel-bulldogs-mens-basketball",
+      "seed": "The Citadel Bulldogs Mens Basketball tickets",
+      "suggestions": [
+        "the citadel bulldogs men's basketball vs chattanooga mocs men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "new-haven-chargers-mens-basketball",
+      "seed": "New Haven Chargers Mens Basketball tickets",
+      "suggestions": [
+        "new haven chargers men's basketball vs syracuse orange men's basketball tickets",
+        "new haven chargers men's basketball vs seton hall pirates men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "washington-state-cougars-mens-basketball",
+      "seed": "Washington State Cougars Mens Basketball tickets",
+      "suggestions": [
+        "washington state cougars men's basketball tickets",
+        "washington state cougars men's basketball vs seattle redhawks men's basketball tickets",
+        "washington state cougars men's basketball vs bradley braves men's basketball tickets",
+        "washington state cougars men's basketball vs loyola marymount lions men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "northern-iowa-panthers-mens-basketball",
+      "seed": "Northern Iowa Panthers Mens Basketball tickets",
+      "suggestions": [
+        "northern iowa panthers men's basketball vs murray state basketball tickets",
+        "northern iowa panthers men's basketball vs uic flames men's basketball tickets",
+        "northern iowa panthers men's basketball vs bradley braves men's basketball tickets",
+        "northern iowa panthers men's basketball vs evansville purple aces men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "south-carolina-state-bulldogs-mens-basketball",
+      "seed": "South Carolina State Bulldogs Mens Basketball tickets",
+      "suggestions": [
+        "south carolina state bulldogs men's basketball vs tennessee volunteers men's basketball tickets",
+        "south carolina state bulldogs men's basketball vs louisville cardinals men's basketball tickets",
+        "south carolina state bulldogs men's basketball vs howard bison men's basketball tickets",
+        "south carolina state bulldogs men's basketball vs norfolk state spartans men's basketball tickets",
+        "south carolina state bulldogs men's basketball vs morgan state bears men's basketball tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "meridian-hall-toronto",
+      "seed": "Meridian Hall tickets",
+      "suggestions": [
+        "meridian hall tickets",
+        "meridian hall tickets price",
+        "meridian hall tickets discount",
+        "meridian hall tickets toronto",
+        "meridian hall ticket office",
+        "meridian hall ticket sales",
+        "meridian hall rush tickets",
+        "meridian hall buy tickets",
+        "meridian hall last minute tickets",
+        "big thief meridian hall tickets"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "dunkin-park-hartford",
+      "seed": "Dunkin' Park tickets",
+      "suggestions": [
+        "dunkin park tickets",
+        "duncan park tickets",
+        "dunkin donuts park events"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "fifth-third-park-spartanburg",
+      "seed": "Fifth Third Park tickets",
+      "suggestions": [
+        "fifth third park tickets",
+        "fifth third park tickets price",
+        "fifth third field tickets",
+        "fifth third stadium tickets",
+        "fifth third ballpark tickets",
+        "fifth third field ticket office",
+        "how much is a fantasy five ticket"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "utah-valley-wolverines-mens-basketball",
+      "seed": "Utah Valley Wolverines Mens Basketball tickets",
+      "suggestions": [
+        "utah valley wolverines men's basketball vs sdsu basketball tickets",
+        "utah valley wolverines men's basketball vs boise state broncos men's basketball tickets",
+        "utah big game application deadline",
+        "are there wolverines in utah"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "prince-georges-stadium-bowie",
+      "seed": "Prince Georges Stadium tickets",
+      "suggestions": [
+        "prince george's stadium tickets",
+        "prince george's stadium banana ball tickets",
+        "can you buy royals tickets at the stadium",
+        "can you buy tickets at the stadium",
+        "how much are tickets to a royals game",
+        "royals tickets cost"
+      ],
+      "pulledAt": "2026-10-29T00:00:00Z"
     }
   ]
 }
