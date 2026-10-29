@@ -46,6 +46,14 @@ import { syncAllEvents as syncAllTicketmasterEvents, backfillMissingPrices as ba
 import { syncSeatGeekEvents, backfillMissingPrices as backfillSeatGeekPrices } from './services/seatgeek.js';
 import { rebuildCanonicalEvents } from './services/canonicalize.js';
 
+// Impact Radius Product Catalog -> Postgres sync for Ticketmaster baseline
+// pricing (added 2026-10-29 alongside bringing Ticketmaster discovery back,
+// see runScheduledEventSync and sourceVisibility.js). Runs on its own daily
+// cron (default 3 AM, see scheduleTicketmasterCatalogSync's own comments)
+// rather than inside runScheduledEventSync's 12h cycle, since it's a bulk
+// catalog download+parse job, not a per-event API sync like the others here.
+import { scheduleTicketmasterCatalogSync } from './services/impactCatalogSync.js';
+
 // TicketNetwork catalog sync (Impact.com affiliate feed) — services/
 // ticketnetwork.js already exported a scheduleTicketNetworkSync() meant to
 // run this automatically every 24h, but nothing ever called it: it wasn't
@@ -270,16 +278,66 @@ async function runScheduledEventSync() {
 // load), which is fine here since this already runs as a backgrounded job
 // with its own concurrency guard (isEventSyncRunning above), not an
 // HTTP-triggered request under Railway's proxy timeout.
-// Ticketmaster + SeatGeek scheduled sync DISABLED (2026-10-23, "we no
-// longer promote Ticketmaster/SeatGeek events" -- see config/
-// sourceVisibility.js for the matching display-side hide, which covers
-// the events these jobs already stored; this is what stops MORE of their
-// events from being pulled in going forward). The provider modules
-// (services/ticketmaster.js, services/seatgeek.js) and the manual
-// POST /admin/sync/ticketmaster|seatgeek routes are untouched in case
-// this needs to be reversed again -- see sourceVisibility.js's history
-// comment for how many times that's already happened.
+// Ticketmaster scheduled sync RESTORED 2026-10-29 ("bringing back all of
+// the Ticketmaster events" -- see config/sourceVisibility.js for the
+// matching display-side un-hide). This is the same discovery + per-event
+// price backfill block removed 2026-10-23; SeatGeek is deliberately left
+// disabled below -- only Ticketmaster was asked for this time.
+//
+// Pricing now has a second, complementary source as of this same change:
+// services/impactCatalogSync.js's nightly Impact Radius Product Catalog
+// sync (scheduled separately, see scheduleTicketmasterCatalogSync() below)
+// bulk-fills events.min_price/max_price from Impact's catalog feed instead
+// of Ticketmaster's own Discovery API. backfillTicketmasterPrices below
+// only touches rows where min_price IS NULL, so whichever source gets to
+// an event first "wins" for that night and the other naturally skips it --
+// they share the load rather than racing or double-writing.
+console.log('🔄 Running scheduled Ticketmaster sync (full worldwide catalog, every segment)...');
 let startedAt = new Date();
+try {
+  const tmResult = await syncAllTicketmasterEvents();
+  console.log('Ticketmaster sync result:', tmResult);
+  await logProviderSync({
+    providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: tmResult.totalEvents ?? null,
+    status: tmResult.success ? 'success' : 'error',
+    errorMessage: tmResult.error ?? (tmResult.apiErrorCount > 0 ? `${tmResult.apiErrorCount} API error(s): ${JSON.stringify(tmResult.sampleApiErrors)}` : null),
+  });
+} catch (err) {
+  console.error('Ticketmaster sync failed:', err);
+  await logProviderSync({ providerName: 'ticketmaster', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Backfilling Ticketmaster prices...');
+startedAt = new Date();
+try {
+  // Bumped 300 -> 3000 (2026-09-27): the worldwide-coverage expansion added
+  // ~30,000 unpriced international Ticketmaster rows overnight (discovery
+  // returns priceRanges for only a fraction of events; the rest need this
+  // per-event detail-endpoint backfill). At 300/day that backlog would take
+  // ~100 days to clear even once; at 3000/day (4/sec throttle -> ~12.5 min
+  // runtime, well within a background job) it clears in under 2 weeks.
+  // Safe to raise: backfillMissingPrices already detects Ticketmaster's daily
+  // quota exhaustion and stops the batch early with a clear log message
+  // rather than failing silently, so an overly large number just means an
+  // early, well-logged stop rather than a broken run.
+  const tmPriceResult = await backfillTicketmasterPrices(3000);
+  console.log('Ticketmaster price backfill result:', tmPriceResult);
+  await logProviderSync({
+    providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+    recordsUpdated: tmPriceResult.updated ?? null,
+    status: tmPriceResult.success ? 'success' : 'error',
+    errorMessage: tmPriceResult.error ?? null,
+  });
+} catch (err) {
+  console.error('Ticketmaster price backfill failed:', err);
+  await logProviderSync({ providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+// SeatGeek scheduled sync stays DISABLED (2026-10-23 removal, not reversed
+// this time -- only Ticketmaster was asked to come back). services/
+// seatgeek.js and the manual POST /admin/sync/seatgeek route are untouched
+// in case this needs to be reversed too later.
 
 console.log('🔄 Running scheduled TicketNetwork sync...');
 startedAt = new Date();
@@ -405,3 +463,16 @@ async function maybeRunEventSyncOnBoot() {
 // EVENT_SYNC_INTERVAL_MS after that.
 setTimeout(maybeRunEventSyncOnBoot, 20 * 60 * 1000);
 setInterval(runScheduledEventSyncGuarded, EVENT_SYNC_INTERVAL_MS);
+
+// Impact Catalog (Ticketmaster baseline pricing) daily cron — registered
+// once at boot, independent of the interval-based cycle above. Deferred
+// with setTimeout (same pattern as maybeRunEventSyncOnBoot above) rather
+// than called synchronously here at module-eval time, both to keep cron
+// registration off the server's critical startup path and to avoid relying
+// on the exact circular-import evaluation order between this file and
+// services/impactCatalogSync.js (which imports `pool` back from here).
+// No-ops safely (just logs and returns during its first scheduled run) if
+// the three required IMPACT_* env vars haven't been set yet in this
+// environment; see impactCatalogSync.js's own header comment for exactly
+// which ones.
+setTimeout(() => scheduleTicketmasterCatalogSync(), 5000);
