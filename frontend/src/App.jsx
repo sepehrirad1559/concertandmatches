@@ -1822,7 +1822,7 @@ function BrandLink({ onClick }) {
       }}>
       <Logo size={38} />
       <span>
-        <span style={{ display: 'block', fontWeight: 800, fontSize: '25px', lineHeight: 1.15 }}>ConcertAndMatches.com</span>
+        <span style={{ display: 'block', fontWeight: 800, fontSize: '17.5px', lineHeight: 1.15 }}>ConcertAndMatches.com</span>
       </span>
     </button>
   );
