@@ -3321,47 +3321,49 @@ export default function App() {
                           borderTop: i === 0 ? 'none' : '1px solid #eee',
                           backgroundColor: link.isBest ? '#f3faf3' : 'transparent',
                         }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', rowGap: '4px', flexWrap: 'wrap', minWidth: 0 }}>
-                          <span
-                            aria-hidden="true"
-                            style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor, flexShrink: 0 }}
-                          />
-                          {link.logoUrl && (
-                            <img
-                              src={link.logoUrl}
-                              alt=""
-                              width={16}
-                              height={16}
-                              style={{ borderRadius: '3px', flexShrink: 0 }}
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', rowGap: '4px', flexWrap: 'wrap', minWidth: 0 }}>
+                            <span
+                              aria-hidden="true"
+                              style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor, flexShrink: 0 }}
                             />
-                          )}
-                          <span style={{ fontWeight: 'bold', fontSize: '15px', flexShrink: 0 }}>
-                            {isOfficialLink ? `Visit ${link.name}` : link.name}
-                          </span>
-                          {link.isBest && (
-                            <span style={{
-                              fontSize: '10px',
-                              fontWeight: 800,
-                              color: '#fff',
-                              backgroundColor: '#2e7d32',
-                              borderRadius: '999px',
-                              padding: '2px 8px',
-                              letterSpacing: '0.03em',
-                              flexShrink: 0,
-                            }}>
-                              BEST PRICE
+                            {link.logoUrl && (
+                              <img
+                                src={link.logoUrl}
+                                alt=""
+                                width={16}
+                                height={16}
+                                style={{ borderRadius: '3px', flexShrink: 0 }}
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            )}
+                            <span style={{ fontWeight: 'bold', fontSize: '15px', flexShrink: 0 }}>
+                              {isOfficialLink ? `Visit ${link.name}` : link.name}
                             </span>
-                          )}
-                          <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
-                        </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          {priceLabel && (
-                            <>
-                              <div style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</div>
-                              <div style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</div>
-                            </>
-                          )}
+                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            {link.isBest && (
+                              <span style={{
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                color: '#fff',
+                                backgroundColor: '#2e7d32',
+                                borderRadius: '999px',
+                                padding: '2px 8px',
+                                letterSpacing: '0.03em',
+                                flexShrink: 0,
+                              }}>
+                                BEST PRICE
+                              </span>
+                            )}
+                            {priceLabel && (
+                              <span style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</span>
+                            )}
+                            {priceLabel && (
+                              <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</span>
+                            )}
+                          </div>
                         </div>
                       </a>
                     );
