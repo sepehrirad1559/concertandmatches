@@ -3154,8 +3154,8 @@ export default function App() {
         <div style={{ background: NAVY_BG, borderRadius: '28px', padding: '20px', marginBottom: '24px' }}>
           <nav style={{
             display: 'flex',
-            gap: '16px',
-            alignItems: 'center',
+            flexDirection: 'column',
+            gap: '10px',
             padding: '14px 18px',
             backgroundColor: '#fff',
             borderRadius: '16px',
@@ -3164,12 +3164,14 @@ export default function App() {
             color: '#141b2d',
           }}>
             <BrandLink onClick={handleFooterGoHome} />
-            <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-              Home
-            </button>
-            <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-              ← Back to Events
-            </button>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+                Home
+              </button>
+              <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+                ← Back to Events
+              </button>
+            </div>
           </nav>
         </div>
 
