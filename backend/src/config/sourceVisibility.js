@@ -12,10 +12,16 @@
 // here). Reversed again 2026-10-29: bringing Ticketmaster back as a visible
 // source, now sourcing its pricing from Impact Radius's Product Catalog
 // feed (see services/impactCatalogSync.js) instead of hitting Ticketmaster's
-// Discovery API directly for discovery+backfill. SeatGeek stays excluded --
-// this change only concerns Ticketmaster. null would mean "no restriction"
-// and isn't needed while this is a real, deliberate allowlist.
-export const ACTIVE_SOURCES = ['ticketmaster', 'ticketnetwork', 'curated'];
+// Discovery API directly for discovery+backfill. Same day, same-session
+// follow-up: SeatGeek brought back too (user asked for it right after).
+// StubHub and TickPick are NOT added here -- neither has a working
+// integration in this codebase (StubHub's was an unverified placeholder
+// that never got real partner API access, per DATA_SOURCES.md; TickPick
+// has no code at all), and this platform's policy is official/authenticated
+// APIs only, never scraping -- so there's nothing to turn on for them yet.
+// null would mean "no restriction" and isn't needed while this is a real,
+// deliberate allowlist.
+export const ACTIVE_SOURCES = ['ticketmaster', 'seatgeek', 'ticketnetwork', 'curated'];
 
 // Appends a `source = ANY(...)` condition to an existing WHERE clause
 // string, pushing ACTIVE_SOURCES onto `params` and returning the next free

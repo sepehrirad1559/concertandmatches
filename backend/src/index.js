@@ -334,10 +334,48 @@ try {
   await logProviderSync({ providerName: 'ticketmaster', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
 }
 
-// SeatGeek scheduled sync stays DISABLED (2026-10-23 removal, not reversed
-// this time -- only Ticketmaster was asked to come back). services/
-// seatgeek.js and the manual POST /admin/sync/seatgeek route are untouched
-// in case this needs to be reversed too later.
+// SeatGeek scheduled sync RESTORED 2026-10-29 (user asked to bring back
+// SeatGeek alongside Ticketmaster). Exact same discovery + per-event price
+// backfill block removed 2026-10-23 in 711bf264, region-segmented sync the
+// manual POST /admin/sync/seatgeek route already used (perState=300, see
+// that route's comment for why it's segmented by US state/Canadian
+// province rather than one flat call).
+console.log('🔄 Running scheduled SeatGeek sync (region-segmented)...');
+startedAt = new Date();
+try {
+  const sgResult = await syncSeatGeekEvents(300);
+  console.log('SeatGeek sync result:', sgResult);
+  await logProviderSync({
+    providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(),
+    recordsReceived: sgResult.totalEvents ?? null,
+    status: sgResult.success ? 'success' : 'error',
+    errorMessage: sgResult.error ?? (sgResult.apiErrorCount > 0 ? `${sgResult.apiErrorCount} API error(s): ${JSON.stringify(sgResult.sampleApiErrors)}` : null),
+  });
+} catch (err) {
+  console.error('SeatGeek sync failed:', err);
+  await logProviderSync({ providerName: 'seatgeek', syncType: 'discovery', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
+
+console.log('🔄 Backfilling SeatGeek prices...');
+startedAt = new Date();
+try {
+  // Same 3000/day bound as Ticketmaster's backfill above, same reasoning:
+  // a fresh region-segmented discovery run can leave a large number of rows
+  // unpriced (SeatGeek's discovery payload doesn't always include a price),
+  // and backfillMissingPrices already detects quota exhaustion and stops
+  // early with a clear log rather than failing silently.
+  const sgPriceResult = await backfillSeatGeekPrices(3000);
+  console.log('SeatGeek price backfill result:', sgPriceResult);
+  await logProviderSync({
+    providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(),
+    recordsUpdated: sgPriceResult.updated ?? null,
+    status: sgPriceResult.success ? 'success' : 'error',
+    errorMessage: sgPriceResult.error ?? null,
+  });
+} catch (err) {
+  console.error('SeatGeek price backfill failed:', err);
+  await logProviderSync({ providerName: 'seatgeek', syncType: 'price_backfill', startedAt, finishedAt: new Date(), status: 'error', errorMessage: err.message });
+}
 
 console.log('🔄 Running scheduled TicketNetwork sync...');
 startedAt = new Date();
