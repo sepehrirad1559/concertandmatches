@@ -3342,24 +3342,26 @@ export default function App() {
                             </span>
                             <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            {link.isBest && (
-                              <span style={{
-                                fontSize: '10px',
-                                fontWeight: 800,
-                                color: '#fff',
-                                backgroundColor: '#2e7d32',
-                                borderRadius: '999px',
-                                padding: '2px 8px',
-                                letterSpacing: '0.03em',
-                                flexShrink: 0,
-                              }}>
-                                BEST PRICE
-                              </span>
-                            )}
-                            {priceLabel && (
-                              <span style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</span>
-                            )}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              {link.isBest && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: 800,
+                                  color: '#fff',
+                                  backgroundColor: '#2e7d32',
+                                  borderRadius: '999px',
+                                  padding: '2px 8px',
+                                  letterSpacing: '0.03em',
+                                  flexShrink: 0,
+                                }}>
+                                  BEST PRICE
+                                </span>
+                              )}
+                              {priceLabel && (
+                                <span style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</span>
+                              )}
+                            </div>
                             {priceLabel && (
                               <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</span>
                             )}
