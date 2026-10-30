@@ -196,6 +196,18 @@ router.get('/event/:pathParam', async (req, res) => {
     const lowPrice = pricedValues.length > 0 ? Math.min(...pricedValues) : null;
     const highPrice = pricedValues.length > 0 ? Math.max(...pricedValues) : null;
 
+    // 2026-10-30: noindex events with literally nothing to show -- no
+    // artist, no venue, no city, no image, and no priced offer from any
+    // seller. This is deliberately NOT based on price alone: a 2026-09-27
+    // fix (see config/priceVisibility.js) removed "no price" as a
+    // visibility signal because most unpriced events are real Ticketmaster
+    // listings still waiting on a slow price-backfill job, not thin pages.
+    // Requiring every one of these fields to be missing at once keeps this
+    // rule from touching that population -- it only catches pages that are
+    // genuinely empty by any definition, independent of the backfill.
+    const isEmptyListing = !event.artist_name && !event.venue_name && !event.city
+      && !event.image_url && pricedOffers.length === 0;
+
     const title = `${event.title} Tickets${event.city ? ` in ${event.city}` : ''} — ${formatDate(event.date)} | ConcertAndMatches`;
     const description = `Get tickets for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}.${startingPrice != null ? ` Prices start at $${startingPrice.toFixed(0)}.` : ''} Listed from multiple authorized sellers.`;
     const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
@@ -335,7 +347,7 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta name="twitter:title" content="${xmlEscape(title)}" />
 <meta name="twitter:description" content="${xmlEscape(description)}" />
 <meta name="twitter:image" content="${xmlEscape(event.image_url || 'https://www.concertandmatches.com/og-image.png')}" />
-<meta name="robots" content="${isPastEvent ? 'noindex, follow' : 'index, follow'}" />
+<meta name="robots" content="${(isPastEvent || isEmptyListing) ? 'noindex, follow' : 'index, follow'}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>`;
 
