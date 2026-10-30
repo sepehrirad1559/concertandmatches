@@ -1655,7 +1655,16 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
 // markup seven more times.
 function EventCard({ event, onSelect, fallbackImageUrl }) {
   const priceLabel = (event.min_price != null || event.max_price != null) ? formatPrice(event) : null;
-  const fromPrice = event.min_price != null ? event.min_price : event.max_price;
+  const fromPriceRaw = event.min_price != null ? event.min_price : event.max_price;
+  // Same TicketNetwork sitewide 20% price drop as the event detail page
+  // (see TICKETNETWORK_DISCOUNT_RATE/getDisplayPriceLabels above) -- the
+  // homepage's "From $X" line should show the real current price too, not
+  // just the detail page. Only applies when TicketNetwork is actually the
+  // (best/only) priced source behind this card's single "From" figure.
+  const fromPriceSource = event.best_source || event.source;
+  const fromPrice = (fromPriceSource === 'ticketnetwork' && fromPriceRaw != null)
+    ? Math.round(fromPriceRaw * (1 - TICKETNETWORK_DISCOUNT_RATE))
+    : fromPriceRaw;
   // Price RANGE across sellers (2026-10-10, business-model change: pull
   // availability + price from Ticketmaster, TicketNetwork and SeatGeek and
   // show the customer the range across them, not just the single cheapest
