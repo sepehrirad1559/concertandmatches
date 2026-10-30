@@ -78,6 +78,45 @@ export function tokenSimilarity(a, b) {
   return (2 * overlap) / (setA.size + setB.size);
 }
 
+// Venue-type nouns generic enough that sharing one conveys essentially no
+// identifying signal about WHICH venue two rows mean — a huge number of
+// unrelated venues in any given city are named "[City] ... Center/Arena/
+// Theater". Found live: "Chicago Symphony Center" vs. "Chicago Architecture
+// Center" (an unrelated TicketNetwork river-cruise listing) scored 0.667 on
+// plain tokenSimilarity, clearing VENUE_STRONG_MATCH, purely because both
+// venue names happened to contain the city name and the word "center" — two
+// tokens that were never a real match signal in the first place, since
+// isSameEvent has already required an exact city match before venueScore is
+// even computed. Stripped here, same as the city name itself (see
+// venueSimilarity below), so only the part of a venue name that actually
+// distinguishes it from every other venue in the same city can drive a
+// venue-match merge.
+const GENERIC_VENUE_WORDS = new Set([
+  'center', 'theater', 'arena', 'stadium', 'hall', 'pavilion',
+  'amphitheater', 'coliseum', 'auditorium', 'complex',
+]);
+
+// Same Dice-coefficient comparison as tokenSimilarity, but for venue names
+// specifically: strips the shared city name (always present on both sides
+// once isSameEvent's exact city-match check has passed, so it can only
+// inflate overlap, never discriminate) and generic venue-type nouns (see
+// GENERIC_VENUE_WORDS) before scoring. Falls back to plain tokenSimilarity
+// behavior when stripping would leave one side with nothing to compare
+// (e.g. a venue name that IS just "Center"), rather than reporting a
+// spurious 0 for a case normalizeTokens alone would have scored validly.
+export function venueSimilarity(venueA, venueB, city) {
+  const cityTokens = new Set(normalizeTokens(city));
+  const strip = (text) => normalizeTokens(text).filter(
+    (t) => !cityTokens.has(t) && !GENERIC_VENUE_WORDS.has(t)
+  );
+  const setA = new Set(strip(venueA));
+  const setB = new Set(strip(venueB));
+  if (setA.size === 0 || setB.size === 0) return tokenSimilarity(venueA, venueB);
+  let overlap = 0;
+  for (const t of setA) if (setB.has(t)) overlap++;
+  return (2 * overlap) / (setA.size + setB.size);
+}
+
 // TicketNetwork's catalog (services/ticketnetwork.js) gives a LaunchDate
 // with no real start time — every TicketNetwork row lands as exactly
 // midnight UTC (see the isMidnightUTC comment further down for the full
@@ -237,7 +276,7 @@ export function isSameEvent(a, b) {
   // utils/states.js for the full story.
   if (normalizeState(a.state) !== normalizeState(b.state)) return false;
 
-  const venueScore = tokenSimilarity(a.venue_name, b.venue_name);
+  const venueScore = venueSimilarity(a.venue_name, b.venue_name, a.city);
 
   // Two ways to compare "what is this event of/about", and we take
   // whichever scores higher — they diverge specifically for team sports.
