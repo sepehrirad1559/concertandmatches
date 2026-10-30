@@ -3417,6 +3417,47 @@ export default function App() {
             )}
           </div>
 
+          {/* Internal links back up to the artist/city/venue hub pages
+              (routes/seoPages.js) -- mirrors the exact same links
+              prerender.js already serves to non-JS crawlers (relatedLinks),
+              which were real content in the server response but vanished
+              the instant React hydrated and replaced #root, since this
+              client-rendered branch never rendered them. That left human
+              visitors with no way to browse from one event into related
+              ones, and left every event page a dead end post-hydration
+              even where the prerendered HTML had real outbound links.
+              Plain <a> tags (not client-side navigate()) since these hub
+              pages are server-rendered by seoPages.js, not part of this
+              SPA's own routing -- same as how prerender.js links to them. */}
+          {(selectedEvent.artist_name || selectedEvent.city || selectedEvent.venue_name) && (
+            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--cm-border)' }}>
+              <h2 style={{ fontSize: '15px', color: '#141b2d', marginBottom: '10px' }}>Related</h2>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {selectedEvent.artist_name && (
+                  <li>
+                    <a href={`/artists/${slugify(selectedEvent.artist_name)}`} style={{ color: 'var(--cm-accent, #2563eb)', fontSize: '14px', textDecoration: 'underline' }}>
+                      More {selectedEvent.artist_name} tickets
+                    </a>
+                  </li>
+                )}
+                {selectedEvent.city && (
+                  <li>
+                    <a href={`/cities/${slugify(`${selectedEvent.city}-${selectedEvent.state || ''}`)}/events`} style={{ color: 'var(--cm-accent, #2563eb)', fontSize: '14px', textDecoration: 'underline' }}>
+                      More events in {selectedEvent.city}{selectedEvent.state ? `, ${selectedEvent.state}` : ''}
+                    </a>
+                  </li>
+                )}
+                {selectedEvent.venue_name && (
+                  <li>
+                    <a href={`/venues/${slugify(`${selectedEvent.venue_name}-${selectedEvent.city || ''}`)}`} style={{ color: 'var(--cm-accent, #2563eb)', fontSize: '14px', textDecoration: 'underline' }}>
+                      More events at {selectedEvent.venue_name}
+                    </a>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
           <div style={{ marginTop: '20px' }}>
             <AffiliateDisclosure />
           </div>
