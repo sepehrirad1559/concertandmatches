@@ -554,6 +554,29 @@ const SOURCE_DOT_COLOR = {
   curated: '#e0a100',
 };
 
+// TicketNetwork sitewide price drop (2026-10-30, per product decision) —
+// their listed prices are 20% lower than what our synced min/max_price
+// data reflects, so the event detail page shows the original (struck
+// through) alongside the real, current discounted price. Ongoing until
+// product says otherwise; applies only on the event detail page, not the
+// homepage/search price ranges, which are left reading the raw synced
+// values.
+const TICKETNETWORK_DISCOUNT_RATE = 0.2;
+
+function getDisplayPriceLabels(link) {
+  const rawPrices = [...new Set(
+    [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
+  )].sort((a, b) => a - b);
+  const isDiscounted = link.source === 'ticketnetwork' && rawPrices.length > 0;
+  const shownPrices = isDiscounted
+    ? rawPrices.map((p) => Math.round(p * (1 - TICKETNETWORK_DISCOUNT_RATE)))
+    : rawPrices;
+  return {
+    priceLabel: shownPrices.length > 0 ? shownPrices.map((p) => `$${p.toFixed(0)}`).join(', ') : null,
+    originalPriceLabel: isDiscounted ? rawPrices.map((p) => `$${p.toFixed(0)}`).join(', ') : null,
+  };
+}
+
 function buildFindTicketsLinks(event) {
   const q = encodeURIComponent(event.title || event.artist_name || '');
   const sourceMeta = {
@@ -3227,12 +3250,7 @@ export default function App() {
               // nothing to compare against.
               (() => {
                 const link = findTicketsLinks[0];
-                const linkPrices = [...new Set(
-                  [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
-                )].sort((a, b) => a - b);
-                const priceLabel = linkPrices.length > 0
-                  ? linkPrices.map((p) => `$${p.toFixed(0)}`).join(', ')
-                  : null;
+                const { priceLabel, originalPriceLabel } = getDisplayPriceLabels(link);
                 return (
                   <a
                     href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}?sid=${encodeURIComponent(CLICK_SESSION_ID)}` : link.url}
@@ -3268,6 +3286,9 @@ export default function App() {
                     <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
                       Buy on {link.name}
                     </span>
+                    {originalPriceLabel && (
+                      <span style={{ fontSize: '12px', fontWeight: 600, textDecoration: 'line-through', opacity: 0.7, whiteSpace: 'nowrap' }}>{originalPriceLabel}</span>
+                    )}
                     {priceLabel && (
                       <span style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>From {priceLabel}</span>
                     )}
@@ -3291,12 +3312,7 @@ export default function App() {
                 </p>
                 <div className="cm-event-seller-list" style={{ border: '1px solid #eee', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#fff' }}>
                   {findTicketsLinks.map((link, i) => {
-                    const linkPrices = [...new Set(
-                      [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
-                    )].sort((a, b) => a - b);
-                    const priceLabel = linkPrices.length > 0
-                      ? linkPrices.map((p) => `$${p.toFixed(0)}`).join(', ')
-                      : null;
+                    const { priceLabel, originalPriceLabel } = getDisplayPriceLabels(link);
                     const isOfficialLink = link.source === 'official';
                     return (
                       <a
@@ -3362,8 +3378,11 @@ export default function App() {
                                 BEST PRICE
                               </span>
                             )}
+                            {originalPriceLabel && (
+                              <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through' }}>{originalPriceLabel}</span>
+                            )}
                             {priceLabel && (
-                              <span style={{ fontWeight: 'bold', fontSize: '17px', color: '#111' }}>{priceLabel}</span>
+                              <span style={{ fontWeight: 'bold', fontSize: '17px', color: originalPriceLabel ? '#2e7d32' : '#111' }}>{priceLabel}</span>
                             )}
                             {priceLabel && (
                               <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</span>
