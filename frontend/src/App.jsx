@@ -571,9 +571,16 @@ function getDisplayPriceLabels(link) {
   const shownPrices = isDiscounted
     ? rawPrices.map((p) => Math.round(p * (1 - TICKETNETWORK_DISCOUNT_RATE)))
     : rawPrices;
+  // Joined with an en dash as a real "$X - $Y" range (2026-10-30, matching
+  // the reference seller-card design) rather than a bare comma-separated
+  // pair -- a min/max displayed as "$104, $1387" read as two unrelated
+  // prices rather than one price range.
+  const join = (prices) => (prices.length > 1
+    ? `$${prices[0].toFixed(0)} – $${prices[prices.length - 1].toFixed(0)}`
+    : `$${prices[0].toFixed(0)}`);
   return {
-    priceLabel: shownPrices.length > 0 ? shownPrices.map((p) => `$${p.toFixed(0)}`).join(', ') : null,
-    originalPriceLabel: isDiscounted ? rawPrices.map((p) => `$${p.toFixed(0)}`).join(', ') : null,
+    priceLabel: shownPrices.length > 0 ? join(shownPrices) : null,
+    originalPriceLabel: isDiscounted ? join(rawPrices) : null,
   };
 }
 
@@ -3314,22 +3321,41 @@ export default function App() {
                 );
               })()
             ) : (
-              // RESTORED 2026-10-10 (business-model change: pull
-              // availability + price from Ticketmaster, TicketNetwork and
-              // SeatGeek and show the customer the price range across
-              // them) — the per-seller comparison list that was simplified
-              // away on 2026-09-21 when Ticketmaster/SeatGeek data was
-              // purged and TicketNetwork was effectively the only seller
-              // left. buildFindTicketsLinks already produces everything
-              // this needs (isBest/dotColor/logoUrl were left in place,
-              // unused, the whole time — see that function above) so this
-              // is a rendering-only restoration, not new data plumbing.
+              // REDESIGNED 2026-10-30 (reference comparison-card layout
+              // provided by the user) -- was a plain intro sentence above a
+              // continuous bordered list with divider lines between rows.
+              // Replaced with a "Compare ticket prices" header card and
+              // separated, individually-bordered seller cards (the best
+              // price highlighted with a green border, same color the
+              // BEST PRICE badge already used) plus an explicit
+              // View Tickets/Check Price button per card. Deliberately
+              // does NOT include star ratings/review counts like the
+              // reference image did -- there is no real per-seller rating
+              // data behind those numbers, and showing fabricated ones
+              // next to a real purchase decision would be actively
+              // misleading, not just a style gap. The "ConcertAndMatches
+              // doesn't sell tickets directly" line that used to sit here
+              // is dropped too -- AffiliateDisclosure below already covers
+              // that, and the reference layout doesn't repeat it here either.
               <>
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
-                  ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — click through below to buy:
-                </p>
-                <div className="cm-event-seller-list" style={{ border: '1px solid #eee', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#fff' }}>
-                  {findTicketsLinks.map((link, i) => {
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '16px 18px',
+                  backgroundColor: '#eef4ff',
+                  borderRadius: '14px',
+                  marginBottom: '16px',
+                }}>
+                  <span aria-hidden="true" style={{ fontSize: '20px', lineHeight: 1, flexShrink: 0 }}>🔀</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '16px', color: '#141b2d' }}>Compare ticket prices</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#555' }}>Choose a seller and find the right seats.</p>
+                  </div>
+                </div>
+
+                <div className="cm-event-seller-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {findTicketsLinks.map((link) => {
                     const { priceLabel, originalPriceLabel } = getDisplayPriceLabels(link);
                     const isOfficialLink = link.source === 'official';
                     return (
@@ -3352,36 +3378,45 @@ export default function App() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '12px',
-                          padding: '16px 18px',
+                          gap: '14px',
+                          flexWrap: 'wrap',
+                          padding: '18px 20px',
                           textDecoration: 'none',
                           color: 'inherit',
-                          borderTop: i === 0 ? 'none' : '1px solid #eee',
-                          backgroundColor: link.isBest ? '#f3faf3' : 'transparent',
+                          borderRadius: '14px',
+                          border: link.isBest ? '2px solid #2e7d32' : '1px solid #eee',
+                          backgroundColor: link.isBest ? '#f3faf3' : '#fff',
                         }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', rowGap: '4px', flexWrap: 'wrap', minWidth: 0 }}>
-                            <span
-                              aria-hidden="true"
-                              style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor, flexShrink: 0 }}
-                            />
-                            {link.logoUrl && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 220px' }}>
+                          <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            backgroundColor: `${link.dotColor}22`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            overflow: 'hidden',
+                          }}>
+                            {link.logoUrl ? (
                               <img
                                 src={link.logoUrl}
                                 alt=""
-                                width={16}
-                                height={16}
-                                style={{ borderRadius: '3px', flexShrink: 0 }}
+                                width={20}
+                                height={20}
+                                style={{ borderRadius: '4px' }}
                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                               />
+                            ) : (
+                              <span aria-hidden="true" style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: link.dotColor }} />
                             )}
-                            <span style={{ fontWeight: 'bold', fontSize: '15px', flexShrink: 0 }}>
-                              {isOfficialLink ? `Visit ${link.name}` : link.name}
-                            </span>
-                            <span aria-hidden="true" style={{ color: '#999', fontSize: '13px', flexShrink: 0 }}>↗</span>
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', rowGap: '4px', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 800, fontSize: '16px' }}>
+                                {isOfficialLink ? `Visit ${link.name}` : link.name}
+                              </span>
                               {link.isBest && (
                                 <span style={{
                                   fontSize: '10px',
@@ -3397,15 +3432,32 @@ export default function App() {
                                   BEST PRICE
                                 </span>
                               )}
-                              {originalPriceLabel && (
-                                <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through', textDecorationColor: '#dc2626' }}>{originalPriceLabel}</span>
-                              )}
-                              {priceLabel && (
-                                <span style={{ fontWeight: 'bold', fontSize: '17px', color: originalPriceLabel ? '#2e7d32' : '#111' }}>{priceLabel}</span>
-                              )}
                             </div>
+                            {(priceLabel || originalPriceLabel) && (
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                                {priceLabel && (
+                                  <span style={{ fontWeight: 'bold', fontSize: '19px', color: originalPriceLabel ? '#2e7d32' : '#111' }}>{priceLabel}</span>
+                                )}
+                                {originalPriceLabel && (
+                                  <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through', textDecorationColor: '#dc2626' }}>{originalPriceLabel}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
+                        <span style={{
+                          padding: '10px 18px',
+                          borderRadius: '999px',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                          backgroundColor: link.isBest ? '#2e7d32' : 'transparent',
+                          color: link.isBest ? '#fff' : 'var(--cm-accent, #2563eb)',
+                          border: link.isBest ? 'none' : '1.5px solid var(--cm-accent, #2563eb)',
+                        }}>
+                          {link.isBest ? 'View tickets' : 'Check price'} →
+                        </span>
                       </a>
                     );
                   })}
