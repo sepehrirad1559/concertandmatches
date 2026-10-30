@@ -3305,7 +3305,7 @@ export default function App() {
                       Buy on {link.name}
                     </span>
                     {originalPriceLabel && (
-                      <span style={{ fontSize: '12px', fontWeight: 600, textDecoration: 'line-through', opacity: 0.7, whiteSpace: 'nowrap' }}>{originalPriceLabel}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, textDecoration: 'line-through', textDecorationColor: '#dc2626', opacity: 0.7, whiteSpace: 'nowrap' }}>{originalPriceLabel}</span>
                     )}
                     {priceLabel && (
                       <span style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>From {priceLabel}</span>
@@ -3398,7 +3398,7 @@ export default function App() {
                                 </span>
                               )}
                               {originalPriceLabel && (
-                                <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through' }}>{originalPriceLabel}</span>
+                                <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through', textDecorationColor: '#dc2626' }}>{originalPriceLabel}</span>
                               )}
                               {priceLabel && (
                                 <span style={{ fontWeight: 'bold', fontSize: '17px', color: originalPriceLabel ? '#2e7d32' : '#111' }}>{priceLabel}</span>
