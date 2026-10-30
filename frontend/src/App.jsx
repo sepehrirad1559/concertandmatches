@@ -3112,7 +3112,7 @@ export default function App() {
   // resolved to a full event object yet)
   if (eventIdFromUrl && detailLoading && !selectedEvent) {
     return (
-      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <div className="cm-event-page" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
           <BrandLink onClick={handleFooterGoHome} />
           <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
@@ -3126,7 +3126,7 @@ export default function App() {
 
   if (eventIdFromUrl && detailError && !selectedEvent) {
     return (
-      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <div className="cm-event-page" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <nav style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
           <BrandLink onClick={handleFooterGoHome} />
           <button onClick={handleFooterGoHome} style={{ padding: '8px 16px', cursor: 'pointer' }}>
@@ -3145,14 +3145,14 @@ export default function App() {
   if (selectedEvent) {
     const findTicketsLinks = buildFindTicketsLinks(selectedEvent);
     return (
-      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <div className="cm-event-page" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         {/* Same dark-navy band treatment as the redesigned homepage hero, so
             the event page's top zone matches it instead of sitting on the
             plain page background. The nav keeps its own white card on top
             of the band (same pattern as the homepage nav) so the brand
             logo/text stay fully readable regardless of the band color. */}
-        <div style={{ background: NAVY_BG, borderRadius: '28px', padding: '20px', marginBottom: '24px' }}>
-          <nav style={{
+        <div className="cm-event-band" style={{ background: NAVY_BG, borderRadius: '28px', padding: '20px', marginBottom: '24px' }}>
+          <nav className="cm-event-nav" style={{
             display: 'flex',
             flexDirection: 'column',
             gap: '10px',
@@ -3175,15 +3175,16 @@ export default function App() {
           </nav>
         </div>
 
-        <div style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid var(--cm-border)', padding: '30px', borderRadius: 'var(--cm-radius)', backgroundColor: '#fff', boxShadow: 'var(--cm-shadow-sm)' }}>
+        <div className="cm-event-card" style={{ maxWidth: '600px', margin: '0 auto', border: '1px solid var(--cm-border)', padding: '30px', borderRadius: 'var(--cm-radius)', backgroundColor: '#fff', boxShadow: 'var(--cm-shadow-sm)' }}>
           {((hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)) && (
             <img
               src={(hasRealEventPhoto(selectedEvent) ? selectedEvent.image_url : null) || selectedEventEntityImage || pickFallbackImage(selectedEvent, categoryFallbackImages)}
               alt={selectedEvent.title}
+              className="cm-event-photo"
               style={{ width: '100%', borderRadius: '12px', marginBottom: '20px', objectFit: 'cover', maxHeight: '300px' }}
             />
           )}
-          <h1 style={{ color: '#141b2d' }}>{selectedEvent.title}</h1>
+          <h1 className="cm-event-title" style={{ color: '#141b2d' }}>{selectedEvent.title}</h1>
           {selectedEvent.artist_name && (
             <p style={{ fontSize: '18px', color: '#666' }}>{selectedEvent.artist_name}</p>
           )}
@@ -3246,7 +3247,7 @@ export default function App() {
                         state: selectedEvent?.state,
                       });
                     }}
-                    className="cm-btn"
+                    className="cm-btn cm-event-buy-btn"
                     style={{
                       display: 'flex',
                       flexDirection: 'row',
@@ -3288,7 +3289,7 @@ export default function App() {
                 <p style={{ fontSize: '14px', color: '#666', marginBottom: '14px' }}>
                   ConcertAndMatches doesn't sell tickets directly. This event is listed with more than one seller — click through below to buy:
                 </p>
-                <div style={{ border: '1px solid #eee', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#fff' }}>
+                <div className="cm-event-seller-list" style={{ border: '1px solid #eee', borderRadius: '14px', overflow: 'hidden', backgroundColor: '#fff' }}>
                   {findTicketsLinks.map((link, i) => {
                     const linkPrices = [...new Set(
                       [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
@@ -3312,6 +3313,7 @@ export default function App() {
                             state: selectedEvent?.state,
                           });
                         }}
+                        className="cm-event-seller-row"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
