@@ -3386,9 +3386,6 @@ export default function App() {
                                 <span style={{ fontWeight: 'bold', fontSize: '17px', color: originalPriceLabel ? '#2e7d32' : '#111' }}>{priceLabel}</span>
                               )}
                             </div>
-                            {priceLabel && (
-                              <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.03em' }}>STARTING AT</span>
-                            )}
                           </div>
                         </div>
                       </a>
