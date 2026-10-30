@@ -3116,6 +3116,15 @@ export default function App() {
     bumpCategoryInterest(event.category);
     setSelectedEvent(event);
     navigate(buildEventPath(event));
+    // Client-side route changes don't reset scroll position the way a full
+    // page load does, so clicking "Find Your Ticket" while scrolled down
+    // the homepage left the visitor looking at whatever happened to be at
+    // that same scroll offset on the (much shorter) event page -- often
+    // its footer, nowhere near the seller list. Jump to the top instantly
+    // (not smooth -- this is a page change, not an in-page scroll) so the
+    // event page always opens where the seller-comparison list actually
+    // is.
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   const handleLoadMore = async () => {
