@@ -564,8 +564,11 @@ const SOURCE_DOT_COLOR = {
 const TICKETNETWORK_DISCOUNT_RATE = 0.2;
 
 function getDisplayPriceLabels(link) {
+  // p > 0 (not just != null) excludes Ticketmaster's occasional $0
+  // priceRanges data quirk (see backend/src/utils/pricing.js's header
+  // comment) from ever rendering as a fake "$0" seller price here.
   const rawPrices = [...new Set(
-    [link.minPrice, link.maxPrice].filter((p) => p != null).map((p) => Number(p))
+    [link.minPrice, link.maxPrice].filter((p) => p != null && Number(p) > 0).map((p) => Number(p))
   )].sort((a, b) => a - b);
   const isDiscounted = link.source === 'ticketnetwork' && rawPrices.length > 0;
   const shownPrices = isDiscounted

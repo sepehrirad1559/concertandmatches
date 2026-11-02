@@ -9,6 +9,7 @@ import {
   nearbyCities,
 } from '../services/seoEngine.js';
 import { topArtistCityCombos, guideSlugify } from './guides.js';
+import { displayPriceForOffer, cheapestDisplayPrice, discountFooterNote } from '../utils/pricing.js';
 
 const router = express.Router();
 
@@ -67,8 +68,19 @@ function notFoundPage(label) {
 function eventRows(events) {
   return events.map((e) => {
     const eventUrl = `${SITE_ORIGIN}/event/${e.id}-${xmlEscape(slugifyForEvent(e))}`;
-    const priced = e.offers.filter((o) => o.min_price != null).sort((a, b) => Number(a.min_price) - Number(b.min_price));
-    const offerList = priced.map((o) => `${xmlEscape(o.source)}: $${Number(o.min_price).toFixed(0)}`).join(' · ');
+    // displayPriceForOffer (backend/src/utils/pricing.js) excludes
+    // Ticketmaster's occasional $0 priceRanges data quirk and applies the
+    // real, ongoing 20% TicketNetwork discount -- see that file's header
+    // comment for the full writeup of both.
+    const priced = e.offers
+      .map((o) => ({ o, d: displayPriceForOffer(o) }))
+      .filter((x) => x.d)
+      .sort((a, b) => a.d.price - b.d.price);
+    const offerList = priced
+      .map(({ o, d }) => (d.isDiscounted
+        ? `${xmlEscape(o.source)}: $${d.price} <del>$${d.originalPrice.toFixed(0)}</del> (20% off)`
+        : `${xmlEscape(o.source)}: $${d.price}`))
+      .join(' · ');
     return `<tr>
       <td>${xmlEscape(formatDate(e.date))}</td>
       <td>${xmlEscape(e.title || e.artist_name || '')}</td>
@@ -81,9 +93,12 @@ function eventRows(events) {
 }
 
 function cheapestPrice(events) {
-  const priced = events.filter((e) => e.best_price != null);
-  if (priced.length === 0) return null;
-  return priced.reduce((a, b) => (Number(a.best_price) <= Number(b.best_price) ? a : b)).best_price;
+  // Recomputed from each event's own offers via cheapestDisplayPrice
+  // (backend/src/utils/pricing.js) rather than event.best_price, so the
+  // headline "starting from $X" always matches the discounted,
+  // non-zero price actually shown in the table below it.
+  const prices = events.map((e) => cheapestDisplayPrice(e)).filter((p) => p != null);
+  return prices.length > 0 ? Math.min(...prices) : null;
 }
 
 // Renders real Google Autocomplete completions (see
@@ -209,7 +224,8 @@ router.get('/artists/:slug', async (req, res) => {
       bodyHtml: `<table><thead><tr><th>Date</th><th>Show</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${cityLinks ? `<h2>Cities on this tour</h2><ul>${cityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
-      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
+      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
+      ${discountFooterNote(page.events)}`,
       jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
@@ -313,7 +329,8 @@ async function renderCityVariant(req, res, variant) {
       ${guideLinks ? `<h2>Price guides for ${xmlEscape(page.city)}</h2><ul>${guideLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
       ${nearbyLinks ? `<h2>${label} near ${xmlEscape(page.city)}</h2><ul>${nearbyLinks}</ul>` : ''}
-      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
+      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
+      ${discountFooterNote(page.events)}`,
       jsonLd,
     });
     // Public edge cache (Vercel honors this on its rewrite-proxy to this
@@ -383,7 +400,8 @@ router.get('/venues/:slug', async (req, res) => {
       breadcrumbHtml: breadcrumb([{ label: 'Venues', href: '/venues' }, { label: page.venueName }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p><a href="/cities/${xmlEscape(citySlugify(`${page.city || ''}-${page.state || ''}`))}/events">More events in ${xmlEscape(page.city || '')}</a></p>
-      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
+      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
+      ${discountFooterNote(page.events)}`,
       jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
@@ -442,7 +460,8 @@ router.get('/leagues/:slug', async (req, res) => {
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events.slice(0, 300))}</tbody></table>
       ${cityLinks ? `<h2>Cities with ${xmlEscape(page.label)} events</h2><ul>${cityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
-      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
+      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
+      ${discountFooterNote(page.events)}`,
       jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
@@ -499,7 +518,8 @@ router.get('/teams/:slug', async (req, res) => {
       bodyHtml: `<table><thead><tr><th>Date</th><th>Matchup</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p>Team names on this page are extracted from matchup listings (e.g. "Team A at Team B") and may occasionally be imprecise.</p>
       ${confirmedSearchesSection(page.confirmedSearches)}
-      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>`,
+      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
+      ${discountFooterNote(page.events)}`,
       jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');

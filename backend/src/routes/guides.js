@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool } from '../index.js';
 import { mergeEventsAcrossSources } from './events.js';
+import { displayPriceForOffer, hasDiscountedOffer, discountFooterNote } from '../utils/pricing.js';
 
 const router = express.Router();
 
@@ -18,6 +19,13 @@ const router = express.Router();
 // hand-written filler copy. A combo with zero upcoming events simply
 // doesn't get a page (see topArtistCityCombos below), so there's no
 // thin/empty content for Google to penalize.
+//
+// Every displayed price goes through displayPriceForOffer()
+// (backend/src/utils/pricing.js): it filters out non-positive prices (a
+// real Ticketmaster data quirk that used to show as a fake "$0" on these
+// pages) and applies the same real, ongoing 20% TicketNetwork discount
+// the event detail page already shows — so a page's own headline price
+// and FAQ answers never disagree with what buyers see one click later.
 
 function xmlEscape(str) {
   return String(str ?? '')
@@ -202,7 +210,15 @@ router.get('/guide/:slug', async (req, res) => {
     }
 
     const events = await eventsForArtistCity(match.artist_name, match.city);
-    if (events.length === 0) {
+
+    // Every offer's display price goes through displayPriceForOffer(),
+    // which both excludes non-positive prices (the $0 Ticketmaster data
+    // quirk — see this file's top comment) and applies the real 20%
+    // TicketNetwork discount. A combo can pass eventsForArtistCity's own
+    // `min_price != null` filter yet still have nothing left once $0
+    // offers are excluded here, so this is checked again, separately.
+    const allDisplayPrices = events.flatMap((e) => e.offers.map(displayPriceForOffer).filter(Boolean).map((d) => d.price));
+    if (events.length === 0 || allDisplayPrices.length === 0) {
       // The combo query and this query can race with a sync job between
       // requests (events selling out / a source dropping below 2 sellers).
       // Fail to a clean 404 rather than rendering an empty, thin page.
@@ -210,7 +226,8 @@ router.get('/guide/:slug', async (req, res) => {
       return;
     }
 
-    const cheapest = events.reduce((a, b) => (Number(a.best_price ?? Infinity) <= Number(b.best_price ?? Infinity) ? a : b));
+    const cheapestPriceNum = Math.min(...allDisplayPrices);
+    const highestPrice = Math.max(...allDisplayPrices);
     const url = `https://www.concertandmatches.com/guide/${xmlEscape(requested)}`;
 
     // Multi- vs. single-seller wording (added 2026-10-06, alongside
@@ -219,15 +236,15 @@ router.get('/guide/:slug', async (req, res) => {
     // guide pages have exactly one seller — saying "compare prices" on a
     // page with one price is actively misleading, so every place that
     // used to assume 2+ sellers now branches on the real count instead.
-    const sourceNames = [...new Set(events.flatMap((e) => e.offers.filter((o) => o.min_price != null).map((o) => o.source)))];
+    const sourceNames = [...new Set(events.flatMap((e) => e.offers.filter((o) => displayPriceForOffer(o)).map((o) => o.source)))];
     const isMultiSource = sourceNames.length >= 2;
 
     const title = isMultiSource
       ? `Cheapest ${match.artist_name} Tickets in ${match.city}${match.state ? `, ${match.state}` : ''} — Compare Prices | ConcertAndMatches`
       : `${match.artist_name} Tickets in ${match.city}${match.state ? `, ${match.state}` : ''} — Dates & Prices | ConcertAndMatches`;
     const description = isMultiSource
-      ? `Compare live ${match.artist_name} ticket prices in ${match.city} across every confirmed seller. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${Number(cheapest.best_price).toFixed(0)}.`
-      : `${match.artist_name} ticket prices and dates in ${match.city}. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${Number(cheapest.best_price).toFixed(0)}.`;
+      ? `Compare live ${match.artist_name} ticket prices in ${match.city} across every confirmed seller. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${cheapestPriceNum.toFixed(0)}.`
+      : `${match.artist_name} ticket prices and dates in ${match.city}. ${events.length} upcoming show${events.length === 1 ? '' : 's'}, starting from $${cheapestPriceNum.toFixed(0)}.`;
 
     // FAQ block (added 2026-10-06) — every answer is computed straight from
     // the same `events` data rendered in the table above, nothing
@@ -242,14 +259,10 @@ router.get('/guide/:slug', async (req, res) => {
     // every number below already exists elsewhere on this same page.
     const nextShow = events[0];
     const soonestDate = formatDate(nextShow.date);
-    const highestPrice = events.reduce(
-      (max, e) => Math.max(max, ...e.offers.filter((o) => o.min_price != null).map((o) => Number(o.min_price))),
-      Number(cheapest.best_price)
-    );
     const faqs = [
       {
         q: `How much are ${match.artist_name} tickets in ${match.city}?`,
-        a: `Prices currently start around $${Number(cheapest.best_price).toFixed(0)}${highestPrice > Number(cheapest.best_price) ? ` and go up to about $${highestPrice.toFixed(0)} depending on seller and seat` : ''}, based on live listings from ${sourceNames.length} confirmed seller${sourceNames.length === 1 ? '' : 's'}.`,
+        a: `Prices currently start around $${cheapestPriceNum.toFixed(0)}${highestPrice > cheapestPriceNum ? ` and go up to about $${highestPrice.toFixed(0)} depending on seller and seat` : ''}, based on live listings from ${sourceNames.length} confirmed seller${sourceNames.length === 1 ? '' : 's'}.`,
       },
       {
         q: `When is ${match.artist_name} next playing in ${match.city}?`,
@@ -262,6 +275,16 @@ router.get('/guide/:slug', async (req, res) => {
           : `This page lists live availability from ${sourceNames[0] || 'a confirmed seller'}. ConcertAndMatches links you through to buy directly on the seller's own site — we don't sell tickets ourselves.`,
       },
     ];
+    // Real, ongoing discount disclosure (added 2026-11-02, at the user's
+    // request) — only added when this page actually has a discounted
+    // TicketNetwork offer, never a blanket claim. Same 20% rate already
+    // shown on the event detail page; see utils/pricing.js.
+    if (events.some(hasDiscountedOffer)) {
+      faqs.push({
+        q: `Is there a discount on ${match.artist_name} tickets in ${match.city}?`,
+        a: `Yes — TicketNetwork tickets for this show are listed at 20% off their regular price. The prices shown above and in the table below already reflect that discount.`,
+      });
+    }
     const faqJsonLd = {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
@@ -275,10 +298,14 @@ router.get('/guide/:slug', async (req, res) => {
 
     const rows = events.map((e) => {
       const eventUrl = `https://www.concertandmatches.com/event/${e.id}-${eventSlug(e)}`;
-      const offerList = e.offers
-        .filter((o) => o.min_price != null)
-        .sort((a, b) => Number(a.min_price) - Number(b.min_price))
-        .map((o) => `${xmlEscape(o.source)}: $${Number(o.min_price).toFixed(0)}`)
+      const priced = e.offers
+        .map((o) => ({ o, d: displayPriceForOffer(o) }))
+        .filter((x) => x.d)
+        .sort((a, b) => a.d.price - b.d.price);
+      const offerList = priced
+        .map(({ o, d }) => (d.isDiscounted
+          ? `${xmlEscape(o.source)}: $${d.price} <del>$${d.originalPrice.toFixed(0)}</del> (20% off)`
+          : `${xmlEscape(o.source)}: $${d.price}`))
         .join(' · ');
       return `<tr>
         <td>${xmlEscape(formatDate(e.date))}</td>
@@ -324,6 +351,7 @@ router.get('/guide/:slug', async (req, res) => {
 <tbody>${rows}</tbody>
 </table>
 <p>Prices update as sellers change theirs — always confirm the final price on the seller's site before buying. ConcertAndMatches doesn't sell tickets directly; we list availability from authorized sellers and link you through to buy.</p>
+${discountFooterNote(events)}
 ${faqHtml}
 <p><a href="/artists/${xmlEscape(slugify(match.artist_name))}">All ${xmlEscape(match.artist_name)} tickets</a> · <a href="/cities/${xmlEscape(slugify(`${match.city}-${match.state || ''}`))}/concerts">All concerts in ${xmlEscape(match.city)}</a> · <a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches</a></p>
 </body>

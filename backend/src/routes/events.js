@@ -160,7 +160,7 @@ function mergeEventsAcrossSources(rows) {
   // frontend shows it as its own unpriced "Visit Official Site" link) —
   // it's just never eligible to win the price comparison.
   for (const event of merged) {
-    const priced = event.offers.filter((o) => o.min_price != null && o.source !== 'official');
+    const priced = event.offers.filter((o) => o.min_price != null && Number(o.min_price) > 0 && o.source !== 'official'); // > 0 excludes Ticketmaster's occasional $0 priceRanges data quirk (see backend/src/utils/pricing.js header comment) from ever winning best_price
     if (priced.length > 0) {
       const best = priced.reduce((a, b) => (Number(a.min_price) <= Number(b.min_price) ? a : b));
       const worst = priced.reduce((a, b) => (Number(a.min_price) >= Number(b.min_price) ? a : b));
@@ -380,7 +380,7 @@ function applyLocationDateOrder(events, hasCoords) {
 // change cannot alter the behavior of the merge the /discover, /detail and
 // sitemap paths all still depend on.
 function applyPriceComparisonFields(event) {
-  const priced = event.offers.filter((o) => o.min_price != null && o.source !== 'official');
+  const priced = event.offers.filter((o) => o.min_price != null && Number(o.min_price) > 0 && o.source !== 'official'); // > 0 excludes Ticketmaster's occasional $0 priceRanges data quirk (see backend/src/utils/pricing.js header comment) from ever winning best_price
   if (priced.length === 0) {
     event.best_price = null;
     event.best_source = null;
