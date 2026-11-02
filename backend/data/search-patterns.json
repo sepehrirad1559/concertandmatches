@@ -1,6 +1,6 @@
 {
   "source": "Google Autocomplete Suggest API (suggestqueries.google.com) — real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model — every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-11-01T00:00:00Z",
+  "pulledAt": "2026-11-02T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -32855,6 +32855,813 @@
         "willie nelson new braunfels concert tickets"
       ],
       "pulledAt": "2026-11-01T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "hadestown-touring",
+      "seed": "Hadestown (Touring) tickets",
+      "suggestions": [
+        "hadestown touring tickets",
+        "hadestown tour tickets uk",
+        "hadestown tour ticket prices",
+        "hadestown tour 2026 tickets",
+        "hadestown national tour tickets",
+        "hadestown tour rush tickets",
+        "hadestown broadway tour tickets",
+        "hadestown tour 2027 tickets",
+        "hadestown tour dublin tickets",
+        "hadestown uk tour tickets price"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "beetlejuice-touring",
+      "seed": "Beetlejuice (Touring) tickets",
+      "suggestions": [
+        "beetlejuice touring tickets",
+        "beetlejuice uk tour tickets",
+        "beetlejuice tour 2026 tickets",
+        "beetlejuice broadway tour tickets",
+        "beetlejuice musical tour tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "mcneese-cowboys",
+      "seed": "McNeese Cowboys tickets",
+      "suggestions": [
+        "mcneese cowboys football tickets",
+        "mcneese cowboys basketball tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "bradley-braves",
+      "seed": "Bradley Braves tickets",
+      "suggestions": [
+        "bradley braves tickets",
+        "bradley basketball tickets",
+        "bradley university tickets",
+        "bradley braves ticket office",
+        "bradley braves basketball tickets",
+        "bradley braves season tickets",
+        "braves tickets age limit"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "jacksonville-dolphins",
+      "seed": "Jacksonville Dolphins tickets",
+      "suggestions": [
+        "jacksonville university tickets",
+        "is there a dolphin at the miami dolphins stadium",
+        "dolphin show ticket price"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "seton-hall-pirates",
+      "seed": "Seton Hall Pirates tickets",
+      "suggestions": [
+        "seton hall pirates tickets",
+        "seton hall pirates basketball tickets",
+        "seton hall pirates men's basketball tickets",
+        "opening day pirates tickets",
+        "how much are pirates season tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "creighton-bluejays",
+      "seed": "Creighton Bluejays tickets",
+      "suggestions": [
+        "creighton bluejays tickets",
+        "creighton university tickets",
+        "how to attract cardinals and bluejays"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "depaul-blue-demons",
+      "seed": "DePaul Blue Demons tickets",
+      "suggestions": [
+        "depaul blue demons tickets",
+        "depaul blue demons basketball tickets",
+        "depaul blue demons men's basketball tickets",
+        "depaul blue demons women's basketball tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "high-point-panthers",
+      "seed": "High Point Panthers tickets",
+      "suggestions": [
+        "high point panthers tickets",
+        "high point panthers basketball tickets",
+        "panthers fantasy points"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "north-florida-ospreys-mens-basketball",
+      "seed": "North Florida Ospreys Mens Basketball tickets",
+      "suggestions": [
+        "north florida ospreys men's basketball vs florida gators men's basketball tickets",
+        "north florida ospreys men's basketball vs tennessee volunteers men's basketball tickets",
+        "north florida ospreys men's basketball vs dayton flyers men's basketball tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "pepperdine-waves",
+      "seed": "Pepperdine Waves tickets",
+      "suggestions": [
+        "pepperdine university tickets",
+        "pepperdine waves cafe hours",
+        "pepperdine ea acceptance rate",
+        "pepperdine pool hours"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "providence-friars",
+      "seed": "Providence Friars tickets",
+      "suggestions": [
+        "providence friars tickets",
+        "providence friars tickets hockey",
+        "providence friars tickets basketball",
+        "pc friars tickets",
+        "pc friars tickets basketball",
+        "providence college tickets",
+        "providence college tickets basketball",
+        "providence college tickets hockey",
+        "providence religious meaning"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "xavier-musketeers",
+      "seed": "Xavier Musketeers tickets",
+      "suggestions": [
+        "xavier basketball tickets",
+        "xavier musketeers schedule"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "marquette-golden-eagles",
+      "seed": "Marquette Golden Eagles tickets",
+      "suggestions": [
+        "marquette golden eagles tickets",
+        "marquette golden eagles basketball tickets",
+        "marquette golden eagles men's basketball tickets",
+        "season eagles tickets cost",
+        "can you buy eagles tickets at the stadium"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "wichita-state-shockers",
+      "seed": "Wichita State Shockers tickets",
+      "suggestions": [
+        "wichita state shockers tickets",
+        "wichita state shockers ticket office",
+        "wichita state shockers basketball tickets",
+        "wichita state shockers baseball tickets",
+        "wichita state shockers men's basketball tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "helium-comedy-club-buffalo-buffalo",
+      "seed": "Helium Comedy Club - Buffalo tickets",
+      "suggestions": [
+        "helium comedy club buffalo tickets",
+        "helium comedy club hours",
+        "helium comedy club classes",
+        "helium comedy club promo code"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "covenant-health-park-knoxville",
+      "seed": "Covenant Health Park tickets",
+      "suggestions": [
+        "covenant health park tickets",
+        "covenant health park ticket office",
+        "covenant health park smokies tickets",
+        "savannah bananas covenant health park tickets",
+        "covenant health park christmas lights tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-phoenix-theatre-company-judith-hardes-theatre-phoenix",
+      "seed": "The Phoenix Theatre Company - Judith Hardes Theatre tickets",
+      "suggestions": [
+        "phoenix theatre company tickets",
+        "phoenix stage company tickets",
+        "phoenix theatre company discount tickets",
+        "phoenix theatre company season tickets",
+        "phoenix theatre company student tickets",
+        "phoenix theater company bogo tickets",
+        "phoenix theater company true tickets",
+        "phoenix theatre company powered by true tickets",
+        "the phoenix theatre company stephenson theatre tickets",
+        "phoenix theatre box office hours"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "secret-cinema-london",
+      "seed": "Secret Cinema tickets",
+      "suggestions": [
+        "secret cinema tickets",
+        "secret cinema tickets london",
+        "secret cinema tickets 2026",
+        "secret cinema ticket prices",
+        "secret cinema cost",
+        "secret cinema barbie tickets",
+        "secret cinema grease tickets",
+        "secret cinema access tickets",
+        "secret cinema book tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ford-center-in-evansville",
+      "seed": "Ford Center - IN tickets",
+      "suggestions": [
+        "ford center evansville tickets",
+        "ford center evansville ticket office",
+        "ford center evansville ticket office hours"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-ballpark-at-america-first-square-south-jordan",
+      "seed": "The Ballpark at America First Square tickets",
+      "suggestions": [
+        "the ballpark at america first square tickets",
+        "holiday lights at the ballpark at america first square tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "gas-south-theater-duluth",
+      "seed": "Gas South Theater tickets",
+      "suggestions": [
+        "gas south theater tickets",
+        "gas south theater box office",
+        "gas south theater parking tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "theater-des-westens-berlin",
+      "seed": "Theater Des Westens tickets",
+      "suggestions": [
+        "theater des westens tickets",
+        "theater des westens tickets romeo und julia",
+        "theater des westens tickets kaufen",
+        "theater des westens tickets vor ort kaufen",
+        "theater des westens tickets die amme",
+        "theater des westens tickets heute",
+        "theater des westens tickets wir sind am leben",
+        "theater des westens spielplan 2026 tickets",
+        "theater des westens berlin tickets",
+        "stage theater des westens tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "littlejohn-coliseum-clemson",
+      "seed": "Littlejohn Coliseum tickets",
+      "suggestions": [
+        "littlejohn coliseum tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "devos-performance-hall-grand-rapids",
+      "seed": "DeVos Performance Hall tickets",
+      "suggestions": [
+        "devos performance hall tickets",
+        "devos performance hall season tickets",
+        "devos performance hall rush tickets",
+        "devos performance hall lion king tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "avista-stadium-spokane",
+      "seed": "Avista Stadium tickets",
+      "suggestions": [
+        "avista stadium tickets",
+        "avista stadium ticket office"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "urbanite-theatre-sarasota",
+      "seed": "Urbanite Theatre tickets",
+      "suggestions": [
+        "urbanite theatre tickets",
+        "urbanite theatre tickets sarasota",
+        "urbanite theatre tickets price"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "comedy-off-broadway-lexington",
+      "seed": "Comedy Off Broadway tickets",
+      "suggestions": [
+        "comedy off broadway tickets",
+        "comedy off broadway tickets lexington ky",
+        "comedy off broadway promo code",
+        "comedy off broadway shows"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "numerica-veterans-arena-spokane",
+      "seed": "Numerica Veterans Arena tickets",
+      "suggestions": [
+        "numerica veterans arena tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "buckhead-theatre-atlanta",
+      "seed": "Buckhead Theatre tickets",
+      "suggestions": [
+        "buckhead theatre tickets",
+        "buckhead theater concerts"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "mississippi-studios-portland",
+      "seed": "Mississippi Studios tickets",
+      "suggestions": [
+        "mississippi studios tickets",
+        "mississippi studios portland tickets",
+        "mississippi studios events"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "centennial-hall-az-tucson",
+      "seed": "Centennial Hall - AZ tickets",
+      "suggestions": [
+        "centennial hall tucson tickets",
+        "centennial hall tucson ticket office",
+        "centennial hall tucson az",
+        "centennial hall tucson az seating chart",
+        "centennial hall tucson az parking",
+        "centennial hall tucson az directions",
+        "centennial hall tucson az capacity",
+        "centennial hall tucson arizona tickets",
+        "centennial hall tucson season tickets",
+        "centennial hall tucson student tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "funny-bone-comedy-club-albany-albany",
+      "seed": "Funny Bone Comedy Club - Albany tickets",
+      "suggestions": [
+        "funny bone comedy club albany ny",
+        "hotels near funny bone comedy club albany ny",
+        "funny bone comedy club promo code",
+        "funny bone comedy club events",
+        "funny bone comedy club locations",
+        "funny bone albany menu"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "american-music-theatre-lancaster",
+      "seed": "American Music Theatre tickets",
+      "suggestions": [
+        "american music theatre lancaster tickets",
+        "american music theatre tickets lancaster pa",
+        "american music theatre tickets price lancaster pa",
+        "american music theater concerts",
+        "american music theatre lancaster pa schedule"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "royal-theatre-victoria-bc-victoria",
+      "seed": "Royal Theatre - Victoria, BC tickets",
+      "suggestions": [
+        "royal theatre victoria bc tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "orpheum-theatre-san-francisco-san-francisco",
+      "seed": "Orpheum Theatre - San Francisco tickets",
+      "suggestions": [
+        "orpheum theatre san francisco tickets",
+        "orpheum theatre san francisco tickets discount",
+        "orpheum theatre san francisco tickets online",
+        "orpheum theatre san francisco tickets price",
+        "orpheum theatre san francisco rush tickets",
+        "orpheum theater san francisco season tickets",
+        "orpheum theater san francisco official website tickets",
+        "orpheum theater san francisco bag policy",
+        "what to wear to orpheum theater san francisco"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ed-mirvish-theatre-toronto",
+      "seed": "Ed Mirvish Theatre tickets",
+      "suggestions": [
+        "ed mirvish theatre tickets",
+        "ed mirvish theatre rush tickets",
+        "caa ed mirvish theatre tickets",
+        "ed mirvish theatre season tickets",
+        "ed mirvish theatre last minute tickets",
+        "ed mirvish theatre box office hours",
+        "ed mirvish theatre customer service",
+        "ed mirvish theatre location",
+        "ed mirvish theatre phone number"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "fox-theatre-atlanta-atlanta",
+      "seed": "Fox Theatre Atlanta tickets",
+      "suggestions": [
+        "fox theatre atlanta tickets",
+        "fox theatre atlanta tickets price",
+        "fox theatre atlanta tickets discount",
+        "fox theatre atlanta ticket office",
+        "fox theatre atlanta ga",
+        "fox theatre atlanta ga seating chart",
+        "fox theatre atlanta concert capacity",
+        "fox theatre atlanta concert",
+        "fox theatre atlanta ga capacity",
+        "fox theatre atlanta ga schedule"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "cross-insurance-arena-portland",
+      "seed": "Cross Insurance Arena tickets",
+      "suggestions": [
+        "cross insurance arena tickets",
+        "cross insurance center bangor tickets",
+        "cross insurance arena ticket office",
+        "cross insurance arena portland tickets",
+        "cross insurance arena concerts",
+        "cross insurance arena events",
+        "cross insurance arena capacity",
+        "cross insurance arena jobs"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ppl-center-allentown",
+      "seed": "PPL Center tickets",
+      "suggestions": [
+        "ppl center tickets",
+        "ppl center ticket office",
+        "ppl center journey tickets",
+        "ppl center phantoms tickets",
+        "jason aldean ppl center tickets",
+        "ppl center concerts",
+        "ppl center upcoming events"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "first-interstate-center-for-the-arts-spokane",
+      "seed": "First Interstate Center for the Arts tickets",
+      "suggestions": [
+        "first interstate center for the arts tickets",
+        "first interstate center for the arts season tickets",
+        "first interstate center for the arts student tickets",
+        "first interstate center for the arts box office",
+        "first interstate center for the arts box office phone number",
+        "first interstate center for the arts box office hours"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "florida-theatre-jacksonville-jacksonville",
+      "seed": "Florida Theatre Jacksonville tickets",
+      "suggestions": [
+        "florida theatre jacksonville tickets",
+        "florida theatre jacksonville fl",
+        "florida theatre jacksonville fl capacity",
+        "florida theater jacksonville fl seating chart",
+        "florida theater jacksonville fl parking",
+        "florida theatre events jacksonville fl",
+        "florida theatre inc jacksonville fl"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "jersey-mike-s-arena-piscataway",
+      "seed": "Jersey Mike's Arena tickets",
+      "suggestions": [
+        "jersey mike's arena tickets",
+        "jersey mike's arena ticket office",
+        "jersey mike's arena parking tickets",
+        "jersey mike's arena parking tickets price"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "palace-theatre-manchester-nh-manchester",
+      "seed": "Palace Theatre - Manchester, NH tickets",
+      "suggestions": [
+        "palace theatre manchester nh tickets",
+        "palace theatre manchester new hampshire tickets price",
+        "palace theatre manchester nh box office hours",
+        "palace theatre manchester bag policy"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "lee-penny-anderson-arena-saint-paul",
+      "seed": "Lee & Penny Anderson Arena tickets",
+      "suggestions": [
+        "lee and penny anderson arena tickets",
+        "lee and penny anderson arena season tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "antone-s-nightclub-austin",
+      "seed": "Antone's Nightclub tickets",
+      "suggestions": [
+        "antone's nightclub events"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "helium-comedy-club-st-louis-st-louis",
+      "seed": "Helium Comedy Club - St. Louis tickets",
+      "suggestions": [
+        "helium comedy club st louis tickets",
+        "helium comedy club promo code"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "eccles-theater-salt-lake-city-salt-lake-city",
+      "seed": "Eccles Theater - Salt Lake City tickets",
+      "suggestions": [
+        "eccles theater salt lake city tickets",
+        "eccles theater salt lake city season tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "grand-rapids-civic-theatre-grand-rapids",
+      "seed": "Grand Rapids Civic Theatre tickets",
+      "suggestions": [
+        "grand rapids civic theatre tickets",
+        "grand rapids civic theatre box office",
+        "grand rapids civic theatre season tickets",
+        "grand rapids civic theatre box office hours",
+        "grand rapids civic theatre & school of theatre arts tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "dizzys-club-coca-cola-new-york",
+      "seed": "Dizzys Club Coca-Cola tickets",
+      "suggestions": [
+        "dizzy's club coca cola tickets",
+        "dizzy's club dress code"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "milwaukee-improv-brookfield",
+      "seed": "Milwaukee Improv tickets",
+      "suggestions": [
+        "milwaukee improv tickets",
+        "milwaukee improv tickets price",
+        "milwaukee improv free tickets",
+        "milwaukee improv vip tickets",
+        "milwaukee improv $5 tickets",
+        "milwaukee improv free tickets promo code"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "lexington-opera-house-lexington",
+      "seed": "Lexington Opera House tickets",
+      "suggestions": [
+        "lexington opera house tickets",
+        "lexington opera house tickets price",
+        "lexington opera house ticket office",
+        "lexington opera house ticket manager",
+        "lexington opera house season tickets",
+        "lexington opera house season tickets price",
+        "lexington opera house nutcracker tickets",
+        "lexington opera house discount tickets",
+        "lexington opera house student tickets",
+        "lexington opera house season tickets 2025"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "four-winds-field-at-coveleski-stadium-south-bend",
+      "seed": "Four Winds Field at Coveleski Stadium tickets",
+      "suggestions": [
+        "four winds field at coveleski stadium tickets",
+        "four winds field concerts",
+        "four winds field events"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "leeds-unknown",
+      "seed": "Leeds concert tickets",
+      "suggestions": [
+        "leeds concert tickets",
+        "leeds gig tickets",
+        "leeds castle concert tickets",
+        "leeds castle concert tickets 2026",
+        "pitbull concert leeds tickets",
+        "dbe leeds concert tickets",
+        "leeds castle concert tickets price",
+        "leeds concerts 2026 tickets",
+        "leeds concerts 2025 tickets",
+        "leeds minster candlelight concert tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "morrison-co",
+      "seed": "Morrison concert tickets",
+      "suggestions": [
+        "van morrison concert tickets",
+        "james morrison concert tickets",
+        "matthew morrison concert tickets",
+        "van morrison concert tickets 2026",
+        "carla morrison concert tickets",
+        "james morrison liverpool concert tickets",
+        "morrison colorado concerts"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "wilson-nc",
+      "seed": "Wilson concert tickets",
+      "suggestions": [
+        "wilson concert tickets",
+        "lainey wilson concert tickets",
+        "anne wilson concert tickets",
+        "charlie wilson concert tickets",
+        "lainey wilson concert tickets 2026",
+        "lainey wilson concert tickets 2025",
+        "stephen wilson jr concert tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "hollywood-fl",
+      "seed": "Hollywood concert tickets",
+      "suggestions": [
+        "hollywood tour tickets",
+        "hollywood bowl concert tickets",
+        "hollywood undead concert tickets",
+        "hollywood casino concert tickets",
+        "planet hollywood concert tickets",
+        "hard rock hollywood concert tickets",
+        "planet hollywood concerts"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "kamloops-bc",
+      "seed": "Kamloops concert tickets",
+      "suggestions": [
+        "candlelight concert kamloops tickets",
+        "kamloops rock choir concert tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "charleston-wv",
+      "seed": "Charleston concert tickets",
+      "suggestions": [
+        "charleston concert tickets",
+        "charleston sc concert tickets",
+        "charleston wv concert tickets",
+        "pitbull charleston concert tickets",
+        "charleston candlelight concerts tickets",
+        "charleston concerts 2025 tickets",
+        "ella langley charleston concert tickets",
+        "charleston sc concerts",
+        "charleston arena concerts",
+        "charleston concert schedule"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "moline-il",
+      "seed": "Moline concert tickets",
+      "suggestions": [
+        "ella langley moline concert tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "eastlake-oh",
+      "seed": "Eastlake concert tickets",
+      "suggestions": [
+        "east lake tour tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "west-chester-oh",
+      "seed": "West Chester concert tickets",
+      "suggestions": [
+        "west chester university christmas concert 2025 tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "saint-charles-mo",
+      "seed": "Saint Charles concert tickets",
+      "suggestions": [
+        "st charles church concert tickets",
+        "st charles church vienna concert tickets"
+      ],
+      "pulledAt": "2026-11-02T00:00:00Z"
     }
   ]
 }
