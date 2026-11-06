@@ -16,6 +16,8 @@ import prerenderRoutes from './routes/prerender.js';
 import guidesRoutes from './routes/guides.js';
 import seoPagesRoutes from './routes/seoPages.js';
 import contentPagesRoutes from './routes/contentPages.js';
+import authRoutes from './routes/auth.js';
+import favoritesRoutes from './routes/favorites.js';
 
 import { logProviderSync } from './utils/syncLog.js';
 
@@ -172,6 +174,12 @@ res.json({ status: 'OK', timestamp: new Date().toISOString() });
 app.use('/api/events', eventsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/clicks', clicksRoutes);
+// Real accounts/favorites, added 2026-11-06 -- see routes/auth.js and
+// routes/favorites.js for the full writeup (previously Sign In/Sign Up/
+// Favorites in the nav were an honest "coming soon" placeholder with no
+// accounts system behind them at all).
+app.use('/api/auth', authRoutes);
+app.use('/api/favorites', favoritesRoutes);
 // /go/event/:id IS the frontend's real "Buy Your Ticket" link (built in
 // App.jsx via GO_BASE) — for a ticketmaster.com event it redirects straight
 // through the real revenue-earning Impact.com tracked affiliate link. It

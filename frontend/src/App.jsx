@@ -1663,7 +1663,7 @@ function TeamTiles({ category, onSelectTeam, onClose }) {
 // the event-discovery sections below (Popular/Recommended/Trending/by-
 // category) can share the exact same card instead of duplicating this
 // markup seven more times.
-function EventCard({ event, onSelect, fallbackImageUrl }) {
+function EventCard({ event, onSelect, fallbackImageUrl, isFavorited, onToggleFavorite }) {
   const priceLabel = (event.min_price != null || event.max_price != null) ? formatPrice(event) : null;
   const fromPriceRaw = event.min_price != null ? event.min_price : event.max_price;
   // Same TicketNetwork sitewide 20% price drop as the event detail page
@@ -1774,6 +1774,31 @@ function EventCard({ event, onSelect, fallbackImageUrl }) {
           }}>
             🚗 {formatDistance(event.distance_km)}
           </span>
+        )}
+        {onToggleFavorite && (
+          <button
+            type="button"
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(event); }}
+            style={{
+              position: 'absolute',
+              bottom: '10px',
+              right: '10px',
+              width: '30px',
+              height: '30px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: 'rgba(0,0,0,0.55)',
+              color: isFavorited ? '#e0245e' : '#fff',
+              fontSize: '16px',
+              lineHeight: 1,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            {isFavorited ? '♥' : '♡'}
+          </button>
         )}
       </div>
       <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', flex: '1' }}>
@@ -2380,6 +2405,136 @@ export default function App() {
   // know that, rather than pretending those flows exist. One shared
   // message string drives the same modal for all three entry points.
   const [authNoticeMessage, setAuthNoticeMessage] = useState('');
+
+  // Real accounts (added 2026-11-06, replacing the "coming soon" notice
+  // above for Sign In/Sign Up/Favorites) -- see backend/src/routes/auth.js
+  // and routes/favorites.js. authNoticeMessage above is left in place for
+  // any future "not built yet" placeholder; these three entry points no
+  // longer use it.
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authView, setAuthView] = useState(null); // null | 'login' | 'signup'
+  const [authFormError, setAuthFormError] = useState('');
+  const [authFormLoading, setAuthFormLoading] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState(() => new Set());
+  const [showFavoritesPanel, setShowFavoritesPanel] = useState(false);
+  const [favoritesList, setFavoritesList] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+
+  // On mount: ask the API who (if anyone) the session cookie belongs to.
+  // credentials: 'include' is required on every auth/favorites fetch below
+  // -- without it the browser never sends/receives the cross-origin
+  // (Vercel -> Railway) session cookie at all, regardless of the backend's
+  // own SameSite=None;Secure config.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/auth/me`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        setCurrentUser(data?.user || null);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setAuthChecked(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Keep favoriteIds in sync with the logged-in user: fetched right after
+  // we know who's logged in, and cleared immediately on logout so a stale
+  // heart icon never survives past the account that set it.
+  useEffect(() => {
+    if (!currentUser) {
+      setFavoriteIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetch(`${API_URL}/favorites/ids`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        setFavoriteIds(new Set(data?.eventRowIds || []));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentUser]);
+
+  async function submitAuthForm(email, password) {
+    setAuthFormError('');
+    setAuthFormLoading(true);
+    try {
+      const endpoint = authView === 'signup' ? 'register' : 'login';
+      const response = await fetch(`${API_URL}/auth/${endpoint}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setAuthFormError(data?.error || 'Something went wrong. Please try again.');
+        return;
+      }
+      setCurrentUser(data.user);
+      setAuthView(null);
+    } catch {
+      setAuthFormError('Could not reach the server. Please try again.');
+    } finally {
+      setAuthFormLoading(false);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+      // Clear local state regardless -- worst case the cookie outlives its
+      // usefulness server-side until it naturally expires (30 days).
+    }
+    setCurrentUser(null);
+    setShowFavoritesPanel(false);
+  }
+
+  async function toggleFavorite(event) {
+    if (!currentUser) {
+      setAuthView('login');
+      return;
+    }
+    const isFavorited = favoriteIds.has(event.id);
+    // Optimistic update -- the heart should flip the instant you click it,
+    // not after a round trip; reverted below if the request actually fails.
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (isFavorited) next.delete(event.id); else next.add(event.id);
+      return next;
+    });
+    try {
+      const response = await fetch(`${API_URL}/favorites/${event.id}`, {
+        method: isFavorited ? 'DELETE' : 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('favorite toggle failed');
+    } catch {
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (isFavorited) next.add(event.id); else next.delete(event.id);
+        return next;
+      });
+    }
+  }
+
+  function openFavoritesPanel() {
+    if (!currentUser) {
+      setAuthView('login');
+      return;
+    }
+    setShowFavoritesPanel(true);
+    setFavoritesLoading(true);
+    fetch(`${API_URL}/favorites`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => setFavoritesList(data?.events || []))
+      .catch(() => setFavoritesList([]))
+      .finally(() => setFavoritesLoading(false));
+  }
 
   // Autocomplete dropdown for the search box (spec: search/autocomplete
   // engine). Debounced so we don't hit the API on every keystroke; the
@@ -3645,31 +3800,47 @@ export default function App() {
           <div style={{ display: 'flex', gap: '18px', alignItems: 'center', fontSize: '14px', fontWeight: 600 }}>
             <button
               type="button"
-              onClick={() => setAuthNoticeMessage('Favorites are coming soon — check back shortly!')}
+              onClick={openFavoritesPanel}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#fff', cursor: 'pointer' }}>
               <span aria-hidden="true">♡</span> Favorites
             </button>
-            <button
-              type="button"
-              onClick={() => setAuthNoticeMessage('Accounts and sign-in are coming soon — check back shortly!')}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#fff', cursor: 'pointer' }}>
-              <span aria-hidden="true">👤</span> Sign In
-            </button>
-            <button
-              type="button"
-              className="cm-btn"
-              onClick={() => setAuthNoticeMessage('Accounts and sign-up are coming soon — check back shortly!')}
-              style={{
-                padding: '9px 20px',
-                cursor: 'pointer',
-                border: 'none',
-                borderRadius: '999px',
-                backgroundColor: NAV_ACCENT_COLOR,
-                color: '#fff',
-                fontWeight: 700,
-              }}>
-              Sign Up
-            </button>
+            {currentUser ? (
+              <>
+                <span style={{ color: '#fff', opacity: 0.85, maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={currentUser.email}>
+                  <span aria-hidden="true">👤</span> {currentUser.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#fff', cursor: 'pointer' }}>
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setAuthFormError(''); setAuthView('login'); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#fff', cursor: 'pointer' }}>
+                  <span aria-hidden="true">👤</span> Sign In
+                </button>
+                <button
+                  type="button"
+                  className="cm-btn"
+                  onClick={() => { setAuthFormError(''); setAuthView('signup'); }}
+                  style={{
+                    padding: '9px 20px',
+                    cursor: 'pointer',
+                    border: 'none',
+                    borderRadius: '999px',
+                    backgroundColor: NAV_ACCENT_COLOR,
+                    color: '#fff',
+                    fontWeight: 700,
+                  }}>
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
         </nav>
 
@@ -3706,6 +3877,108 @@ export default function App() {
                 style={{ padding: '10px 24px', cursor: 'pointer', border: 'none', borderRadius: '999px', backgroundColor: NAV_ACCENT_COLOR, color: 'white', fontWeight: 'bold' }}>
                 Got it
               </button>
+            </div>
+          </div>
+        )}
+
+        {authView && (
+          <div
+            role="dialog"
+            aria-label={authView === 'signup' ? 'Sign up' : 'Sign in'}
+            onClick={() => setAuthView(null)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+            }}>
+            <form
+              onClick={(e) => e.stopPropagation()}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.target;
+                submitAuthForm(form.email.value, form.password.value);
+              }}
+              style={{
+                background: '#fff', color: '#222', padding: '28px', borderRadius: '18px',
+                maxWidth: '340px', width: '90%', boxShadow: 'var(--cm-shadow-lg)',
+              }}>
+              <h2 style={{ marginTop: 0, marginBottom: '16px', fontSize: '20px' }}>
+                {authView === 'signup' ? 'Create an account' : 'Sign in'}
+              </h2>
+              <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px' }}>
+                Email
+                <input name="email" type="email" required autoFocus
+                  style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', boxSizing: 'border-box' }} />
+              </label>
+              <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px' }}>
+                Password
+                <input name="password" type="password" required minLength={8}
+                  style={{ display: 'block', width: '100%', marginTop: '4px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', boxSizing: 'border-box' }} />
+              </label>
+              {authView === 'signup' && (
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '-6px', marginBottom: '12px' }}>At least 8 characters.</p>
+              )}
+              {authFormError && (
+                <p style={{ color: '#c0392b', fontSize: '13px', marginBottom: '12px' }}>{authFormError}</p>
+              )}
+              <button
+                type="submit"
+                className="cm-btn"
+                disabled={authFormLoading}
+                style={{ width: '100%', padding: '10px 24px', cursor: authFormLoading ? 'default' : 'pointer', border: 'none', borderRadius: '999px', backgroundColor: NAV_ACCENT_COLOR, color: 'white', fontWeight: 'bold', opacity: authFormLoading ? 0.7 : 1 }}>
+                {authFormLoading ? 'Please wait...' : (authView === 'signup' ? 'Sign Up' : 'Sign In')}
+              </button>
+              <p style={{ textAlign: 'center', marginTop: '14px', marginBottom: 0, fontSize: '13px' }}>
+                {authView === 'signup' ? (
+                  <>Already have an account?{' '}
+                    <span role="button" tabIndex={0} style={{ color: NAV_ACCENT_COLOR, cursor: 'pointer', textDecoration: 'underline' }}
+                      onClick={() => { setAuthFormError(''); setAuthView('login'); }}>Sign in</span>
+                  </>
+                ) : (
+                  <>Don't have an account?{' '}
+                    <span role="button" tabIndex={0} style={{ color: NAV_ACCENT_COLOR, cursor: 'pointer', textDecoration: 'underline' }}
+                      onClick={() => { setAuthFormError(''); setAuthView('signup'); }}>Sign up</span>
+                  </>
+                )}
+              </p>
+            </form>
+          </div>
+        )}
+
+        {showFavoritesPanel && (
+          <div
+            role="dialog"
+            aria-label="Favorites"
+            onClick={() => setShowFavoritesPanel(false)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+            }}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: '#fff', color: '#222', padding: '24px', borderRadius: '18px',
+                maxWidth: '480px', width: '92%', maxHeight: '80vh', overflowY: 'auto', boxShadow: 'var(--cm-shadow-lg)',
+              }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h2 style={{ margin: 0, fontSize: '20px' }}>Your favorites</h2>
+                <button type="button" onClick={() => setShowFavoritesPanel(false)}
+                  style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
+              </div>
+              {favoritesLoading && <p>Loading...</p>}
+              {!favoritesLoading && favoritesList.length === 0 && <p>No favorites yet — tap the heart on any event to save it here.</p>}
+              {!favoritesLoading && favoritesList.map((event) => (
+                <div key={event.id} onClick={() => { setShowFavoritesPanel(false); handleSelectEvent(event); }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #eee', cursor: 'pointer' }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{event.title || event.artist_name}</div>
+                    <div style={{ fontSize: '13px', color: '#666' }}>{event.venue_name}{event.city ? ` · ${event.city}` : ''}</div>
+                  </div>
+                  <button type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(event); setFavoritesList((prev) => prev.filter((ev) => ev.id !== event.id)); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#c0392b' }}
+                    aria-label="Remove from favorites">&hearts;</button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -4154,6 +4427,8 @@ export default function App() {
               event={event}
               onSelect={handleSelectEvent}
               fallbackImageUrl={pickFallbackImage(event, categoryFallbackImages)}
+              isFavorited={favoriteIds.has(event.id)}
+              onToggleFavorite={toggleFavorite}
             />
           ))}
         </div>

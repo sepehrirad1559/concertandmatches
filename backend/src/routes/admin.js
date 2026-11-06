@@ -2344,4 +2344,43 @@ router.get('/diagnostics/raw-artist-name-check', requireAdminAccess, async (req,
   }
 });
 
+// One-time schema migration: create the `users` and `favorites` tables
+// real accounts need (added 2026-11-06 -- see routes/auth.js and
+// routes/favorites.js). Same pattern as every other /schema/add-* route in
+// this file: additive-only, idempotent (CREATE TABLE IF NOT EXISTS), safe
+// to run more than once. Run this once after deploying the commit that
+// added it:
+//
+//   curl -X POST https://concertandmatches-production.up.railway.app/api/admin/schema/add-user-accounts \
+//     -H "x-sync-key: $SYNC_SECRET_KEY"
+//
+// Also requires SESSION_SECRET (or JWT_SECRET) to be set in Railway's env
+// vars -- routes/auth.js/utils/session.js throw a clear 500 if it's
+// missing rather than signing sessions with no secret.
+router.post('/schema/add-user-accounts', requireAdminAccess, async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        event_row_id INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(user_id, event_row_id)
+      );
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);`);
+    res.json({ success: true, message: 'users and favorites tables are ready.' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
