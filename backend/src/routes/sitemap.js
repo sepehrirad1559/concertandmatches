@@ -195,6 +195,15 @@ router.get('/sitemap-seo.xml', async (req, res) => {
     // cities/venues/teams batch was pushing these 6 URLs past the cap).
     const leagueEntries = Object.keys(LEAGUE_DEFS).map((slug) => seoEntry(`${SITE_ORIGIN}/leagues/${slug}`, 'tier1'));
 
+    // Static informational pages (routes/contentPages.js) — these have
+    // existed and been crawlable since that file was added, but were never
+    // actually listed in any sitemap (only reachable via the footer link
+    // graph). Listing them here costs nothing (4 fixed URLs) and gives
+    // Google an explicit, direct signal to (re)crawl them instead of
+    // relying solely on incidental discovery.
+    const staticEntries = ['/about', '/how-it-works', '/faq', '/contact']
+      .map((p) => seoEntry(`${SITE_ORIGIN}${p}`, 'tier1'));
+
     // Sort each dynamic set tier1-first so if a cap ever does truncate,
     // the highest-opportunity pages are the ones kept.
     const tierRank = { tier1: 0, tier2: 1, tier3: 2 };
@@ -212,7 +221,7 @@ router.get('/sitemap-seo.xml', async (req, res) => {
     // sitemap-events-:page.xml above) — this cap only needs to cover the
     // non-event entity pages now.
     const SEO_SITEMAP_CAP = 45000;
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...guideEntries, ...leagueEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries].slice(0, SEO_SITEMAP_CAP).join('\n')}\n</urlset>\n`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...staticEntries, ...guideEntries, ...leagueEntries, ...artistEntries, ...cityEntries, ...venueEntries, ...teamEntries].slice(0, SEO_SITEMAP_CAP).join('\n')}\n</urlset>\n`;
 
     res.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'application/xml');

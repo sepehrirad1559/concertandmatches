@@ -182,6 +182,7 @@ router.get('/guide', async (req, res) => {
 <h1>Ticket guides</h1>
 <p>${items.length} artist/city guides, generated from currently listed shows with at least one confirmed ticket seller.</p>
 <ul>${items.join('')}</ul>
+<nav aria-label="browse" style="margin:18px 0;font-size:14px;"><a href="/artists">Artists</a> · <a href="/cities">Cities</a> · <a href="/venues">Venues</a> · <a href="/teams">Teams</a> · <a href="/leagues">Leagues</a> · <a href="/faq">FAQ</a></nav>
 <p><a href="/">Back to ConcertAndMatches</a></p>
 </body>
 </html>`;
@@ -354,6 +355,7 @@ router.get('/guide/:slug', async (req, res) => {
 ${discountFooterNote(events)}
 ${faqHtml}
 <p><a href="/artists/${xmlEscape(slugify(match.artist_name))}">All ${xmlEscape(match.artist_name)} tickets</a> · <a href="/cities/${xmlEscape(slugify(`${match.city}-${match.state || ''}`))}/concerts">All concerts in ${xmlEscape(match.city)}</a> · <a href="/guide">See all price guides</a> · <a href="/">Back to ConcertAndMatches</a></p>
+<nav aria-label="browse" style="margin:10px 0;font-size:14px;"><a href="/venues">Venues</a> · <a href="/teams">Teams</a> · <a href="/leagues">Leagues</a> · <a href="/faq">FAQ</a></nav>
 </body>
 </html>`;
 

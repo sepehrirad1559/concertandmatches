@@ -25,6 +25,33 @@ const router = express.Router();
 
 const SITE_ORIGIN = 'https://www.concertandmatches.com';
 
+// Site-wide hub nav, rendered on every programmatic SEO page below —
+// added because none of these ~10,000+ generated pages (artists/cities/
+// venues/teams/leagues) linked to each other's INDEX pages at all before
+// this: each was only reachable via its own index or a narrow, specific
+// cross-link (e.g. an artist page linking to the cities its tour visits).
+// A crawler landing on any single one of these leaf pages had no path to
+// the other four hub types without going back through the homepage. This
+// gives every page here a consistent, site-wide set of links to all five
+// hubs plus the informational pages (routes/contentPages.js), cutting
+// crawl depth and spreading link equity across the whole programmatic-SEO
+// surface rather than siloing it by entity type.
+const HUB_NAV_LINKS = [
+  { href: '/artists', label: 'Artists' },
+  { href: '/cities', label: 'Cities' },
+  { href: '/venues', label: 'Venues' },
+  { href: '/teams', label: 'Teams' },
+  { href: '/leagues', label: 'Leagues' },
+  { href: '/guide', label: 'Price Guides' },
+  { href: '/faq', label: 'FAQ' },
+];
+
+function hubNavHtml() {
+  const links = HUB_NAV_LINKS.map((l) => `<a href="${l.href}">${l.label}</a>`).join(' · ');
+  return `<nav aria-label="browse" style="margin:18px 0;font-size:14px;">${links}</nav>`;
+}
+
+
 function xmlEscape(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
@@ -140,6 +167,7 @@ ${breadcrumbHtml || ''}
 <h1>${xmlEscape(h1)}</h1>
 <p>${xmlEscape(intro)}</p>
 ${bodyHtml}
+${hubNavHtml()}
 <p><a href="/">Back to ConcertAndMatches</a></p>
 </body>
 </html>`;
@@ -393,6 +421,12 @@ router.get('/venues/:slug', async (req, res) => {
       : `${page.events.length} upcoming event${page.events.length === 1 ? '' : 's'} at ${page.venueName} in ${place}. See dates and ticket availability.`;
     const url = `${SITE_ORIGIN}/venues/${xmlEscape(req.params.slug)}`;
     const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url };
+    const allVenues = await discoverVenues({ limit: 2000 }).catch(() => []);
+    const otherVenueLinks = allVenues
+      .filter((v) => v.slug !== req.params.slug && v.city === page.city && (v.state || '') === (page.state || ''))
+      .slice(0, 10)
+      .map((v) => `<li><a href="/venues/${xmlEscape(v.slug)}">${xmlEscape(v.venueName)}</a></li>`)
+      .join('');
     const html = pageShell({
       title, description, url,
       h1: `${page.venueName} — ${place}`,
@@ -400,6 +434,7 @@ router.get('/venues/:slug', async (req, res) => {
       breadcrumbHtml: breadcrumb([{ label: 'Venues', href: '/venues' }, { label: page.venueName }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p><a href="/cities/${xmlEscape(citySlugify(`${page.city || ''}-${page.state || ''}`))}/events">More events in ${xmlEscape(page.city || '')}</a></p>
+      ${otherVenueLinks ? `<h2>Other venues in ${xmlEscape(page.city || '')}</h2><ul>${otherVenueLinks}</ul>` : ''}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,
       jsonLd,
@@ -452,6 +487,10 @@ router.get('/leagues/:slug', async (req, res) => {
     }
     const cityLinks = [...leagueCityMap.values()].slice(0, 12)
       .map((c) => `<li><a href="/cities/${xmlEscape(citySlugify(`${c.city}-${c.state || ''}`))}/events">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a></li>`).join('');
+    const otherLeagues = Object.entries(LEAGUE_DEFS)
+      .filter(([slug]) => slug !== req.params.slug)
+      .map(([slug, def]) => `<a href="/leagues/${xmlEscape(slug)}">${xmlEscape(def.label)}</a>`)
+      .join(' · ');
     const html = pageShell({
       title, description, url,
       h1: `${page.label} tickets`,
@@ -460,6 +499,7 @@ router.get('/leagues/:slug', async (req, res) => {
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events.slice(0, 300))}</tbody></table>
       ${cityLinks ? `<h2>Cities with ${xmlEscape(page.label)} events</h2><ul>${cityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
+      ${otherLeagues ? `<h2>Other leagues &amp; categories</h2><p>${otherLeagues}</p>` : ''}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,
       jsonLd,
@@ -510,6 +550,18 @@ router.get('/teams/:slug', async (req, res) => {
       : `${page.events.length} upcoming ${page.name} game${page.events.length === 1 ? '' : 's'}. See dates, venues, and ticket availability.`;
     const url = `${SITE_ORIGIN}/teams/${xmlEscape(req.params.slug)}`;
     const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url };
+    // Team pages had no outbound cross-links at all before this (unlike
+    // artist/venue/city pages, which all link sideways to at least one
+    // related hub) — link to the home city of this team's games, same
+    // citySlugify(`${city}-${state}`) pattern getCityPage's own slug uses.
+    const teamCityMap = new Map();
+    for (const e of page.events) {
+      if (!e.city) continue;
+      const key = `${e.city}|${e.state || ''}`;
+      if (!teamCityMap.has(key)) teamCityMap.set(key, { city: e.city, state: e.state });
+    }
+    const teamCityLinks = [...teamCityMap.values()].slice(0, 8)
+      .map((c) => `<li><a href="/cities/${xmlEscape(citySlugify(`${c.city}-${c.state || ''}`))}/sports">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a></li>`).join('');
     const html = pageShell({
       title, description, url,
       h1: `${page.name} tickets`,
@@ -517,6 +569,7 @@ router.get('/teams/:slug', async (req, res) => {
       breadcrumbHtml: breadcrumb([{ label: 'Teams', href: '/teams' }, { label: page.name }]),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Matchup</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p>Team names on this page are extracted from matchup listings (e.g. "Team A at Team B") and may occasionally be imprecise.</p>
+      ${teamCityLinks ? `<h2>Cities ${xmlEscape(page.name)} plays in</h2><ul>${teamCityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,

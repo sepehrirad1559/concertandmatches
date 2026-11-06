@@ -82,6 +82,7 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script
 ${bodyHtml}
 <footer>
 <p><a href="/">Home</a> · <a href="/how-it-works">How It Works</a> · <a href="/faq">FAQ</a> · <a href="/contact">Contact Us</a></p>
+<p><a href="/artists">Artists</a> · <a href="/cities">Cities</a> · <a href="/venues">Venues</a> · <a href="/teams">Teams</a> · <a href="/leagues">Leagues</a> · <a href="/guide">Price Guides</a></p>
 </footer>
 </body>
 </html>`;
