@@ -221,6 +221,50 @@ function itemListJsonLd(name, url, entries) {
   };
 }
 
+// Compact Event-list structured data for the artist/city/venue/league/team
+// detail pages below -- each already lists real events in an HTML table
+// (eventRows()) but had no structured data describing THOSE events, only
+// a CollectionPage wrapper + (as of the previous change) a BreadcrumbList.
+// Google's own event structured-data guidance explicitly covers pages that
+// list multiple events, recommending an array of Event entries exactly
+// like this. Deliberately NOT the same full builder prerender.js uses for
+// a single /event/:id page (performer/organizer/endDate/validFrom, etc.)
+// -- that level of detail belongs on the event's own canonical page, which
+// every entry here links straight to via `url`; duplicating all of it here
+// across up to 300 events per city page would bloat every one of these
+// pages for no real benefit. Capped at 24 events (unlike the 200-entry cap
+// on the plain ItemList index pages above) because a full Event object is
+// far heavier than a ListItem, and a detail page's own table is already
+// capped in practice by what's visually above the fold.
+function eventListJsonLd(events) {
+  const withPrice = events.slice(0, 24).map((e) => {
+    const priced = e.offers.map((o) => displayPriceForOffer(o)).filter(Boolean);
+    const low = priced.length > 0 ? Math.min(...priced.map((d) => d.price)) : null;
+    const slug = String(e.title || e.artist_name || 'event')
+      .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'event';
+    const url = `${SITE_ORIGIN}/event/${e.id}-${slug}`;
+    return {
+      '@type': 'Event',
+      name: e.title || e.artist_name,
+      startDate: e.date,
+      eventStatus: 'https://schema.org/EventScheduled',
+      url,
+      location: {
+        '@type': 'Place',
+        name: e.venue_name || undefined,
+        address: { '@type': 'PostalAddress', addressLocality: e.city || undefined, addressRegion: e.state || undefined },
+      },
+      ...(low != null ? { offers: { '@type': 'AggregateOffer', priceCurrency: 'USD', lowPrice: low.toFixed(2), offerCount: priced.length, availability: 'https://schema.org/InStock', url } } : {}),
+    };
+  });
+  if (withPrice.length === 0) return null;
+  // Wrapped in a single @graph node (one <script> tag, same multi-type
+  // convention pageShell's jsonLd array already uses for the other blocks
+  // on this page) rather than one @context-bearing object per event.
+  return { '@context': 'https://schema.org', '@graph': withPrice };
+}
+
 function breadcrumbJsonLd(items) {
   const full = [{ label: 'Home', href: '/' }, ...items];
   return {
@@ -294,7 +338,7 @@ router.get('/artists/:slug', async (req, res) => {
       h1: `${page.artistName} tickets`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Artists', href: '/artists' }, { label: page.artistName }]),
-      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Artists', href: '/artists' }, { label: page.artistName }])],
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Artists', href: '/artists' }, { label: page.artistName }]), eventListJsonLd(page.events)].filter(Boolean),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Show</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${cityLinks ? `<h2>Cities on this tour</h2><ul>${cityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
@@ -399,7 +443,7 @@ async function renderCityVariant(req, res, variant) {
       h1: `${label} in ${place}`,
       intro: richIntro,
       breadcrumbHtml: breadcrumb([{ label: 'Cities', href: '/cities' }, { label: place }]),
-      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Cities', href: '/cities' }, { label: place }])],
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Cities', href: '/cities' }, { label: place }]), eventListJsonLd(page.events)].filter(Boolean),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${otherVariants ? `<p>${otherVariants}</p>` : ''}
       ${guideLinks ? `<h2>Price guides for ${xmlEscape(page.city)}</h2><ul>${guideLinks}</ul>` : ''}
@@ -481,7 +525,7 @@ router.get('/venues/:slug', async (req, res) => {
       h1: `${page.venueName} — ${place}`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Venues', href: '/venues' }, { label: page.venueName }]),
-      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Venues', href: '/venues' }, { label: page.venueName }])],
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Venues', href: '/venues' }, { label: page.venueName }]), eventListJsonLd(page.events)].filter(Boolean),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p><a href="/cities/${xmlEscape(citySlugify(`${page.city || ''}-${page.state || ''}`))}/events">More events in ${xmlEscape(page.city || '')}</a></p>
       ${otherVenueLinks ? `<h2>Other venues in ${xmlEscape(page.city || '')}</h2><ul>${otherVenueLinks}</ul>` : ''}
@@ -547,7 +591,7 @@ router.get('/leagues/:slug', async (req, res) => {
       h1: `${page.label} tickets`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Leagues', href: '/leagues' }, { label: page.label }]),
-      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Leagues', href: '/leagues' }, { label: page.label }])],
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Leagues', href: '/leagues' }, { label: page.label }]), eventListJsonLd(page.events)].filter(Boolean),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events.slice(0, 300))}</tbody></table>
       ${cityLinks ? `<h2>Cities with ${xmlEscape(page.label)} events</h2><ul>${cityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
@@ -620,7 +664,7 @@ router.get('/teams/:slug', async (req, res) => {
       h1: `${page.name} tickets`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Teams', href: '/teams' }, { label: page.name }]),
-      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Teams', href: '/teams' }, { label: page.name }])],
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Teams', href: '/teams' }, { label: page.name }]), eventListJsonLd(page.events)].filter(Boolean),
       bodyHtml: `<table><thead><tr><th>Date</th><th>Matchup</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p>Team names on this page are extracted from matchup listings (e.g. "Team A at Team B") and may occasionally be imprecise.</p>
       ${teamCityLinks ? `<h2>Cities ${xmlEscape(page.name)} plays in</h2><ul>${teamCityLinks}</ul>` : ''}

@@ -1,6 +1,7 @@
 import express from 'express';
 import { getMergedEventById } from './events.js';
 import { slugify as entitySlugify } from '../services/seoEngine.js';
+import { displayPriceForOffer } from '../utils/pricing.js';
 
 const router = express.Router();
 
@@ -186,13 +187,19 @@ router.get('/event/:pathParam', async (req, res) => {
     // Hawks" pages. See events.js's hasConfirmedSellerLink for the real
     // check, and sitemap.js for the matching sitemap-side exclusion.)
     const offers = Array.isArray(event.offers) ? event.offers : [];
-    const pricedOffers = offers.filter((o) => o.min_price != null);
-    const startingPrice = pricedOffers.length > 0
-      ? Math.min(...pricedOffers.map((o) => Number(o.min_price)))
+    const pricedOfferPairs = offers
+      .map((o) => ({ o, d: displayPriceForOffer(o) }))
+      .filter((x) => x.d);
+    const pricedOffers = pricedOfferPairs.map((x) => x.o);
+    const startingPrice = pricedOfferPairs.length > 0
+      ? Math.min(...pricedOfferPairs.map((x) => x.d.price))
       : null;
     // Real per-seller prices this platform actually has for this event —
     // the inputs for the AggregateOffer built below, not a separate query.
-    const pricedValues = pricedOffers.map((o) => Number(o.min_price));
+    // Post-displayPriceForOffer, so this already excludes the $0 quirk and
+    // already reflects the 20% TicketNetwork discount, same as everywhere
+    // else these prices are shown.
+    const pricedValues = pricedOfferPairs.map((x) => x.d.price);
     const lowPrice = pricedValues.length > 0 ? Math.min(...pricedValues) : null;
     const highPrice = pricedValues.length > 0 ? Math.max(...pricedValues) : null;
 
@@ -219,9 +226,9 @@ router.get('/event/:pathParam', async (req, res) => {
     // expects when more than one seller is shown for the same event. Each
     // seller still gets its own nested Offer (url/seller) inside offers, so
     // nothing about per-seller detail is lost versus the old flat array.
-    const offersForLd = pricedOffers.map((o) => ({
+    const offersForLd = pricedOfferPairs.map(({ o, d }) => ({
       '@type': 'Offer',
-      price: Number(o.min_price).toFixed(2),
+      price: d.price.toFixed(2),
       priceCurrency: o.currency || 'USD',
       availability: 'https://schema.org/InStock',
       url,
@@ -301,7 +308,7 @@ router.get('/event/:pathParam', async (req, res) => {
     };
 
     const offersHtml = offers.length > 0
-      ? `<ul>${offers.map((o) => `<li>${xmlEscape(o.source)}${o.min_price != null ? `: from $${Number(o.min_price).toFixed(0)}` : ''}</li>`).join('')}</ul>`
+      ? `<ul>${offers.map((o) => { const d = displayPriceForOffer(o); return `<li>${xmlEscape(o.source)}${d ? `: from $${d.price}${d.isDiscounted ? ' (20% off)' : ''}` : ''}</li>`; }).join('')}</ul>`
       : '<p>No confirmed ticket seller yet — check back soon.</p>';
 
     // Internal links up to the hub/collection pages (seoPages.js) — this
