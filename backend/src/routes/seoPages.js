@@ -160,7 +160,7 @@ function pageShell({ title, description, url, h1, intro, bodyHtml, jsonLd, bread
 <meta name="twitter:title" content="${xmlEscape(title)}" />
 <meta name="twitter:description" content="${xmlEscape(description)}" />
 <meta name="twitter:image" content="${SITE_ORIGIN}/og-image.png" />
-${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : ''}
+${[].concat(jsonLd || []).map((ld) => `<script type="application/ld+json">${JSON.stringify(ld)}</script>`).join('\n')}
 </head>
 <body>
 ${breadcrumbHtml || ''}
@@ -192,6 +192,49 @@ function breadcrumb(items) {
   return `<nav aria-label="breadcrumb"><p>${parts.join(' &raquo; ')}</p></nav>`;
 }
 
+// BreadcrumbList structured data matching the visual breadcrumb() above --
+// every page that calls breadcrumb() already shows this trail visually,
+// but none of them emitted the structured-data version, which is what
+// actually lets Google show the breadcrumb trail (instead of the raw URL)
+// in search results. Always prepends Home, same as the visual breadcrumb
+// implicitly does via pageShell's own top-level "Back to ConcertAndMatches"
+// link.
+// Shared ItemList structured data for the five big hub index pages
+// (artists/cities/venues/teams/leagues) -- each links out to ~100-1000
+// detail pages but had no structured data describing itself as a list at
+// all before this. Capped at 200 entries: Google's own ItemList guidance
+// treats this as a representative sample, not a requirement to enumerate
+// everything, so this stays cheap even on the ~1000-entry pages.
+function itemListJsonLd(name, url, entries) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name,
+    url,
+    numberOfItems: entries.length,
+    itemListElement: entries.slice(0, 200).map((e, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: e.name,
+      url: `${SITE_ORIGIN}${e.href}`,
+    })),
+  };
+}
+
+function breadcrumbJsonLd(items) {
+  const full = [{ label: 'Home', href: '/' }, ...items];
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: full.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.label,
+      ...(it.href ? { item: `${SITE_ORIGIN}${it.href}` } : {}),
+    })),
+  };
+}
+
 // ---------------------------------------------------------------------
 // Artists
 // ---------------------------------------------------------------------
@@ -200,13 +243,15 @@ router.get('/artists', async (req, res) => {
   try {
     const artists = await discoverArtists({ limit: 1000 });
     const items = artists.map((a) => `<li><a href="/artists/${xmlEscape(a.slug)}">${xmlEscape(a.artistName)}</a> — ${a.eventCount} upcoming show${a.eventCount === 1 ? '' : 's'}${a.cityCount > 1 ? ` in ${a.cityCount} cities` : ''}</li>`).join('');
+    const artistsUrl = `${SITE_ORIGIN}/artists`;
     const html = pageShell({
       title: `Concert Tickets by Artist — ${artists.length} Artists | ConcertAndMatches`,
       description: `Compare ticket prices for ${artists.length} artists with real, currently listed upcoming shows from multiple sellers.`,
-      url: `${SITE_ORIGIN}/artists`,
+      url: artistsUrl,
       h1: 'Artists with tickets available',
       intro: `${artists.length} artists currently have upcoming shows listed with real ticket availability.`,
       bodyHtml: `<ul>${items}</ul>`,
+      jsonLd: itemListJsonLd('Artists with tickets available', artistsUrl, artists.map((a) => ({ name: a.artistName, href: `/artists/${a.slug}` }))),
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
@@ -249,12 +294,12 @@ router.get('/artists/:slug', async (req, res) => {
       h1: `${page.artistName} tickets`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Artists', href: '/artists' }, { label: page.artistName }]),
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Artists', href: '/artists' }, { label: page.artistName }])],
       bodyHtml: `<table><thead><tr><th>Date</th><th>Show</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${cityLinks ? `<h2>Cities on this tour</h2><ul>${cityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,
-      jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
@@ -274,13 +319,15 @@ router.get('/cities', async (req, res) => {
   try {
     const cities = await discoverCities({ limit: 1000 });
     const items = cities.map((c) => `<li><a href="/cities/${xmlEscape(c.slug)}/events">${xmlEscape(c.city)}${c.state ? `, ${xmlEscape(c.state)}` : ''}</a> — ${c.eventCount} upcoming event${c.eventCount === 1 ? '' : 's'}</li>`).join('');
+    const citiesUrl = `${SITE_ORIGIN}/cities`;
     const html = pageShell({
       title: `Concert & Sports Tickets Near You — ${cities.length} Cities | ConcertAndMatches`,
       description: `Compare ticket prices for upcoming concerts and sports events in ${cities.length} cities with real, currently listed availability.`,
-      url: `${SITE_ORIGIN}/cities`,
+      url: citiesUrl,
       h1: 'Events by city',
       intro: `${cities.length} cities currently have upcoming events listed.`,
       bodyHtml: `<ul>${items}</ul>`,
+      jsonLd: itemListJsonLd('Events by city', citiesUrl, cities.map((c) => ({ name: `${c.city}${c.state ? `, ${c.state}` : ''}`, href: `/cities/${c.slug}/events` }))),
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
@@ -352,6 +399,7 @@ async function renderCityVariant(req, res, variant) {
       h1: `${label} in ${place}`,
       intro: richIntro,
       breadcrumbHtml: breadcrumb([{ label: 'Cities', href: '/cities' }, { label: place }]),
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Cities', href: '/cities' }, { label: place }])],
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       ${otherVariants ? `<p>${otherVariants}</p>` : ''}
       ${guideLinks ? `<h2>Price guides for ${xmlEscape(page.city)}</h2><ul>${guideLinks}</ul>` : ''}
@@ -359,7 +407,6 @@ async function renderCityVariant(req, res, variant) {
       ${nearbyLinks ? `<h2>${label} near ${xmlEscape(page.city)}</h2><ul>${nearbyLinks}</ul>` : ''}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,
-      jsonLd,
     });
     // Public edge cache (Vercel honors this on its rewrite-proxy to this
     // Railway route — see frontend/vercel.json): a short browser max-age
@@ -390,13 +437,15 @@ router.get('/venues', async (req, res) => {
   try {
     const venues = await discoverVenues({ limit: 1000 });
     const items = venues.map((v) => `<li><a href="/venues/${xmlEscape(v.slug)}">${xmlEscape(v.venueName)}</a> — ${xmlEscape(v.city || '')}${v.state ? `, ${xmlEscape(v.state)}` : ''} (${v.eventCount} upcoming)</li>`).join('');
+    const venuesUrl = `${SITE_ORIGIN}/venues`;
     const html = pageShell({
       title: `Event Venues & Tickets — ${venues.length} Venues | ConcertAndMatches`,
       description: `Compare ticket prices for ${venues.length} venues with real, currently listed upcoming events.`,
-      url: `${SITE_ORIGIN}/venues`,
+      url: venuesUrl,
       h1: 'Venues with upcoming events',
       intro: `${venues.length} venues currently have upcoming events listed.`,
       bodyHtml: `<ul>${items}</ul>`,
+      jsonLd: itemListJsonLd('Venues with upcoming events', venuesUrl, venues.map((v) => ({ name: v.venueName, href: `/venues/${v.slug}` }))),
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
@@ -432,12 +481,12 @@ router.get('/venues/:slug', async (req, res) => {
       h1: `${page.venueName} — ${place}`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Venues', href: '/venues' }, { label: page.venueName }]),
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Venues', href: '/venues' }, { label: page.venueName }])],
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p><a href="/cities/${xmlEscape(citySlugify(`${page.city || ''}-${page.state || ''}`))}/events">More events in ${xmlEscape(page.city || '')}</a></p>
       ${otherVenueLinks ? `<h2>Other venues in ${xmlEscape(page.city || '')}</h2><ul>${otherVenueLinks}</ul>` : ''}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,
-      jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
@@ -453,13 +502,15 @@ router.get('/venues/:slug', async (req, res) => {
 
 router.get('/leagues', async (req, res) => {
   const items = Object.entries(LEAGUE_DEFS).map(([slug, def]) => `<li><a href="/leagues/${xmlEscape(slug)}">${xmlEscape(def.label)}</a></li>`).join('');
+  const leaguesUrl = `${SITE_ORIGIN}/leagues`;
   const html = pageShell({
     title: 'NFL, NBA & More — Tickets by League | ConcertAndMatches',
     description: 'Compare ticket prices by league or category: NFL, NBA, NCAA Football, concerts, theater, and comedy.',
-    url: `${SITE_ORIGIN}/leagues`,
+    url: leaguesUrl,
     h1: 'Browse by league or category',
     intro: 'Pick a league or category to see all currently listed upcoming events.',
     bodyHtml: `<ul>${items}</ul>`,
+    jsonLd: itemListJsonLd('Browse by league or category', leaguesUrl, Object.entries(LEAGUE_DEFS).map(([slug, def]) => ({ name: def.label, href: `/leagues/${slug}` }))),
   });
   res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
   res.set('Content-Type', 'text/html').send(html);
@@ -496,13 +547,13 @@ router.get('/leagues/:slug', async (req, res) => {
       h1: `${page.label} tickets`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Leagues', href: '/leagues' }, { label: page.label }]),
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Leagues', href: '/leagues' }, { label: page.label }])],
       bodyHtml: `<table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events.slice(0, 300))}</tbody></table>
       ${cityLinks ? `<h2>Cities with ${xmlEscape(page.label)} events</h2><ul>${cityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
       ${otherLeagues ? `<h2>Other leagues &amp; categories</h2><p>${otherLeagues}</p>` : ''}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,
-      jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
@@ -520,13 +571,15 @@ router.get('/teams', async (req, res) => {
   try {
     const teams = await discoverTeams({ limit: 1000 });
     const items = teams.map((t) => `<li><a href="/teams/${xmlEscape(t.slug)}">${xmlEscape(t.name)}</a> — ${t.eventCount} upcoming game${t.eventCount === 1 ? '' : 's'}</li>`).join('');
+    const teamsUrl = `${SITE_ORIGIN}/teams`;
     const html = pageShell({
       title: `Sports Tickets by Team — ${teams.length} Teams | ConcertAndMatches`,
       description: `Compare ticket prices for ${teams.length} teams with real, currently listed upcoming games.`,
-      url: `${SITE_ORIGIN}/teams`,
+      url: teamsUrl,
       h1: 'Teams with upcoming games',
       intro: `${teams.length} teams currently have upcoming games listed. Team names are extracted from matchup listings and may occasionally be imprecise.`,
       bodyHtml: `<ul>${items}</ul>`,
+      jsonLd: itemListJsonLd('Teams with upcoming games', teamsUrl, teams.map((t) => ({ name: t.name, href: `/teams/${t.slug}` }))),
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
@@ -567,13 +620,13 @@ router.get('/teams/:slug', async (req, res) => {
       h1: `${page.name} tickets`,
       intro: description,
       breadcrumbHtml: breadcrumb([{ label: 'Teams', href: '/teams' }, { label: page.name }]),
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Teams', href: '/teams' }, { label: page.name }])],
       bodyHtml: `<table><thead><tr><th>Date</th><th>Matchup</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events)}</tbody></table>
       <p>Team names on this page are extracted from matchup listings (e.g. "Team A at Team B") and may occasionally be imprecise.</p>
       ${teamCityLinks ? `<h2>Cities ${xmlEscape(page.name)} plays in</h2><ul>${teamCityLinks}</ul>` : ''}
       ${confirmedSearchesSection(page.confirmedSearches)}
       <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
       ${discountFooterNote(page.events)}`,
-      jsonLd,
     });
     res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
     res.set('Content-Type', 'text/html').send(html);
