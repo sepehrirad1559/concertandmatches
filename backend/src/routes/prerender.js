@@ -3,6 +3,31 @@ import { getMergedEventById } from './events.js';
 import { slugify as entitySlugify } from '../services/seoEngine.js';
 import { displayPriceForOffer } from '../utils/pricing.js';
 
+const SITE_ORIGIN = 'https://www.concertandmatches.com';
+
+// Same BreadcrumbList shape as routes/seoPages.js's breadcrumbJsonLd() —
+// duplicated rather than imported since these are two standalone route
+// files with no shared "page chrome" module yet, but kept byte-for-byte
+// equivalent in structure on purpose. Every other indexed page type on the
+// site (artists/cities/venues/leagues/teams, via seoPages.js) already emits
+// this; event pages (this file) are the single highest-volume page type
+// (~184K pages) and were the one gap — they rendered the visual breadcrumb
+// nav below but never the matching structured data, so Google couldn't show
+// the breadcrumb trail in search results for the site's biggest page type.
+function breadcrumbJsonLd(items) {
+  const full = [{ label: 'Home', href: '/' }, ...items];
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: full.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.label,
+      ...(it.href ? { item: `${SITE_ORIGIN}${it.href}` } : {}),
+    })),
+  };
+}
+
 const router = express.Router();
 
 // Real SSR for event pages (2026-10-09 rewrite — see git history for the
@@ -337,6 +362,13 @@ router.get('/event/:pathParam', async (req, res) => {
       relatedLinks.push(`<a href="/venues/${xmlEscape(venueSlug)}">More events at ${xmlEscape(event.venue_name)}</a>`);
     }
     const breadcrumbHtml = `<nav aria-label="breadcrumb"><p><a href="/">Home</a>${event.city ? ` &raquo; <a href="/cities/${xmlEscape(entitySlugify(`${event.city}-${event.state || ''}`))}/events">${xmlEscape(event.city)}${event.state ? `, ${xmlEscape(event.state)}` : ''}</a>` : ''} &raquo; ${xmlEscape(event.title)}</p></nav>`;
+    // Structured-data twin of breadcrumbHtml above — same Home » City »
+    // Title path, kept in sync by construction since both are built from
+    // the same event.city/event.state/event.title fields right here.
+    const breadcrumbLd = breadcrumbJsonLd([
+      ...(event.city ? [{ label: `${event.city}${event.state ? `, ${event.state}` : ''}`, href: `/cities/${entitySlugify(`${event.city}-${event.state || ''}`)}/events` }] : []),
+      { label: event.title },
+    ]);
     const relatedLinksHtml = relatedLinks.length > 0
       ? `<h2>Related</h2><ul>${relatedLinks.map((l) => `<li>${l}</li>`).join('')}</ul>`
       : '';
@@ -356,6 +388,7 @@ router.get('/event/:pathParam', async (req, res) => {
 <meta name="twitter:image" content="${xmlEscape(event.image_url || 'https://www.concertandmatches.com/og-image.png')}" />
 <meta name="robots" content="${(isPastEvent || isEmptyListing) ? 'noindex, follow' : 'index, follow'}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+<script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>
 </head>`;
 
     const citySlugForEvent = event.city ? entitySlugify(`${event.city}-${event.state || ''}`) : null;

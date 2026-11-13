@@ -1358,6 +1358,41 @@ async function getMergedEventById(eventRowId) {
   return result;
 }
 
+// Resolves which raw `events.id` a real-world event's page should actually
+// live at, for the known class of GSC "Duplicate" issue documented in
+// project notes: TicketNetwork sometimes lists the exact same real show
+// under two different product IDs, so /event/:id produced two near-
+// identical, independently self-canonicalizing pages for the same event —
+// each with its own <link rel="canonical"> pointing at itself, so Google
+// never got a clear "these are the same page" signal (surfaces as both the
+// older "Duplicate, Google chose different canonical than user" bucket and
+// the newer "Duplicate without user-selected canonical" one).
+//
+// Rather than re-deriving same-event matching here, this reads the grouping
+// `services/canonicalize.js` already computes via the same isSameEvent fuzzy
+// matcher used everywhere else on the site (POST /admin/canonicalize/
+// rebuild, run automatically after every sync) — canonical_events/
+// ticket_offers already know which raw rows represent the same show.
+// Deterministic choice of "primary": the lowest raw id in the group, so
+// every caller (any raw id in the group) converges on the exact same URL.
+//
+// Always resolves to a real id, never null: when this row has no
+// canonical_events mapping yet (not yet rebuilt) or its canonical group has
+// only one raw row (the overwhelming majority — no real duplication),
+// returns eventRowId itself unchanged, so callers never need a null check
+// and non-duplicated events see zero behavior change.
+async function getPrimaryEventRowId(eventRowId) {
+  const result = await pool.query(
+    `SELECT MIN(t2.source_event_row_id) AS primary_id
+     FROM ticket_offers t
+     JOIN ticket_offers t2 ON t2.canonical_event_id = t.canonical_event_id
+     WHERE t.source_event_row_id = $1 AND t2.source_event_row_id IS NOT NULL`,
+    [eventRowId]
+  );
+  const primaryId = result.rows[0]?.primary_id;
+  return primaryId != null ? Number(primaryId) : Number(eventRowId);
+}
+
 // ---- Homepage event-discovery sections (Popular / Recommended / Trending /
 // by-category) ------------------------------------------------------------
 //
@@ -1937,6 +1972,6 @@ router.get('/:eventId', async (req, res) => {
 // Exported for reuse by routes/sitemap.js, which needs the same
 // cross-source dedup so sitemap URLs correspond 1:1 with what customers
 // actually see as a single event card, not one URL per raw source row.
-export { mergeEventsAcrossSources, getMergedEventById };
+export { mergeEventsAcrossSources, getMergedEventById, getPrimaryEventRowId };
 
 export default router;

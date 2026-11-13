@@ -48,11 +48,18 @@ function xmlEscape(str) {
 //
 // Still queries the raw `events` table (not `canonical_events`) and still
 // merges/dedupes per-page via mergeEventsAcrossSources, same as before —
-// deliberately NOT switched to the canonical_events layer in this change.
-// That's a separate, larger fix (routing /event/:id pages through
-// canonical events, which is also what would resolve the small number of
-// "Duplicate, Google chose different canonical" pages in Search Console —
-// see project notes) left for its own task rather than entangled here.
+// deliberately NOT switched to the canonical_events layer wholesale in this
+// change (routing every /event/:id page through canonical_events is a much
+// larger rework). What IS now excluded (2026-11-13) is the specific,
+// understood cause of the GSC "Duplicate without user-selected canonical" /
+// "Duplicate, Google chose different canonical than user" buckets: a raw
+// row that's a known duplicate of another raw row already in the sitemap
+// (same real show, same canonical_events group, a higher id) — see
+// routes/events.js's getPrimaryEventRowId, which routes/prerender.js also
+// uses to 301 a duplicate's own URL to its primary sibling. Submitting only
+// the primary URL here means Google never even discovers the duplicate URL
+// to begin with, rather than relying solely on the redirect to clean it up
+// after the fact.
 const EVENTS_PER_SITEMAP_PAGE = 40000;
 const SITE_ORIGIN = 'https://www.concertandmatches.com';
 
@@ -79,6 +86,23 @@ function buildSitemapEventsWhere() {
     sitemapWhere += ` AND source = ANY($1::text[])`;
     sitemapParams.push(ACTIVE_SOURCES);
   }
+  // Exclude known-duplicate raw rows (see header comment above): computed
+  // once as a flat set of "losing" ids — any raw row id that shares a
+  // canonical_events group with a lower raw row id — rather than a
+  // per-row correlated subquery, so this stays cheap even scanned against
+  // 250K+ event rows. A row with no canonical_events mapping yet (not yet
+  // rebuilt) is never in this set and is completely unaffected.
+  sitemapWhere += ` AND id NOT IN (
+    SELECT t.source_event_row_id
+    FROM ticket_offers t
+    JOIN (
+      SELECT canonical_event_id, MIN(source_event_row_id) AS primary_id
+      FROM ticket_offers
+      WHERE source_event_row_id IS NOT NULL AND canonical_event_id IS NOT NULL
+      GROUP BY canonical_event_id
+    ) g ON g.canonical_event_id = t.canonical_event_id
+    WHERE t.source_event_row_id IS NOT NULL AND t.source_event_row_id <> g.primary_id
+  )`;
   return { sitemapWhere, sitemapParams };
 }
 
