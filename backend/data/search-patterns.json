@@ -1,6 +1,6 @@
 {
-  "source": "Google Autocomplete Suggest API (suggestqueries.google.com) — real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model — every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-11-02T00:00:00Z",
+  "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
+  "pulledAt": "2026-11-13T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -29,7 +29,7 @@
         "wvu basketball vip tickets",
         "real madrid basketball vip tickets",
         "how to get vip basketball tickets",
-        "vip tickets basketball löwen"
+        "vip tickets basketball l\u00f6wen"
       ],
       "pulledAt": "2026-10-12T00:00:00Z"
     },
@@ -1708,7 +1708,7 @@
         "ka cirque du soleil last minute tickets",
         "buy tickets ka cirque du soleil",
         "ka cirque du soleil las vegas discount tickets",
-        "tickets für ka cirque du soleil"
+        "tickets f\u00fcr ka cirque du soleil"
       ],
       "pulledAt": "2026-10-30T00:00:00Z"
     },
@@ -7225,7 +7225,7 @@
       "matchKey": "cirque-du-soleil-alize",
       "seed": "Cirque du Soleil - Alize tickets",
       "suggestions": [
-        "cirque du soleil alizé tickets",
+        "cirque du soleil aliz\u00e9 tickets",
         "cirque du soleil alize tickets berlin",
         "cirque du soleil alize tickets kaufen"
       ],
@@ -11547,7 +11547,7 @@
     {
       "matchType": "artist",
       "matchKey": "dazzling-nights-orlando",
-      "seed": "Dazzling Nights® Orlando tickets",
+      "seed": "Dazzling Nights\u00ae Orlando tickets",
       "suggestions": [
         "dazzling nights orlando tickets price",
         "dazzling nights orlando 2025 tickets",
@@ -12261,7 +12261,7 @@
         "fly linq zipline las vegas tickets",
         "fly linq zipline vegas price",
         "fly linq zipline ticket price",
-        "tickets für fly linq zipline",
+        "tickets f\u00fcr fly linq zipline",
         "fly linq zipline hours",
         "fly linq zipline age limit",
         "fly linq zipline reviews"
@@ -13370,7 +13370,7 @@
         "balloon museum emotionair chicago tickets",
         "balloon museum emotion air london tickets",
         "balloon museum emotionair chicago tickets price",
-        "balloon museum emotion air düsseldorf tickets",
+        "balloon museum emotion air d\u00fcsseldorf tickets",
         "balloon museum emotion air san francisco tickets",
         "balloon museum emotionair chicago photos tickets",
         "balloon museum emotion air san francisco tickets price",
@@ -15041,7 +15041,7 @@
     {
       "matchType": "city",
       "matchKey": "mexico-cdmx",
-      "seed": "México concert tickets",
+      "seed": "M\u00e9xico concert tickets",
       "suggestions": [
         "bts mexico concert tickets",
         "mexican ot concert tickets",
@@ -17242,7 +17242,7 @@
         "mrs doubtfire tickets toronto",
         "mrs doubtfire tickets musical",
         "mrs doubtfire tickets theatre",
-        "mrs doubtfire tickets düsseldorf",
+        "mrs doubtfire tickets d\u00fcsseldorf",
         "mrs doubtfire musical tickets melbourne",
         "mrs doubtfire atg tickets"
       ],
@@ -17871,9 +17871,9 @@
     {
       "matchType": "artist",
       "matchKey": "mj-live-michael-jackson-tribute-concert",
-      "seed": "MJ LIVE – Michael Jackson Tribute Concert tickets",
+      "seed": "MJ LIVE \u2013 Michael Jackson Tribute Concert tickets",
       "suggestions": [
-        "MJ LIVE – Michael Jackson Tribute Concert tickets"
+        "MJ LIVE \u2013 Michael Jackson Tribute Concert tickets"
       ],
       "pulledAt": "2026-10-13T00:00:00Z"
     },
@@ -22316,7 +22316,7 @@
       "matchKey": "orchestre-symphonique-de-montreal",
       "seed": "Orchestre Symphonique de Montreal tickets",
       "suggestions": [
-        "orchestre symphonique de montréal tickets"
+        "orchestre symphonique de montr\u00e9al tickets"
       ],
       "pulledAt": "2026-10-16T00:00:00Z"
     },
@@ -25013,12 +25013,12 @@
       "matchKey": "casa-manana-fort-worth",
       "seed": "Casa Manana tickets",
       "suggestions": [
-        "casa mañana tickets",
-        "casa mañana tickets price",
-        "casa mañana tickets fort worth",
+        "casa ma\u00f1ana tickets",
+        "casa ma\u00f1ana tickets price",
+        "casa ma\u00f1ana tickets fort worth",
         "casa manana ticket office",
         "casa manana season tickets",
-        "casa mañana discount tickets",
+        "casa ma\u00f1ana discount tickets",
         "casa manana wizard of oz tickets",
         "casa manana hours",
         "casa manana menu with prices"
@@ -28644,7 +28644,7 @@
         "grapevine vintage railroad tickets discount",
         "grapevine vintage railroad tickets groupon",
         "grapevine vintage train tickets",
-        "tickets für grapevine vintage railroad"
+        "tickets f\u00fcr grapevine vintage railroad"
       ],
       "pulledAt": "2026-10-25T00:00:00Z"
     },
@@ -31398,7 +31398,7 @@
         "winter wonderland tickets london",
         "winter wonderland tickets 2026",
         "winter wonderland tickets price",
-        "winter wonderland tickets £1",
+        "winter wonderland tickets \u00a31",
         "winter wonderland tickets hyde park",
         "winter wonderland tickets london 2026",
         "winter wonderland tickets manchester",
@@ -33662,6 +33662,989 @@
         "st charles church vienna concert tickets"
       ],
       "pulledAt": "2026-11-02T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "paranormal-the-mindreading-magic-show",
+      "seed": "Paranormal - The Mindreading Magic Show tickets",
+      "suggestions": [
+        "paranormal the mindreading magic show tickets",
+        "magic illusion shows near me",
+        "magic show tickets near me",
+        "paranormal mind reading magic reviews",
+        "illusionist shows near me",
+        "magic fantasy shows"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "jervis-shopping-centre-s-magical-santa-grotto",
+      "seed": "Jervis Shopping Centre's Magical Santa Grotto tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "miniatuur-museum-zwolle",
+      "seed": "Miniatuur Museum Zwolle tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "cirque-du-soleil-finding-utopia",
+      "seed": "Cirque du Soleil: Finding Utopia tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "clue-a-new-comedy",
+      "seed": "Clue - A New Comedy tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-magic-parlour",
+      "seed": "The Magic Parlour tickets",
+      "suggestions": [
+        "the magic parlour tickets",
+        "the magic parlour discount tickets",
+        "the parlour magic show vancouver tickets",
+        "magic park ticket price",
+        "entry fee for magic city",
+        "magic city entrance fee",
+        "magic garden ticket price"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "spirited-away",
+      "seed": "Spirited Away tickets",
+      "suggestions": [
+        "spirited away tickets",
+        "spirited away tickets near me",
+        "spirited away tickets regal",
+        "spirited away tickets toronto",
+        "spirited away tickets los angeles",
+        "spirited away tickets london",
+        "spirited away tickets mirvish",
+        "spirited away tickets reddit",
+        "spirited away tickets price",
+        "spirited away tickets toronto reddit"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "penn-teller",
+      "seed": "Penn & Teller tickets",
+      "suggestions": [
+        "penn & teller tickets",
+        "penn & teller tickets las vegas",
+        "penn & teller tickets toronto",
+        "penn teller tickets london",
+        "penn & teller tickets uk",
+        "penn & teller ticketmaster",
+        "penn and teller tickets rio",
+        "penn & teller discount tickets",
+        "penn & teller show tickets",
+        "penn and teller tickets boston"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "redcliffe-a-new-musical",
+      "seed": "Redcliffe - A New Musical tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "jim-gaffigan",
+      "seed": "Jim Gaffigan tickets",
+      "suggestions": [
+        "jim gaffigan tickets",
+        "jim gaffigan tickets oshkosh",
+        "jim gaffigan tickets 2026",
+        "jim gaffigan tickets boston",
+        "jim gaffigan tickets seattle",
+        "jim gaffigan tickets notre dame",
+        "jim gaffigan tickets philadelphia",
+        "jim gaffigan tickets detroit",
+        "jim gaffigan tickets denver",
+        "jim gaffigan tickets 2025"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "alice-in-neverland",
+      "seed": "Alice In Neverland tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "cinderella-musical",
+      "seed": "Cinderella - Musical tickets",
+      "suggestions": [
+        "cinderella musical tickets",
+        "cinderella theatre tickets",
+        "cinderella musical oberhausen tickets",
+        "cinderella musical f\u00fcssen tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "john-crist",
+      "seed": "John Crist tickets",
+      "suggestions": [
+        "john crist tickets",
+        "john crist tickets 2026",
+        "john crist tickets minneapolis",
+        "john crist tickets 2025",
+        "john crist tickets nashville",
+        "john crist tickets phoenix",
+        "john crist tickets fort worth",
+        "john crist tickets houston",
+        "john crist tour tickets",
+        "john b crist tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "public-ice-skating",
+      "seed": "Public Ice Skating tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-pigeon-gets-a-big-time-holiday-extravaganza",
+      "seed": "The Pigeon Gets A Big Time Holiday Extravaganza tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-polar-express",
+      "seed": "The Polar Express tickets",
+      "suggestions": [
+        "the polar express tickets",
+        "the polar express tickets 2026",
+        "the polar express tickets near me",
+        "the polar express tickets please",
+        "the polar express tickets 2025",
+        "the polar express tickets grapevine",
+        "the polar express ticket printable",
+        "the polar express train tickets",
+        "the polar express palestine tickets",
+        "the north pole express tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "dexter-and-the-moonrocks",
+      "seed": "Dexter and The Moonrocks tickets",
+      "suggestions": [
+        "dexter and the moonrocks tickets",
+        "dexter and the moonrocks tickets nashville",
+        "dexter and the moonrocks tickets lubbock",
+        "dexter and the moonrocks tickets chicago",
+        "dexter and the moonrocks tickets springfield mo",
+        "dexter and the moonrocks tickets dallas",
+        "dexter and the moonrocks tickets atlanta",
+        "dexter and the moonrocks tickets cleveland",
+        "dexter and the moonrocks tickets austin",
+        "dexter and the moonrocks concert tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "christmas-spectacular-starring-the-radio-city-rockettes",
+      "seed": "Christmas Spectacular Starring The Radio City Rockettes tickets",
+      "suggestions": [
+        "christmas spectacular starring the radio city rockettes tickets",
+        "christmas spectacular starring the radio city rockettes discount tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-odd-couple",
+      "seed": "The Odd Couple tickets",
+      "suggestions": [
+        "the odd couple tickets",
+        "the odd couple tickets broadway",
+        "the odd couple tickets 2027"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "billy-strings",
+      "seed": "Billy Strings tickets",
+      "suggestions": [
+        "billy strings tickets",
+        "billy strings tickets 2027",
+        "billy strings tickets denver",
+        "billy strings tickets 2026",
+        "billy strings tickets baltimore",
+        "billy strings tickets fishers indiana",
+        "billy strings tickets oakland",
+        "billy strings tickets tonight",
+        "billy strings tickets asheville",
+        "billy strings tickets nashville"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "jason-cheny",
+      "seed": "Jason Cheny tickets",
+      "suggestions": [
+        "jason cheny tickets",
+        "jason cheny tickets vancouver",
+        "jason cheny tickets irvine",
+        "jason cheny ticket price",
+        "jason cheny toronto tickets",
+        "jason cheny singapore tickets",
+        "jason cheny sydney tickets",
+        "jason cheny sf tickets",
+        "jason cheny comedian tickets",
+        "jason cheny tour tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "misery",
+      "seed": "Misery tickets",
+      "suggestions": [
+        "misery tickets",
+        "misery tickets houston",
+        "misery play tickets",
+        "arvada center misery tickets",
+        "midway of misery tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "glengarry-glen-ross",
+      "seed": "Glengarry Glen Ross tickets",
+      "suggestions": [
+        "glengarry glen ross tickets",
+        "glengarry glen ross tickets broadway",
+        "glengarry glen ross tickets philadelphia",
+        "glengarry glen ross tickets old vic",
+        "glengarry glen ross play tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "liquid-stranger",
+      "seed": "Liquid Stranger tickets",
+      "suggestions": [
+        "liquid stranger tickets",
+        "liquid stranger tickets red rocks",
+        "liquid stranger tickets denver"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "the-great-gatsby-ny",
+      "seed": "The Great Gatsby tickets",
+      "suggestions": [
+        "the great gatsby tickets",
+        "the great gatsby tickets broadway",
+        "the great gatsby tickets toronto",
+        "the great gatsby tickets nyc",
+        "the great gatsby tickets musical",
+        "the great gatsby theater",
+        "the great gatsby theater nyc",
+        "the great gatsby theater broadway",
+        "the great gatsby rush tickets",
+        "the great gatsby lottery tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "we-are-alive-the-berlin-musical",
+      "seed": "We Are Alive - The Berlin Musical tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "zoltan-kaszas",
+      "seed": "Zoltan Kaszas tickets",
+      "suggestions": [
+        "zoltan kaszas tickets",
+        "zoltan kaszas calgary tickets",
+        "zoltan kaszas london tickets",
+        "zoltan kaszas boston tickets",
+        "zoltan kaszas denver tickets",
+        "zoltan kaszas san diego tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "artist",
+      "matchKey": "comedy-cellar-las-vegas",
+      "seed": "Comedy Cellar Las Vegas tickets",
+      "suggestions": [
+        "comedy cellar las vegas tickets",
+        "comedy club las vegas tickets",
+        "comedy cellar las vegas discount tickets",
+        "comedy cellar rio las vegas tickets",
+        "wiseguys comedy club las vegas tickets",
+        "jimmy kimmel comedy club las vegas tickets",
+        "brad garrett comedy club las vegas tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "south-alabama-jaguars-mens-basketball",
+      "seed": "South Alabama Jaguars tickets",
+      "suggestions": [
+        "south alabama jaguars tickets",
+        "south alabama football tickets",
+        "south alabama football tickets 2025",
+        "south alabama football tickets price",
+        "south al football tickets",
+        "south alabama jaguars football tickets",
+        "south alabama football ticket office",
+        "auburn south alabama football tickets",
+        "south carolina alabama football tickets",
+        "south alabama football season tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "mcneese-cowboys-mens-basketball",
+      "seed": "McNeese Cowboys tickets",
+      "suggestions": [
+        "mcneese cowboys football tickets",
+        "mcneese cowboys basketball tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "northeastern-huskies-mens-basketball",
+      "seed": "Northeastern Huskies tickets",
+      "suggestions": [
+        "northeastern university tickets",
+        "northeastern husky name"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "siu-edwardsville-cougars",
+      "seed": "SIU Edwardsville Cougars tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "robert-morris-colonials-mens-basketball",
+      "seed": "Robert Morris Colonials tickets",
+      "suggestions": [
+        "robert morris university tickets",
+        "robert morris university basketball tickets",
+        "robert morris university football tickets",
+        "robert morris colonials football vs duquesne football tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "unc-greensboro-spartans-mens-basketball",
+      "seed": "UNC Greensboro Spartans tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "college-of-charleston-cougars",
+      "seed": "College of Charleston Cougars tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "bowling-green-state-falcons-mens-basketball",
+      "seed": "Bowling Green State Falcons tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "queens-royals",
+      "seed": "Queens Royals tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "detroit-mercy-titans",
+      "seed": "Detroit Mercy Titans tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "youngstown-state-penguins-mens-basketball",
+      "seed": "Youngstown State Penguins tickets",
+      "suggestions": [
+        "youngstown state penguins football tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "lehigh-mountain-hawks-mens-basketball",
+      "seed": "Lehigh Mountain Hawks tickets",
+      "suggestions": [
+        "lehigh mountain hawks football tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "miamiredhawks-mens-basketball",
+      "seed": "Miami RedHawks tickets",
+      "suggestions": [
+        "miami redhawks tickets",
+        "miami redhawks tickets basketball",
+        "miami university tickets",
+        "miami university tickets football",
+        "miami ohio tickets basketball",
+        "miami university tickets basketball",
+        "miami ohio tickets student"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "la-salle-explorers-mens-basketball",
+      "seed": "La Salle Explorers tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "ohio-bobcats-mens-basketball",
+      "seed": "Ohio Bobcats tickets",
+      "suggestions": [
+        "ohio bobcats tickets",
+        "ohio bobcats tickets football",
+        "ohio university tickets",
+        "ohio university tickets football",
+        "ohio university tickets basketball",
+        "ohio university tickets hockey"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "texas-a-m-corpus-christi-islanders",
+      "seed": "Texas A&M Corpus Christi Islanders tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "southern-indiana-screaming-eagles",
+      "seed": "Southern Indiana Screaming Eagles tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "evansville-purple-aces",
+      "seed": "Evansville Purple Aces tickets",
+      "suggestions": [
+        "evansville purple aces tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "saint-joseph-s-hawks-mens-basketball",
+      "seed": "Saint Joseph's Hawks tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "team",
+      "matchKey": "pittsburgh-panthers-mens-basketball",
+      "seed": "Pittsburgh Panthers tickets",
+      "suggestions": [
+        "pittsburgh panthers tickets",
+        "pittsburgh panthers tickets football",
+        "pitt panthers tickets basketball",
+        "pittsburgh panthers ticket office",
+        "pitt panthers ticket office phone number",
+        "pittsburgh panthers volleyball tickets",
+        "pitt panthers season tickets",
+        "pitt panthers football tickets 2025",
+        "pitt panthers student tickets",
+        "pitt panthers season tickets football"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "excalibur-arena-at-excalibur-hotel-casino-las-vegas",
+      "seed": "Excalibur Arena tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "horseshoe-las-vegas-hotel-casino-las-vegas",
+      "seed": "Horseshoe Las Vegas tickets",
+      "suggestions": [
+        "real bodies at horseshoe las vegas tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "museo-banksy-madrid-madrid",
+      "seed": "Museo Banksy Madrid tickets",
+      "suggestions": [
+        "museo banksy madrid tickets",
+        "museo banksy madrid admission ticket"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "excalibur-hotel-and-casino-las-vegas",
+      "seed": "Excalibur Hotel and Casino tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "riverside-center-for-the-performing-arts-fredericksburg",
+      "seed": "Riverside Center for the Performing Arts tickets",
+      "suggestions": [
+        "riverside center for the performing arts tickets",
+        "riverside center for the performing arts tickets price",
+        "riverside center for the performing arts tickets discount"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "jervis-shopping-centre-dublin",
+      "seed": "Jervis Shopping Centre tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "donald-and-darlene-shiley-stage-the-old-globe-san-diego",
+      "seed": "Donald and Darlene Shiley Stage tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "bucks-county-playhouse-new-hope",
+      "seed": "Bucks County Playhouse tickets",
+      "suggestions": [
+        "bucks county playhouse tickets",
+        "bucks county playhouse tickets price",
+        "bucks county playhouse tickets discount",
+        "bucks county playhouse tickets rocky horror picture show",
+        "bucks county playhouse tickets rent",
+        "bucks county theater tickets",
+        "bucks county playhouse ticket exchange",
+        "bucks county playhouse ticket office",
+        "bucks county playhouse box office",
+        "elf bucks county playhouse tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "music-mountain-theatre-lambertville",
+      "seed": "Music Mountain Theatre tickets",
+      "suggestions": [
+        "music mountain theatre tickets",
+        "music mountain theatre tickets price for seniors",
+        "music mountain theatre tickets price",
+        "music mountain theatre tickets for seniors",
+        "music mountain theatre tickets discount",
+        "music mountain theatre 2025 schedule tickets",
+        "lambertville nj music mountain theatre tickets",
+        "music mountain theatre 2025 schedule tickets price",
+        "music mountain theatre 2026 schedule tickets",
+        "music mountain theatre 2025 schedule lambertville nj tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "sheryl-and-harvey-white-theatre-the-old-globe-san-diego",
+      "seed": "Sheryl and Harvey White Theatre tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "the-broadway-rose-new-stage-portland",
+      "seed": "The Broadway Rose New Stage tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ticketreturn-com-field-at-pelicans-ballpark-myrtle-beach",
+      "seed": "TicketReturn.com Field at Pelicans Ballpark tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "ahoy-parking-rotterdam",
+      "seed": "Ahoy Rotterdam tickets",
+      "suggestions": [
+        "ahoy rotterdam tickets",
+        "ahoy rotterdam darts tickets",
+        "padel rotterdam.ahoy tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "bugsy-s-cabaret-at-flamingo-las-vegas",
+      "seed": "Bugsy's Cabaret at Flamingo tickets",
+      "suggestions": [
+        "bugsy's cabaret at flamingo tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "fat-man-at-comedy-mothership-austin",
+      "seed": "Fat Man At Comedy Mothership tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "keesler-federal-park-biloxi",
+      "seed": "Keesler Federal Park tickets",
+      "suggestions": [
+        "keesler federal park tickets"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "criterion-theatre-london-london",
+      "seed": "Criterion Theatre London tickets",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "venue",
+      "matchKey": "uncle-vinnie-s-comedy-club-point-pleasant-beach",
+      "seed": "Uncle Vinnie's Comedy Club tickets",
+      "suggestions": [
+        "uncle vinnie's comedy club tickets",
+        "uncle vinnie's comedy club tickets price",
+        "uncle vinnie's comedy club tickets for sale",
+        "uncle vinnie's comedy club tickets price near",
+        "uncle vinnie's comedy club events"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "dublin-d1",
+      "seed": "Dublin Ireland concert tickets",
+      "suggestions": [
+        "dublin ireland concert tickets",
+        "dublin 3 arena concerts"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "new-hope-pa",
+      "seed": "New Hope PA events",
+      "suggestions": [
+        "new hope pa events",
+        "new hope pa events this weekend",
+        "new hope pa events today",
+        "new hope pa events tomorrow",
+        "new hope pa events 2026",
+        "new hope pa events 2025",
+        "new hope pa events calendar",
+        "new hope pa events tonight",
+        "new hope pa events next weekend",
+        "new hope pa events october"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "lambertville-nj",
+      "seed": "Lambertville NJ events",
+      "suggestions": [
+        "lambertville nj events",
+        "lambertville nj events this weekend",
+        "lambertville nj events today",
+        "lambertville nj events 2025",
+        "lambertville nj events calendar",
+        "lambertville nj events today free",
+        "lambertville nj events 2026",
+        "lambertville nj holiday events",
+        "lambertville nj halloween events",
+        "lambertville nj christmas events"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "zwolle",
+      "seed": "Zwolle Netherlands events",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "glen-ellyn-il",
+      "seed": "Glen Ellyn IL events",
+      "suggestions": [
+        "glen ellyn il events",
+        "glen ellyn il events this weekend",
+        "glen ellyn il events today",
+        "events near glen ellyn il",
+        "glen ellyn events today"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "oakdale-ny",
+      "seed": "Oakdale NY events",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "hackettstown-nj",
+      "seed": "Hackettstown NJ events",
+      "suggestions": [
+        "hackettstown nj events",
+        "hackettstown nj events today",
+        "hackettstown nj events this weekend"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "arcadia-ca",
+      "seed": "Arcadia CA events",
+      "suggestions": [
+        "arcadia ca events",
+        "arcadia ca events today",
+        "arcadia events",
+        "arcadia events today"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "estero-fl",
+      "seed": "Estero FL events",
+      "suggestions": [
+        "estero fl events",
+        "estero fl events today",
+        "estero florida events calendar",
+        "hertz arena estero fl events",
+        "events estero fl this weekend"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "visalia-ca",
+      "seed": "Visalia CA events",
+      "suggestions": [
+        "visalia ca events",
+        "visalia ca events today",
+        "visalia ca events this weekend",
+        "visalia ca events 2026",
+        "visalia ca events this week",
+        "visalia ca events tonight",
+        "visalia ca events 2025",
+        "visalia ca halloween events",
+        "visalia ca upcoming events",
+        "visalia ca christmas events"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "hickory-nc",
+      "seed": "Hickory NC events",
+      "suggestions": [
+        "hickory nc events",
+        "hickory nc events this weekend",
+        "hickory nc events today",
+        "hickory nc events calendar",
+        "hickory nc events next weekend",
+        "hickory nc events tonight",
+        "hickory nc events this week",
+        "hickory nc events tomorrow",
+        "hickory nc events for kids",
+        "hickory nc event venues"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "ocala-fl",
+      "seed": "Ocala FL events",
+      "suggestions": [
+        "ocala fl events this weekend",
+        "ocala fl events",
+        "ocala fl events today",
+        "ocala fl events 2026",
+        "ocala fl events tonight",
+        "ocala fl events this week",
+        "ocala fl events calendar",
+        "ocala florida events 2025",
+        "ocala fl halloween events",
+        "ocala fl christmas events"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "salem-va",
+      "seed": "Salem VA events",
+      "suggestions": [
+        "salem va events this weekend",
+        "salem va events",
+        "salem va events today",
+        "salem va events next 14 days",
+        "salem va events 2025",
+        "salem va events calendar",
+        "salem va events tonight",
+        "salem va library events",
+        "salem va halloween events",
+        "downtown salem va events this weekend"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "brea-ca",
+      "seed": "Brea CA events",
+      "suggestions": [
+        "brea ca events today",
+        "brea ca events",
+        "brea california upcoming events",
+        "events brea ca this weekend"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "bellport-ny",
+      "seed": "Bellport NY events",
+      "suggestions": [
+        "bellport ny events"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "comstock-park-mi",
+      "seed": "Comstock Park MI events",
+      "suggestions": [
+        "comstock park mi events"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "dunedin-fl",
+      "seed": "Dunedin FL events",
+      "suggestions": [
+        "dunedin fl events",
+        "dunedin fl events this weekend",
+        "dunedin fl events calendar",
+        "dunedin fl events today",
+        "dunedin fl events this weekend free",
+        "dunedin fl events today free",
+        "dunedin fl events march 2026",
+        "dunedin fl events tomorrow",
+        "dunedin fl events tonight",
+        "dunedin fl events 2026"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "conway-sc",
+      "seed": "Conway SC events",
+      "suggestions": [
+        "conway sc events",
+        "conway sc events this weekend",
+        "conway sc events today",
+        "conway sc events next 14 days",
+        "conway sc events october 2026",
+        "conway sc events october",
+        "conway sc events 2026",
+        "conway sc events tomorrow",
+        "conway sc events 2025",
+        "conway sc events calendar"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "san-juan-capistrano-ca",
+      "seed": "San Juan Capistrano CA events",
+      "suggestions": [
+        "san juan capistrano ca events",
+        "events san juan capistrano ca this weekend",
+        "events near san juan capistrano ca"
+      ],
+      "pulledAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "matchType": "city",
+      "matchKey": "west-nyack-ny",
+      "seed": "West Nyack NY events",
+      "suggestions": [],
+      "pulledAt": "2026-11-13T00:00:00Z"
     }
   ]
 }
