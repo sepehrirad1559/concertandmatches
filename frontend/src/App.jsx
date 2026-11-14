@@ -4017,9 +4017,10 @@ export default function App() {
           lineHeight: 1.15,
           margin: '4px 0 8px',
           color: '#fff',
-          whiteSpace: 'nowrap',
         }}>
-          One Search. Multiple Marketplaces.
+          One Search.
+          <br />
+          Multiple Marketplaces.
         </h1>
 
         <p style={{
