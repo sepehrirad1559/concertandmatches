@@ -336,6 +336,33 @@ router.get('/event/:pathParam', async (req, res) => {
       ? `<ul>${offers.map((o) => { const d = displayPriceForOffer(o); return `<li>${xmlEscape(o.source)}${d ? `: from $${d.price}${d.isDiscounted ? ' (20% off)' : ''}` : ''}</li>`; }).join('')}</ul>`
       : '<p>No confirmed ticket seller yet — check back soon.</p>';
 
+    // Visible seller hashtags (added 2026-11-16, at the user's request, as a
+    // website-side counterpart to the same #Ticketmaster/#SeatGeek hashtags
+    // added to the Instagram posts) — real on-page text naming whichever of
+    // these two sellers ACTUALLY has a confirmed offer on this specific
+    // event, never a blanket tag every page gets regardless of its real
+    // sellers. The goal (the user's own framing) is giving Google more
+    // real, differentiated on-page text to match a "[event] Ticketmaster
+    // tickets" / "[event] TicketNetwork tickets" style search against, the
+    // same honest-signal principle this file already uses everywhere else
+    // (real prices, real dates, real offer counts) — unlike an invisible
+    // <meta name="keywords"> tag, which Google hasn't used for ranking in
+    // years, this is real crawlable body text.
+    //
+    // Each hashtag is also a real link to that seller's new landing page
+    // (routes/seoPages.js's /sellers/:slug, added the same day) rather than
+    // plain text — an internal link from every one of this file's ~184K
+    // event pages that has a real offer from that seller is a far stronger
+    // "help Google find and recommend this page" signal than text alone,
+    // since internal links are literally the crawl path Google follows.
+    const sellerSources = new Set(offers.map((o) => o.source));
+    const sellerHashtags = [];
+    if (sellerSources.has('ticketmaster')) sellerHashtags.push('<a href="/sellers/ticketmaster">#Ticketmaster</a>');
+    if (sellerSources.has('ticketnetwork')) sellerHashtags.push('<a href="/sellers/ticketnetwork">#TicketNetwork</a>');
+    const sellerHashtagsHtml = sellerHashtags.length > 0
+      ? `<p class="seller-hashtags">${sellerHashtags.join(' ')}</p>`
+      : '';
+
     // Internal links up to the hub/collection pages (seoPages.js) — this
     // event page previously had none at all, just a self-link, which left
     // the ~15k individual event pages as crawl dead-ends with no path back
@@ -408,6 +435,7 @@ ${event.artist_name ? `<p>${xmlEscape(event.artist_name)}</p>` : ''}
 ${pastEventNoticeHtml}
 <h2>Ticket Sellers</h2>
 ${offersHtml}
+${sellerHashtagsHtml}
 ${relatedLinksHtml}`;
 
     let html;

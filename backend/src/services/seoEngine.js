@@ -614,3 +614,44 @@ export async function getTeamPage(slug) {
   if (events.length === 0) return null;
   return { ...match, events };
 }
+
+// ---- Sellers (added 2026-11-16, at the user's explicit request for real,
+// indexable, internally-linked pages Google can surface for "[seller]
+// tickets" style searches) ---------------------------------------------
+//
+// Deliberately only the two sellers with a genuine, large, confirmed
+// catalog on this site — Ticketmaster (worldwide, via its own Discovery
+// API sync, services/ticketmaster.js) and TicketNetwork (the Impact.com
+// Product Catalog, services/ticketnetwork.js, the primary source behind
+// most of the current catalog). Not SeatGeek (a separate, much smaller
+// free-API integration, not this site's affiliate catalog) and not
+// 'official' (per-site JSON-LD scraping, not a marketplace brand) — a
+// landing page for either of those would have thin or misleading content
+// behind it, which is exactly what this site's other hub types already
+// avoid by construction (seoEngine's own tiering/do-not-index gate).
+export const SELLER_DEFS = {
+  ticketmaster: { label: 'Ticketmaster', hashtag: '#Ticketmaster' },
+  ticketnetwork: { label: 'TicketNetwork', hashtag: '#TicketNetwork' },
+};
+
+// Queries the raw `events` table directly by its own `source` column
+// (same field redirect.js/pricing.js/every sync service already uses to
+// mean "which seller this raw row came from") rather than trying to infer
+// seller presence from the merged/canonical layer — a raw row's source IS
+// the ground truth of which seller listed it, so this is the simplest
+// correct query, same pattern getLeaguePage above uses for its own
+// category/keyword filter.
+export async function getSellerPage(slug) {
+  const def = SELLER_DEFS[slug];
+  if (!def) return null;
+
+  const [countRow, sample] = await Promise.all([
+    pool.query(`SELECT COUNT(*)::int AS n FROM events WHERE date >= NOW() AND source = $1`, [slug]),
+    pool.query(`SELECT * FROM events WHERE date >= NOW() AND source = $1 ORDER BY date ASC LIMIT 300`, [slug]),
+  ]);
+
+  const events = mergeEventsAcrossSources(sample.rows);
+  if (events.length === 0) return null;
+
+  return { type: 'seller', slug, label: def.label, hashtag: def.hashtag, eventCount: countRow.rows[0].n, events };
+}

@@ -21,6 +21,8 @@
     { "source": "/leagues/:slug", "destination": "https://concertandmatches-production.up.railway.app/leagues/:slug" },
     { "source": "/teams", "destination": "https://concertandmatches-production.up.railway.app/teams" },
     { "source": "/teams/:slug", "destination": "https://concertandmatches-production.up.railway.app/teams/:slug" },
+    { "source": "/sellers", "destination": "https://concertandmatches-production.up.railway.app/sellers" },
+    { "source": "/sellers/:slug", "destination": "https://concertandmatches-production.up.railway.app/sellers/:slug" },
     { "source": "/cities", "destination": "https://concertandmatches-production.up.railway.app/cities" },
     { "source": "/cities/:slug/events", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/events" },
     { "source": "/cities/:slug/concerts", "destination": "https://concertandmatches-production.up.railway.app/cities/:slug/concerts" },

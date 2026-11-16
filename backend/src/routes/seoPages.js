@@ -5,6 +5,7 @@ import {
   discoverVenues, getVenuePage,
   LEAGUE_DEFS, getLeaguePage,
   discoverTeams, getTeamPage,
+  SELLER_DEFS, getSellerPage,
   slugify as citySlugify,
   nearbyCities,
 } from '../services/seoEngine.js';
@@ -42,6 +43,7 @@ const HUB_NAV_LINKS = [
   { href: '/venues', label: 'Venues' },
   { href: '/teams', label: 'Teams' },
   { href: '/leagues', label: 'Leagues' },
+  { href: '/sellers', label: 'Sellers' },
   { href: '/guide', label: 'Price Guides' },
   { href: '/faq', label: 'FAQ' },
 ];
@@ -677,6 +679,68 @@ router.get('/teams/:slug', async (req, res) => {
   } catch (error) {
     console.error('Team page failed:', error);
     res.status(500).send('Failed to generate team page');
+  }
+});
+
+// ---------------------------------------------------------------------
+// Sellers (Ticketmaster / TicketNetwork) — added 2026-11-16, at the
+// user's explicit request. Same pattern as the leagues section above:
+// a tiny fixed SELLER_DEFS map (seoEngine.js) instead of a scored/tiered
+// discover* list, since there are only ever the two sellers this site
+// treats as real marketplace brands worth their own landing page.
+// ---------------------------------------------------------------------
+
+router.get('/sellers', async (req, res) => {
+  const items = Object.entries(SELLER_DEFS).map(([slug, def]) => `<li><a href="/sellers/${xmlEscape(slug)}">${xmlEscape(def.label)}</a></li>`).join('');
+  const sellersUrl = `${SITE_ORIGIN}/sellers`;
+  const html = pageShell({
+    title: 'Ticketmaster & TicketNetwork Tickets | ConcertAndMatches',
+    description: 'Browse real, currently listed tickets by seller: Ticketmaster and TicketNetwork.',
+    url: sellersUrl,
+    h1: 'Browse by seller',
+    intro: 'Pick a seller to see all currently listed upcoming events sold through them.',
+    bodyHtml: `<ul>${items}</ul>`,
+    jsonLd: itemListJsonLd('Browse by seller', sellersUrl, Object.entries(SELLER_DEFS).map(([slug, def]) => ({ name: def.label, href: `/sellers/${slug}` }))),
+  });
+  res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
+  res.set('Content-Type', 'text/html').send(html);
+});
+
+router.get('/sellers/:slug', async (req, res) => {
+  try {
+    const page = await getSellerPage(req.params.slug);
+    if (!page || page.events.length === 0) {
+      res.status(404).set('Content-Type', 'text/html').send(notFoundPage('Seller not found.'));
+      return;
+    }
+    const cheapest = cheapestPrice(page.events);
+    const title = `${page.label} Tickets — Concerts & Sports | ConcertAndMatches`;
+    const description = cheapest != null
+      ? `${page.eventCount} upcoming event${page.eventCount === 1 ? '' : 's'} currently listed on ${page.label}. Starting from $${Number(cheapest).toFixed(0)}.`
+      : `${page.eventCount} upcoming event${page.eventCount === 1 ? '' : 's'} currently listed on ${page.label}.`;
+    const url = `${SITE_ORIGIN}/sellers/${xmlEscape(req.params.slug)}`;
+    const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url };
+    const otherSellers = Object.entries(SELLER_DEFS)
+      .filter(([slug]) => slug !== req.params.slug)
+      .map(([slug, def]) => `<a href="/sellers/${xmlEscape(slug)}">${xmlEscape(def.label)}</a>`)
+      .join(' · ');
+    const html = pageShell({
+      title, description, url,
+      h1: `${page.label} tickets`,
+      intro: description,
+      breadcrumbHtml: breadcrumb([{ label: 'Sellers', href: '/sellers' }, { label: page.label }]),
+      jsonLd: [jsonLd, breadcrumbJsonLd([{ label: 'Sellers', href: '/sellers' }, { label: page.label }]), eventListJsonLd(page.events)].filter(Boolean),
+      bodyHtml: `<p>${xmlEscape(page.hashtag)}</p>
+      <table><thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>City</th><th>Prices by seller</th><th></th></tr></thead><tbody>${eventRows(page.events.slice(0, 300))}</tbody></table>
+      ${otherSellers ? `<h2>Other sellers</h2><p>${otherSellers}</p>` : ''}
+      <p>Prices update as sellers change theirs — confirm the final price on the seller's site before buying.</p>
+      ${discountFooterNote(page.events)}`,
+    });
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400');
+    res.set('Content-Type', 'text/html').send(html);
+  } catch (error) {
+    console.error('Seller page failed:', error);
+    res.status(500).send('Failed to generate seller page');
   }
 });
 
