@@ -1319,7 +1319,29 @@ async function getMergedEventById(eventRowId) {
   // 3000+ row table down to a handful before running the more expensive
   // token-similarity check in JS, same division of labor as the list
   // endpoint above.
-  let candidatesWhere = 'WHERE date::date = $1::date AND city = $2 AND state = $3 AND source != $4';
+  // Was `date::date = $1::date` — wrapping the column itself in a cast
+  // makes the predicate non-sargable, so Postgres can never use
+  // idx_events_date here no matter how it's written; it fell back to a
+  // BitmapAnd of just the city+state indexes and then rechecked/filtered
+  // date row-by-row on whatever that returned. With 520k+ rows and city
+  // values like "London" (shared by hundreds of events) crossed with a
+  // 23k-row 'Unknown' state bucket (international venues with no US
+  // state — see events.state), that recheck set is routinely large enough
+  // to make this query take 10-15s on cold cache (confirmed live on
+  // /event/515671-faulty-towers-the-dining-experience-london, 2026-11-17 —
+  // the GSC "Server error (5xx)" spike's example URL: the page hung on
+  // "Loading event..." for 15s before the detail call finally resolved).
+  // That's well past Google's render budget (recorded as the 5xx spike,
+  // 2.5k pages, starting ~11/3-11/10) and past real visitors' patience —
+  // this is the likely SEO *and* conversion cost of the slow query, not
+  // just a crawler-side symptom.
+  //
+  // Casting the PARAMETER instead of the column keeps the predicate
+  // sargable against the existing idx_events_date btree index, so this now
+  // runs as a 3-way BitmapAnd (date + city + state) instead of 2, which
+  // cuts the candidate/recheck set dramatically for exactly the
+  // high-cardinality city/date combinations that were slow.
+  let candidatesWhere = "WHERE date >= $1::date AND date < ($1::date + INTERVAL '1 day') AND city = $2 AND state = $3 AND source != $4";
   const candidatesParams = [base.date, base.city, base.state, base.source];
   ({ whereClause: candidatesWhere } = appendSourceFilter(candidatesWhere, candidatesParams, candidatesParams.length + 1));
   const candidatesResult = await pool.query(
