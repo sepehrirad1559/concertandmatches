@@ -3438,7 +3438,19 @@ export default function App() {
                   <a
                     href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}?sid=${encodeURIComponent(CLICK_SESSION_ID)}` : link.url}
                     target="_blank"
-                    rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
+                    // nofollow (2026-11-16): /go/event/:id is a live tracked
+                    // affiliate redirect — "sponsored" alone tells Google not
+                    // to pass PageRank through it but does NOT stop Googlebot
+                    // or any other compliant crawler from actually fetching
+                    // it. A click_events audit this same day found ticketnetwork/
+                    // seatgeek session_ids with zero Referer, dozens of distinct
+                    // events hit, spread over many days — the signature of
+                    // crawlers walking every event page's outbound link rather
+                    // than real shoppers. nofollow (paired with robots.txt's new
+                    // Disallow: /go/) tells well-behaved crawlers to leave these
+                    // links alone, cutting that noise out of both our own click
+                    // analytics and the affiliate network's click counts.
+                    rel={link.eventRowId ? 'noopener sponsored nofollow' : 'noopener noreferrer sponsored nofollow'}
                     onClick={() => {
                       if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
                       trackMetaTicketClick({
@@ -3521,7 +3533,8 @@ export default function App() {
                         key={link.source}
                         href={link.eventRowId ? `${GO_BASE}/go/event/${link.eventRowId}?sid=${encodeURIComponent(CLICK_SESSION_ID)}` : link.url}
                         target="_blank"
-                        rel={link.eventRowId ? 'noopener sponsored' : 'noopener noreferrer sponsored'}
+                        // nofollow — see the single-seller buy button above for why.
+                        rel={link.eventRowId ? 'noopener sponsored nofollow' : 'noopener noreferrer sponsored nofollow'}
                         onClick={() => {
                           if (!link.eventRowId) logTicketClick({ event_row_id: link.eventRowId, source: link.source }, selectedEvent);
                           trackMetaTicketClick({

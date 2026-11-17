@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+# /go/ is the live tracked affiliate "Buy Ticket" redirect (see
+# backend/src/routes/redirect.js) — never content worth indexing, and a
+# 2026-11-16 click_events audit found crawler-shaped traffic hitting it
+# (no Referer, one session walking dozens of different events over many
+# days). Disallowing it here, plus rel="nofollow" on the links themselves
+# (frontend/src/App.jsx), keeps compliant crawlers off it entirely.
+Disallow: /go/
 
 Sitemap: https://www.concertandmatches.com/sitemap.xml
