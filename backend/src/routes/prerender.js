@@ -2,6 +2,7 @@ import express from 'express';
 import { getMergedEventById } from './events.js';
 import { slugify as entitySlugify } from '../services/seoEngine.js';
 import { displayPriceForOffer } from '../utils/pricing.js';
+import { getWikipediaExtract } from '../services/wikipediaSummary.js';
 
 const SITE_ORIGIN = 'https://www.concertandmatches.com';
 
@@ -240,6 +241,24 @@ router.get('/event/:pathParam', async (req, res) => {
     const isEmptyListing = !event.artist_name && !event.venue_name && !event.city
       && !event.image_url && pricedOffers.length === 0;
 
+    // Real "About [artist/venue]" content (2026-11-19, see
+    // services/wikipediaSummary.js) -- the single biggest lever available
+    // against the GSC "Soft 404" bucket (45,606 pages, Search Console's own
+    // "thin/boilerplate content" signal), which this file's rootContent
+    // genuinely was: the same title/date/venue/seller-list shape repeated
+    // ~184K times. A real Wikipedia summary of the actual artist/team (or
+    // venue, when there's no artist/team name) is genuine third-party
+    // content, never fabricated -- getWikipediaExtract returns null on any
+    // failure or low-confidence match, and this section is simply omitted
+    // when it does. Skipped entirely for pages that are noindexed anyway
+    // (past/empty listings, below) so this never spends the lookup's
+    // latency/Wikipedia-request budget on a page Google won't index.
+    const willBeIndexed = !isPastEvent && !isEmptyListing;
+    const aboutEntityName = event.artist_name || event.venue_name || null;
+    const aboutEntity = willBeIndexed && aboutEntityName
+      ? await getWikipediaExtract(aboutEntityName).catch(() => null)
+      : null;
+
     const title = `${event.title} Tickets${event.city ? ` in ${event.city}` : ''} — ${formatDate(event.date)} | ConcertAndMatches`;
     const description = `Get tickets for ${event.title}${event.venue_name ? ` at ${event.venue_name}` : ''}${event.city ? ` in ${event.city}` : ''} on ${formatDate(event.date)}.${startingPrice != null ? ` Prices start at $${startingPrice.toFixed(0)}.` : ''} Listed from multiple authorized sellers.`;
     const slug = slugify(`${event.title || event.artist_name || 'event'}-${event.city || ''}`);
@@ -399,6 +418,14 @@ router.get('/event/:pathParam', async (req, res) => {
     const relatedLinksHtml = relatedLinks.length > 0
       ? `<h2>Related</h2><ul>${relatedLinks.map((l) => `<li>${l}</li>`).join('')}</ul>`
       : '';
+    // Real, attributed Wikipedia summary (see aboutEntity above) -- CC
+    // BY-SA requires attribution back to the source article, which the
+    // "Source: Wikipedia" link below provides alongside the honest framing
+    // ("About {name}") so this never reads as if it were this site's own
+    // original writing.
+    const aboutEntityHtml = aboutEntity
+      ? `<h2>About ${xmlEscape(aboutEntityName)}</h2><p>${xmlEscape(aboutEntity.extract)}</p><p class="wiki-attribution"><small>Source: <a href="${xmlEscape(aboutEntity.url)}" rel="noopener">Wikipedia</a></small></p>`
+      : '';
 
     const eventHeadTags = `<title>${xmlEscape(title)}</title>
 <meta name="description" content="${xmlEscape(description)}" />
@@ -436,6 +463,7 @@ ${pastEventNoticeHtml}
 <h2>Ticket Sellers</h2>
 ${offersHtml}
 ${sellerHashtagsHtml}
+${aboutEntityHtml}
 ${relatedLinksHtml}`;
 
     let html;
