@@ -1672,7 +1672,8 @@ function EventCard({ event, onSelect, fallbackImageUrl, isFavorited, onToggleFav
   // just the detail page. Only applies when TicketNetwork is actually the
   // (best/only) priced source behind this card's single "From" figure.
   const fromPriceSource = event.best_source || event.source;
-  const fromPrice = (fromPriceSource === 'ticketnetwork' && fromPriceRaw != null)
+  const isCardDiscounted = fromPriceSource === 'ticketnetwork' && fromPriceRaw != null;
+  const fromPrice = isCardDiscounted
     ? Math.round(fromPriceRaw * (1 - TICKETNETWORK_DISCOUNT_RATE))
     : fromPriceRaw;
   // Price RANGE across sellers (2026-10-10, business-model change: pull
@@ -1815,8 +1816,25 @@ function EventCard({ event, onSelect, fallbackImageUrl, isFavorited, onToggleFav
               <span style={{ fontWeight: 400, color: '#666' }}> · {sellerCount} sellers</span>
             </div>
           ) : priceLabel && (
-            <div style={{ fontSize: '13px', fontWeight: 700, color: NAV_ACCENT_COLOR, marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: NAV_ACCENT_COLOR, marginBottom: '6px' }}>
               From ${Number(fromPrice).toFixed(0)}
+              {/* Makes the real TicketNetwork discount an explicit, visible
+                  hook on the card itself (2026-11-19) rather than something
+                  a visitor could only notice by mentally comparing numbers —
+                  see the homepage banner above for the same reasoning. */}
+              {isCardDiscounted && (
+                <span style={{
+                  backgroundColor: '#e8f5e9',
+                  color: '#2e7d32',
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  padding: '2px 6px',
+                  borderRadius: '999px',
+                  whiteSpace: 'nowrap',
+                }}>
+                  20% OFF
+                </span>
+              )}
             </div>
           )}
           <button
@@ -3487,6 +3505,19 @@ export default function App() {
                     {priceLabel && (
                       <span style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>From {priceLabel}</span>
                     )}
+                    {originalPriceLabel && (
+                      <span style={{
+                        backgroundColor: '#e8f5e9',
+                        color: '#2e7d32',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        padding: '2px 6px',
+                        borderRadius: '999px',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        20% OFF
+                      </span>
+                    )}
                   </a>
                 );
               })()
@@ -3611,6 +3642,19 @@ export default function App() {
                                 )}
                                 {originalPriceLabel && (
                                   <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through', textDecorationColor: '#dc2626' }}>{originalPriceLabel}</span>
+                                )}
+                                {originalPriceLabel && (
+                                  <span style={{
+                                    backgroundColor: '#e8f5e9',
+                                    color: '#2e7d32',
+                                    fontSize: '10px',
+                                    fontWeight: 800,
+                                    padding: '2px 6px',
+                                    borderRadius: '999px',
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    20% OFF
+                                  </span>
                                 )}
                               </div>
                             )}
@@ -4303,6 +4347,35 @@ export default function App() {
           </button>
         )}
       </form>
+      </div>
+
+      {/* Real, sitewide discount banner (2026-11-19) — the TicketNetwork
+          20% price drop (TICKETNETWORK_DISCOUNT_RATE above, already applied
+          to every price shown) was previously only visible as a quiet
+          struck-through number on event cards/detail pages. Impact.com's
+          own conversion data shows it's the only thing that has ever
+          actually closed a sale on this site, so it's surfaced here as an
+          explicit, honest callout instead of staying implicit. Says exactly
+          what's true — TicketNetwork only, 20%, already reflected in the
+          price shown — nothing broader or unverified. */}
+      <div
+        className="cm-discount-banner"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          flexWrap: 'wrap',
+          textAlign: 'center',
+          backgroundColor: '#fff4e5',
+          borderBottom: '1px solid #f3dcae',
+          padding: '10px 20px',
+          fontSize: '14px',
+          fontWeight: 700,
+          color: '#7a4a00',
+        }}>
+        <span aria-hidden="true">🎟️</span>
+        <span>TicketNetwork tickets are 20% off right now — the discounted price is already shown below.</span>
       </div>
 
       <div id="category-tiles">

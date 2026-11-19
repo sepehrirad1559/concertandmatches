@@ -10,7 +10,7 @@ import {
   nearbyCities,
 } from '../services/seoEngine.js';
 import { topArtistCityCombos, guideSlugify } from './guides.js';
-import { displayPriceForOffer, cheapestDisplayPrice, discountFooterNote } from '../utils/pricing.js';
+import { displayPriceForOffer, cheapestDisplayPrice, discountFooterNote, hasDiscountedOffer, TICKETNETWORK_DISCOUNT_RATE } from '../utils/pricing.js';
 
 const router = express.Router();
 
@@ -714,10 +714,28 @@ router.get('/sellers/:slug', async (req, res) => {
       return;
     }
     const cheapest = cheapestPrice(page.events);
-    const title = `${page.label} Tickets — Concerts & Sports | ConcertAndMatches`;
-    const description = cheapest != null
-      ? `${page.eventCount} upcoming event${page.eventCount === 1 ? '' : 's'} currently listed on ${page.label}. Starting from $${Number(cheapest).toFixed(0)}.`
-      : `${page.eventCount} upcoming event${page.eventCount === 1 ? '' : 's'} currently listed on ${page.label}.`;
+    // 2026-11-19: foreground the real, verified TicketNetwork discount
+    // (pricing.js's TICKETNETWORK_DISCOUNT_RATE/displayPriceForOffer —
+    // already applied to every price on this page) directly in the title
+    // and meta description for this specific seller, rather than leaving
+    // it to the shared discountFooterNote() paragraph further down the
+    // page to be the only mention. Impact.com's own click/conversion data
+    // (reviewed 2026-11-19) shows this discount is the only thing that has
+    // ever actually closed a sale on the site, so it's worth a stronger
+    // search-result snippet. Only applied when this page's own events
+    // actually carry the discount (hasDiscountedOffer), which in practice
+    // means only the 'ticketnetwork' slug — Ticketmaster has no such
+    // discount and keeps its plain title/description below unchanged.
+    const sellerHasDiscount = page.events.some(hasDiscountedOffer);
+    const discountPct = Math.round(TICKETNETWORK_DISCOUNT_RATE * 100);
+    const title = sellerHasDiscount
+      ? `${page.label} Tickets — ${discountPct}% Off | ConcertAndMatches`
+      : `${page.label} Tickets — Concerts & Sports | ConcertAndMatches`;
+    const description = sellerHasDiscount
+      ? `${page.eventCount} upcoming event${page.eventCount === 1 ? '' : 's'} currently listed on ${page.label} — all ${discountPct}% off the regular price, discount already applied below.${cheapest != null ? ` Starting from $${Number(cheapest).toFixed(0)}.` : ''}`
+      : cheapest != null
+        ? `${page.eventCount} upcoming event${page.eventCount === 1 ? '' : 's'} currently listed on ${page.label}. Starting from $${Number(cheapest).toFixed(0)}.`
+        : `${page.eventCount} upcoming event${page.eventCount === 1 ? '' : 's'} currently listed on ${page.label}.`;
     const url = `${SITE_ORIGIN}/sellers/${xmlEscape(req.params.slug)}`;
     const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url };
     const otherSellers = Object.entries(SELLER_DEFS)
