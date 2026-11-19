@@ -1,6 +1,6 @@
 {
-  "source": "Google Autocomplete Suggest API (suggestqueries.google.com) — real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model — every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
-  "pulledAt": "2026-11-17T00:00:00Z",
+  "source": "Google Autocomplete Suggest API (suggestqueries.google.com) \u2014 real, live query-completion data returned by Google itself, reflecting actual aggregate searcher behavior. This is NOT search-volume data (no counts, no rankings by frequency) and NOT generated or guessed by an AI model \u2014 every phrase below is a verbatim suggestion Google returned for the seed query on the pull date.",
+  "pulledAt": "2026-11-19T00:00:00Z",
   "method": "Manually pulled during a Claude research session using the seed queries below, one HTTP request per seed, against ConcertAndMatches' actual top-inventory entities at the time (see backend/SEO_STRATEGY.md for why this is a periodic snapshot rather than a live production call).",
   "entries": [
     {
@@ -13,7 +13,7 @@
         "upcoming football matches tickets",
         "how much are football tickets"
       ],
-      "pulledAt": "2026-10-12T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "league",
@@ -29,9 +29,9 @@
         "wvu basketball vip tickets",
         "real madrid basketball vip tickets",
         "how to get vip basketball tickets",
-        "vip tickets basketball löwen"
+        "vip tickets basketball l\u00f6wen"
       ],
-      "pulledAt": "2026-10-12T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "league",
@@ -49,7 +49,7 @@
         "when do 2027 college football championship tickets go on sale",
         "college football dublin 2027 tickets price"
       ],
-      "pulledAt": "2026-10-12T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "league",
@@ -59,7 +59,7 @@
         "2027 concert tickets",
         "2027 vienna new year concert tickets"
       ],
-      "pulledAt": "2026-10-12T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "league",
@@ -75,7 +75,7 @@
         "how much do broadway tickets cost",
         "how to get cheap.broadway tickets"
       ],
-      "pulledAt": "2026-10-12T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "league",
@@ -93,7 +93,7 @@
         "upcoming comedy shows in phoenix",
         "upcoming comedy shows vancouver"
       ],
-      "pulledAt": "2026-10-12T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -1708,7 +1708,7 @@
         "ka cirque du soleil last minute tickets",
         "buy tickets ka cirque du soleil",
         "ka cirque du soleil las vegas discount tickets",
-        "tickets für ka cirque du soleil"
+        "tickets f\u00fcr ka cirque du soleil"
       ],
       "pulledAt": "2026-10-30T00:00:00Z"
     },
@@ -4875,7 +4875,7 @@
         "drunk dracula tickets phoenix",
         "drunk dracula discount tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -4893,7 +4893,7 @@
         "mat franco ticket deals",
         "mat franco ticket prices"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -4907,9 +4907,11 @@
         "the mentalist show tickets",
         "oz the mentalist tickets nyc",
         "the mentalist planet hollywood tickets",
-        "oz the mentalist brooklyn tickets"
+        "oz the mentalist brooklyn tickets",
+        "mentalist ticket nach brasilien",
+        "why was the mentalist cancelled"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -4927,7 +4929,7 @@
         "laugh factory tickets las vegas",
         "laugh factory ticket prices"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -4945,7 +4947,7 @@
         "dear evan hansen tickets philippines",
         "dear evan hansen tickets hamburg"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -4963,7 +4965,7 @@
         "oliver tickets last minute",
         "oliver tickets matt lucas"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -4978,16 +4980,19 @@
         "how long is piff the magic dragon show",
         "piff the magic dragon schedule"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
       "matchKey": "boop-the-betty-boop-musical",
       "seed": "BOOP! The Betty Boop Musical tickets",
       "suggestions": [
-        "betty boop musical tickets"
+        "betty boop musical tickets",
+        "is betty boop child friendly",
+        "is betty boop kid friendly",
+        "how much is betty boop worth"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5005,7 +5010,7 @@
         "diva royale drag queens show savannah tickets",
         "diva royale drag queens show new haven tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5023,7 +5028,7 @@
         "schmigadoon tickets price",
         "schmigadoon tickets stubhub"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5041,7 +5046,7 @@
         "radio city christmas show tickets 2025",
         "radio city christmas show tickets 2026"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5059,7 +5064,7 @@
         "eddie griffin tour 2026",
         "eddie griffin tour dates 2025"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5071,9 +5076,12 @@
         "le grand cirque discount tickets",
         "le grand cirque myrtle beach tickets",
         "le grand cirque maximum velocity tickets",
-        "le grand cirque myrtle beach tickets price"
+        "le grand cirque myrtle beach tickets price",
+        "le grand cirque reviews",
+        "le cirque prices",
+        "le cirque las vegas reviews"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5091,7 +5099,7 @@
         "chicago the play tickets",
         "chicago the musical ticket prices"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5101,7 +5109,7 @@
         "the australian bee gees tickets",
         "australian bee gees tickets las vegas"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5119,7 +5127,7 @@
         "now you see me live melbourne tickets",
         "now you see me live perth tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5127,9 +5135,10 @@
       "seed": "An R-Rated Magic Show tickets",
       "suggestions": [
         "an r rated magic show tickets",
-        "an r rated magic show las vegas tickets"
+        "an r rated magic show las vegas tickets",
+        "what is an r rated magic show"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5147,7 +5156,7 @@
         "legally blonde tickets winnipeg",
         "legally blonde tickets belfast"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5165,7 +5174,7 @@
         "just in time broadway tickets discount",
         "just in time rush tickets broadway"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5173,7 +5182,7 @@
       "seed": "Sinatra The Musical tickets",
       "suggestions": [
         "sinatra the musical tickets",
-        "sinatra the musical tickets london",
+        "sinatra the musical london",
         "sinatra the musical ticket prices",
         "sinatra the musical cheap tickets",
         "sinatra the musical access tickets",
@@ -5183,7 +5192,7 @@
         "sinatra the musical uk tour tickets",
         "sinatra theatre tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5201,7 +5210,7 @@
         "the lost boys ticket lottery",
         "the lost boys ticket prices"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5219,7 +5228,7 @@
         "stranger things the first shadow tickets west end",
         "stranger things the first shadow tickets discount"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "artist",
@@ -5503,9 +5512,10 @@
         "missouri tigers basketball tickets",
         "missouri tigers football tickets 2025",
         "mu tigers football tickets",
-        "missouri tigers football season tickets"
+        "missouri tigers football season tickets",
+        "are there tigers in missouri"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5523,7 +5533,7 @@
         "ole miss football tickets playoff",
         "ole miss football tickets single game"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5532,9 +5542,10 @@
       "suggestions": [
         "vanderbilt commodores tickets",
         "vanderbilt university tickets",
-        "vanderbilt commodores football tickets"
+        "vanderbilt commodores football tickets",
+        "vanderbilt sat scores"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5550,7 +5561,7 @@
         "georgia tech yellow jackets football vs byu football tickets",
         "georgia tech yellow jackets vs georgia bulldogs football tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5558,9 +5569,11 @@
       "seed": "Navy Midshipmen tickets",
       "suggestions": [
         "navy midshipmen tickets",
-        "navy midshipmen football tickets"
+        "navy midshipmen football tickets",
+        "what is a navy midshipmen",
+        "what is a naval midshipman"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5574,9 +5587,10 @@
         "akron zips season tickets",
         "akron zips basketball tickets",
         "akron zips soccer tickets",
-        "akron zips football season tickets"
+        "akron zips football season tickets",
+        "akron zips meaning"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5586,9 +5600,11 @@
         "liberty flames tickets",
         "liberty university tickets",
         "liberty university tickets theater",
-        "liberty university tickets football"
+        "liberty university tickets football",
+        "liberty flames meaning",
+        "is the flame on the statue of liberty real"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5596,9 +5612,11 @@
       "seed": "Harvard Crimson tickets",
       "suggestions": [
         "harvard crimson tickets",
-        "harvard university tickets"
+        "harvard university tickets",
+        "is the harvard crimson reliable",
+        "what is harvard crimson"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5610,7 +5628,7 @@
         "columbia lions schedule",
         "columbia lions football schedule"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5624,7 +5642,7 @@
         "unlv lady rebels tickets",
         "unlv rebels basketball tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5632,18 +5650,20 @@
       "seed": "Princeton Tigers tickets",
       "suggestions": [
         "princeton university tickets",
-        "princeton tigers schedule"
+        "princeton tigers schedule",
+        "can you buy tigers tickets at the gate"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
       "matchKey": "michigan-state-spartans",
       "seed": "Michigan State Spartans tickets",
       "suggestions": [
-        "michigan state spartans tickets"
+        "michigan state spartans tickets",
+        "michigan state spartans sayings"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5660,7 +5680,7 @@
         "utah state aggies football season tickets",
         "utah state aggies basketball season tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5678,7 +5698,7 @@
         "nevada wolf pack football season tickets",
         "nevada wolf pack basketball season tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5692,27 +5712,29 @@
         "louisville football tickets 2026",
         "louisville basketball tickets 2025",
         "louisville cardinals football tickets",
-        "louisville cardinals basketball tickets"
+        "louisville cardinals basketball tickets",
+        "how much are cardinals tickets",
+        "louisville cardinals vs arizona cardinals logo"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
       "matchKey": "pittsburgh-panthers",
       "seed": "Pittsburgh Panthers tickets",
       "suggestions": [
-        "pittsburg panthers tickets",
-        "pittsburg panthers tickets football",
+        "pittsburgh panthers tickets",
+        "pittsburgh panthers tickets football",
+        "pitt panthers tickets",
         "pitt panthers tickets basketball",
-        "pittsburg panthers ticket office",
+        "pittsburgh panthers ticket office",
         "pitt panthers ticket office phone number",
-        "pittsburg panthers volleyball tickets",
+        "pittsburgh panthers volleyball tickets",
         "pitt panthers season tickets",
-        "pitt panthers football tickets 2025",
-        "pitt panthers student tickets",
-        "pitt panthers season tickets football"
+        "pitt panthers football tickets 2026",
+        "pitt panthers student tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5730,7 +5752,7 @@
         "va tech football tickets 2025",
         "virginia tech hokies football tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5744,9 +5766,11 @@
         "iowa state cyclones football tickets 2025",
         "iowa state cyclones men's basketball tickets",
         "iowa state cyclones women's basketball tickets",
-        "iowa state cyclones football season tickets"
+        "iowa state cyclones football season tickets",
+        "are there cyclones in iowa",
+        "what channel are the iowa state cyclones playing on"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5764,7 +5788,7 @@
         "boston university football tickets",
         "boston college football ticket office"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5777,9 +5801,12 @@
         "illinois fighting illini basketball tickets",
         "illinois fighting illini men's basketball tickets",
         "illinois fighting illini women's basketball tickets",
-        "illinois fighting illini football season tickets"
+        "illinois fighting illini football season tickets",
+        "what is an illinois illini",
+        "why is illinois called the fighting illini",
+        "how many tickets can you get in illinois"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5788,9 +5815,10 @@
       "suggestions": [
         "butler basketball tickets",
         "butler football tickets",
-        "butler university tickets"
+        "butler university tickets",
+        "how much are georgia bulldog tickets"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5798,9 +5826,11 @@
       "seed": "California Golden Bears tickets",
       "suggestions": [
         "california golden bears tickets",
-        "california golden bears football tickets"
+        "california golden bears football tickets",
+        "california golden bears location",
+        "who are the california golden bears"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5812,9 +5842,11 @@
         "yale football tickets 2025",
         "yale football tickets 2026",
         "yale football tickets student",
-        "yale bulldogs football tickets"
+        "yale bulldogs football tickets",
+        "yale tuition deadline",
+        "yale university policies and procedures"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5829,9 +5861,10 @@
         "wisconsin football tickets 2025",
         "wisconsin football tickets 2026",
         "wisconsin football tickets student",
-        "wisconsin badgers volleyball tickets"
+        "wisconsin badgers volleyball tickets",
+        "are there actually badgers in wisconsin"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -5839,9 +5872,13 @@
       "seed": "Wake Forest Demon Deacons tickets",
       "suggestions": [
         "wake forest demon deacons football tickets",
-        "wake forest demon deacons men's basketball tickets"
+        "wake forest demon deacons men's basketball tickets",
+        "why is wake forest called the demon deacons",
+        "how did wake forest get the name demon deacons",
+        "who are the demon deacons",
+        "demon deacon meaning"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "team",
@@ -6036,9 +6073,11 @@
         "moulin rouge paris tickets cheap 2 for 1",
         "moulin rouge paris tickets resale",
         "moulin rouge paris tickets 2 for 1",
-        "moulin rouge paris tickets discount"
+        "moulin rouge paris tickets discount",
+        "moulin rouge paris tickets age limit",
+        "moulin rouge paris age rating"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "venue",
@@ -6185,44 +6224,54 @@
       "matchKey": "paris-ville-de-paris",
       "seed": "Paris, VILLE DE PARIS",
       "suggestions": [
-        "paris concert tickets",
-        "paris tickets tour eiffel"
+        "paris ville de paris",
+        "paris adresse ville de paris",
+        "paris tennis ville de paris",
+        "paris sport ville de paris",
+        "paris mus\u00e9e ville de paris",
+        "paris logement ville de paris",
+        "paris recrute ville de paris",
+        "exposition paris ville de paris",
+        "paris fr ville de paris",
+        "encombrants paris ville de paris"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "madrid-madrid",
       "seed": "Madrid, MADRID",
       "suggestions": [
-        "madrid concert tickets",
-        "bts madrid concert tickets",
-        "shakira madrid concert tickets",
-        "ye madrid concert tickets",
-        "kanye madrid concert tickets",
-        "weeknd madrid concert tickets",
-        "bad bunny madrid concert tickets",
-        "bruno mars madrid concert tickets"
+        "madrid madrid",
+        "madrid madrid madrid letra",
+        "madrid madrid madrid lyrics",
+        "madrid madrid madrid hala madrid",
+        "madrid madrid spain",
+        "madrid madrid madrid song",
+        "madrid madrid madrid song lyrics",
+        "madrid madrid hala madrid lyrics",
+        "madrid madrid es",
+        "madrid madrid real madrid"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "buffalo-ny",
       "seed": "Buffalo, NY",
       "suggestions": [
-        "buffalo concert tickets",
-        "buffalo chip concert tickets",
-        "buffalo thunder concert tickets",
-        "buffalo chip concert tickets price",
-        "white buffalo concert tickets",
-        "buffalo ny concert tickets",
-        "buffalo traffic jam concert tickets",
-        "candlelight concert buffalo tickets",
-        "buffalo chip sturgis concert tickets",
-        "buffalo arena concerts"
+        "buffalo ny",
+        "buffalo ny weather",
+        "buffalo ny population",
+        "buffalo ny zip code",
+        "buffalo ny news",
+        "buffalo ny airport",
+        "buffalo ny weather forecast",
+        "buffalo ny map",
+        "buffalo ny to niagara falls",
+        "buffalo ny to nyc"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -6247,240 +6296,324 @@
       "matchKey": "jacksonville-fl",
       "seed": "Jacksonville, FL",
       "suggestions": [
-        "jacksonville concert tickets",
-        "jax concert tickets",
-        "jacksonville fl concert tickets",
-        "candlelight concert jacksonville tickets",
-        "ella langley jacksonville concert tickets"
+        "jacksonville florida",
+        "jacksonville fl weather",
+        "jacksonville fl zip code",
+        "jacksonville flooding",
+        "jacksonville fl airport",
+        "jacksonville fl population",
+        "jacksonville fl county",
+        "jacksonville florida flooding",
+        "jacksonville flooding today",
+        "jacksonville fl to orlando fl"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "sacramento-ca",
       "seed": "Sacramento, CA",
       "suggestions": [
-        "sacramento concert tickets",
-        "sacramento candlelight concert tickets",
-        "nba youngboy sacramento concert tickets",
-        "olivia rodrigo sacramento concert tickets",
-        "cardi b sacramento concert tickets",
-        "j cole sacramento concert tickets",
-        "concert tickets sacramento ca",
-        "sacramento arena concerts"
+        "sacramento california",
+        "sacramento ca weather",
+        "sacramento california weather",
+        "sacramento ca zip code",
+        "sacramento card show",
+        "sacramento capitol",
+        "sacramento ca news",
+        "sacramento california zip code",
+        "sacramento ca county",
+        "sacramento capitol building"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "rochester-ny",
       "seed": "Rochester, NY",
       "suggestions": [
-        "rochester concert tickets",
-        "rochester castle concert tickets",
-        "rochester castle concert tickets 2026",
-        "rochester candlelight concert tickets",
-        "rochester ny concert tickets",
-        "rochester concerts 2025 tickets",
-        "rochester cathedral candlelight concert tickets",
-        "rochester cathedral candlelight concert tickets prices",
-        "rochester cathedral carol concert tickets",
-        "rochester cathedral christmas carol concert tickets"
+        "rochester ny",
+        "rochester ny news",
+        "rochester ny weather",
+        "rochester ny zip code",
+        "rochester ny population",
+        "rochester ny airport",
+        "rochester ny obituaries",
+        "rochester ny county",
+        "rochester ny weather forecast",
+        "rochester ny to nyc"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "san-jose-ca",
       "seed": "San Jose, CA",
       "suggestions": [
-        "san jose concert tickets",
-        "shakira san jose concert tickets",
-        "sonu nigam san jose concert tickets",
-        "candlelight concert san jose tickets",
-        "pritam concert san jose tickets",
-        "freestyle concert san jose 2025 tickets"
+        "san jose california",
+        "san jose ca",
+        "san jose ca weather",
+        "san jose catholic church",
+        "san jose ca news",
+        "san jose california airport",
+        "san jose ca zip code",
+        "san jose ca flooding",
+        "san jose ca county",
+        "san jose ca flooding today"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "fort-lauderdale-fl",
       "seed": "Fort Lauderdale, FL",
       "suggestions": [
-        "fort lauderdale concert tickets",
-        "fort lauderdale greek festival tickets",
-        "fort lauderdale film festival tickets",
-        "fort lauderdale renaissance festival tickets",
-        "candlelight concert fort lauderdale tickets"
+        "fort lauderdale flooding",
+        "fort lauderdale flooding today",
+        "fort lauderdale florida",
+        "fort lauderdale florida weather",
+        "fort lauderdale flights",
+        "fort lauderdale flooding map",
+        "fort lauderdale flooding airport",
+        "fort lauderdale fl flooding",
+        "fort lauderdale fl zip code",
+        "fort lauderdale fl county"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "spokane-wa",
       "seed": "Spokane, WA",
       "suggestions": [
-        "spokane concert tickets",
-        "spokane arena tickets",
-        "spokane arena tickets west",
-        "spokane fair concert tickets",
-        "spokane arena concert tickets",
-        "candlelight concert spokane tickets",
-        "spokane tribe casino concert tickets",
-        "spokane interstate fair concert tickets",
-        "benson boone spokane concert tickets",
-        "brandon lake spokane concert tickets"
+        "spokane washington",
+        "spokane wa",
+        "spokane wa weather",
+        "spokane washington fire",
+        "spokane wa population",
+        "spokane wa zip code",
+        "spokane wa to seattle wa",
+        "spokane washington zip code",
+        "spokane wa fires",
+        "spokane wa air quality"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "el-paso-tx",
       "seed": "El Paso, TX",
       "suggestions": [
-        "el paso concert tickets",
-        "bts el paso concert tickets",
-        "karol g el paso concert tickets",
-        "post malone el paso concert tickets",
-        "candlelight concert el paso tickets",
-        "midland concert el paso tickets"
+        "el paso tx",
+        "el paso tx weather",
+        "el paso tx time",
+        "el paso tx zip code",
+        "el paso tx time zone",
+        "el paso tx county",
+        "el paso tx population",
+        "el paso tx to dallas tx",
+        "el paso tx to houston tx",
+        "el paso tx to san antonio tx"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "durham-nc",
       "seed": "Durham, NC",
       "suggestions": [
-        "durham concert tickets",
-        "durham candlelight concert tickets",
-        "durham cathedral concert tickets",
-        "durham cathedral candlelight concert tickets"
+        "durham nc",
+        "durham nc weather",
+        "durham nc news",
+        "durham nc zip code",
+        "durham nc population",
+        "durham nc county",
+        "durham nc to charlotte nc",
+        "durham nc shooting",
+        "durham nc to raleigh nc",
+        "durham nc apartments"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "anaheim-ca",
       "seed": "Anaheim, CA",
       "suggestions": [
-        "anaheim concert tickets",
-        "poppy anaheim concert tickets",
-        "daniel caesar anaheim concert tickets"
+        "anaheim california",
+        "anaheim ca weather",
+        "anaheim ca",
+        "anaheim ca zip code",
+        "anaheim california airport",
+        "anaheim ca distribution center",
+        "anaheim carriage inn",
+        "anaheim card show",
+        "anaheim camelot inn & suites",
+        "anaheim ca to los angeles ca"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "reno-nv",
       "seed": "Reno, NV",
       "suggestions": [
-        "reno concert tickets",
-        "reno rodeo concert tickets",
-        "gsr reno concert tickets",
-        "fort reno concerts tickets",
-        "reno rodeo kickoff concert tickets",
-        "candlelight concert reno tickets",
-        "reno rodeo opening concert tickets",
-        "raymond lam reno concert tickets",
-        "reno rodeo concert 2026 tickets",
-        "concert tickets reno nv"
+        "reno nv weather",
+        "reno nv",
+        "reno nv zip code",
+        "reno nv fires",
+        "reno nv news",
+        "reno nv time",
+        "reno nv population",
+        "reno nv to las vegas nv",
+        "reno nv time zone",
+        "reno nv elevation"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "akron-oh",
       "seed": "Akron, OH",
       "suggestions": [
-        "akron concert tickets",
-        "candlelight concert akron tickets"
+        "akron ohio",
+        "akron ohio weather",
+        "akron ohio news",
+        "akron ohio zip code",
+        "akron ohio population",
+        "akron oh weather",
+        "akron ohio obituaries",
+        "akron ohio county",
+        "akron ohio airport",
+        "akron ohio weather forecast"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "worcester-ma",
       "seed": "Worcester, MA",
       "suggestions": [
-        "worcester concert tickets",
-        "worcester cathedral concerts tickets prices",
-        "worcester cathedral concerts tickets",
-        "worcester cathedral candlelight concert tickets",
-        "worcester male voice choir concert tickets",
-        "concert in worcester ma tonight",
-        "live music in worcester tonight"
+        "worcester massachusetts",
+        "worcester ma weather",
+        "worcester ma zip code",
+        "worcester ma news",
+        "worcester ma population",
+        "worcester ma to boston ma",
+        "worcester ma obituaries",
+        "worcester massachusetts weather",
+        "worcester ma restaurants",
+        "worcester market"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "lexington-ky",
       "seed": "Lexington, KY",
       "suggestions": [
-        "lexington concert tickets",
-        "lexington ky concert tickets",
-        "lexington lab band concert tickets",
-        "lexington green concerts",
-        "concert in lexington tonight"
+        "lexington ky",
+        "lexington ky weather",
+        "lexington ky zip code",
+        "lexington ky time zone",
+        "lexington ky population",
+        "lexington ky news",
+        "lexington ky airport",
+        "lexington ky restaurants",
+        "lexington ky county",
+        "lexington ky to louisville ky"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "fort-myers-fl",
       "seed": "Fort Myers, FL",
       "suggestions": [
-        "fort myers concert tickets",
-        "candlelight concert fort myers tickets",
-        "concerts in fort myers this weekend"
+        "fort myers florida",
+        "fort myers florida weather",
+        "fort myers fl zip code",
+        "fort myers flea market",
+        "fort myers florida map",
+        "fort myers fl county",
+        "fort myers flooding today",
+        "fort myers florist",
+        "fort myers florida airport",
+        "fort myers flights"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "sarasota-fl",
       "seed": "Sarasota, FL",
       "suggestions": [
-        "sarasota concert tickets",
-        "sarasota concert association tickets",
-        "sarasota concerts 2025 tickets",
-        "candlelight concert sarasota tickets"
+        "sarasota florida",
+        "sarasota fl",
+        "sarasota fl weather",
+        "sarasota florida homes for sale",
+        "sarasota florida map",
+        "sarasota fl zip code",
+        "sarasota florida zip code",
+        "sarasota fl county",
+        "sarasota fl on map",
+        "sarasota florida real estate"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "fayetteville-ar",
       "seed": "Fayetteville, AR",
       "suggestions": [
-        "fayetteville concert tickets",
-        "j cole fayetteville concert tickets",
-        "concert tickets fayetteville ar"
+        "fayetteville ar",
+        "fayetteville ar weather",
+        "fayetteville ar zip code",
+        "fayetteville ar airport",
+        "fayetteville ar population",
+        "fayetteville ar restaurants",
+        "fayetteville arkansas zip code",
+        "fayetteville area code",
+        "fayetteville ar news",
+        "fayetteville arkansas population"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "asheville-nc",
       "seed": "Asheville, NC",
       "suggestions": [
-        "concert tickets asheville",
-        "candlelight concert asheville tickets",
-        "asheville concerts"
+        "asheville nc",
+        "asheville nc weather",
+        "asheville nc airport",
+        "asheville nc population",
+        "asheville nc zip code",
+        "asheville nc things to do",
+        "asheville nc hotels",
+        "asheville nc homes for sale",
+        "asheville nc restaurants",
+        "asheville nc to charlotte nc"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
       "matchKey": "dayton-oh",
       "seed": "Dayton, OH",
       "suggestions": [
-        "dayton concert tickets",
-        "concert tickets dayton ohio"
+        "dayton ohio",
+        "dayton ohio weather",
+        "dayton ohio zip code",
+        "dayton ohio population",
+        "dayton ohio airport",
+        "dayton ohio weather forecast",
+        "dayton ohio obituaries",
+        "dayton ohio county",
+        "dayton ohio weather radar",
+        "dayton ohio air force museum"
       ],
-      "pulledAt": "2026-10-03T00:00:00Z"
+      "pulledAt": "2026-11-19T00:00:00Z"
     },
     {
       "matchType": "city",
@@ -7423,7 +7556,7 @@
       "matchKey": "cirque-du-soleil-alize",
       "seed": "Cirque du Soleil - Alize tickets",
       "suggestions": [
-        "cirque du soleil alizé tickets",
+        "cirque du soleil aliz\u00e9 tickets",
         "cirque du soleil alize tickets berlin",
         "cirque du soleil alize tickets kaufen"
       ],
@@ -11745,7 +11878,7 @@
     {
       "matchType": "artist",
       "matchKey": "dazzling-nights-orlando",
-      "seed": "Dazzling Nights® Orlando tickets",
+      "seed": "Dazzling Nights\u00ae Orlando tickets",
       "suggestions": [
         "dazzling nights orlando tickets price",
         "dazzling nights orlando 2025 tickets",
@@ -12459,7 +12592,7 @@
         "fly linq zipline las vegas tickets",
         "fly linq zipline vegas price",
         "fly linq zipline ticket price",
-        "tickets für fly linq zipline",
+        "tickets f\u00fcr fly linq zipline",
         "fly linq zipline hours",
         "fly linq zipline age limit",
         "fly linq zipline reviews"
@@ -13568,7 +13701,7 @@
         "balloon museum emotionair chicago tickets",
         "balloon museum emotion air london tickets",
         "balloon museum emotionair chicago tickets price",
-        "balloon museum emotion air düsseldorf tickets",
+        "balloon museum emotion air d\u00fcsseldorf tickets",
         "balloon museum emotion air san francisco tickets",
         "balloon museum emotionair chicago photos tickets",
         "balloon museum emotion air san francisco tickets price",
@@ -15239,7 +15372,7 @@
     {
       "matchType": "city",
       "matchKey": "mexico-cdmx",
-      "seed": "México concert tickets",
+      "seed": "M\u00e9xico concert tickets",
       "suggestions": [
         "bts mexico concert tickets",
         "mexican ot concert tickets",
@@ -17440,7 +17573,7 @@
         "mrs doubtfire tickets toronto",
         "mrs doubtfire tickets musical",
         "mrs doubtfire tickets theatre",
-        "mrs doubtfire tickets düsseldorf",
+        "mrs doubtfire tickets d\u00fcsseldorf",
         "mrs doubtfire musical tickets melbourne",
         "mrs doubtfire atg tickets"
       ],
@@ -18069,9 +18202,9 @@
     {
       "matchType": "artist",
       "matchKey": "mj-live-michael-jackson-tribute-concert",
-      "seed": "MJ LIVE – Michael Jackson Tribute Concert tickets",
+      "seed": "MJ LIVE \u2013 Michael Jackson Tribute Concert tickets",
       "suggestions": [
-        "MJ LIVE – Michael Jackson Tribute Concert tickets"
+        "MJ LIVE \u2013 Michael Jackson Tribute Concert tickets"
       ],
       "pulledAt": "2026-10-13T00:00:00Z"
     },
@@ -22514,7 +22647,7 @@
       "matchKey": "orchestre-symphonique-de-montreal",
       "seed": "Orchestre Symphonique de Montreal tickets",
       "suggestions": [
-        "orchestre symphonique de montréal tickets"
+        "orchestre symphonique de montr\u00e9al tickets"
       ],
       "pulledAt": "2026-10-16T00:00:00Z"
     },
@@ -25211,12 +25344,12 @@
       "matchKey": "casa-manana-fort-worth",
       "seed": "Casa Manana tickets",
       "suggestions": [
-        "casa mañana tickets",
-        "casa mañana tickets price",
-        "casa mañana tickets fort worth",
+        "casa ma\u00f1ana tickets",
+        "casa ma\u00f1ana tickets price",
+        "casa ma\u00f1ana tickets fort worth",
         "casa manana ticket office",
         "casa manana season tickets",
-        "casa mañana discount tickets",
+        "casa ma\u00f1ana discount tickets",
         "casa manana wizard of oz tickets",
         "casa manana hours",
         "casa manana menu with prices"
@@ -28842,7 +28975,7 @@
         "grapevine vintage railroad tickets discount",
         "grapevine vintage railroad tickets groupon",
         "grapevine vintage train tickets",
-        "tickets für grapevine vintage railroad"
+        "tickets f\u00fcr grapevine vintage railroad"
       ],
       "pulledAt": "2026-10-25T00:00:00Z"
     },
@@ -31596,7 +31729,7 @@
         "winter wonderland tickets london",
         "winter wonderland tickets 2026",
         "winter wonderland tickets price",
-        "winter wonderland tickets £1",
+        "winter wonderland tickets \u00a31",
         "winter wonderland tickets hyde park",
         "winter wonderland tickets london 2026",
         "winter wonderland tickets manchester",
@@ -33994,7 +34127,7 @@
         "cinderella musical tickets",
         "cinderella theatre tickets",
         "cinderella musical oberhausen tickets",
-        "cinderella musical füssen tickets"
+        "cinderella musical f\u00fcssen tickets"
       ],
       "pulledAt": "2026-11-13T00:00:00Z"
     },
@@ -36141,7 +36274,7 @@
       "matchKey": "theatre-manuvie-brossard",
       "seed": "Theatre Manuvie tickets",
       "suggestions": [
-        "théâtre manuvie tickets"
+        "th\u00e9\u00e2tre manuvie tickets"
       ],
       "pulledAt": "2026-11-16T00:00:00Z"
     },
