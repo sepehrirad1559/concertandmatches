@@ -28,6 +28,17 @@ const FETCH_TIMEOUT_MS = 1500; // short enough that a slow/unreachable
 // Wikipedia can never meaningfully slow down this site's own page response
 // -- see the AbortController usage below.
 
+// Wikimedia's API etiquette policy rejects/throttles requests that don't
+// identify the calling application with a real User-Agent (their guidance:
+// https://meta.wikimedia.org/wiki/User-Agent_policy) -- a bare server-side
+// fetch() with no explicit header is exactly the shape they ask callers not
+// to send, and apparently can be hard-rejected outright. The existing
+// client-side fetchWikipediaImage() in App.jsx never hit this because a
+// real browser always sends its own full User-Agent automatically; our
+// server-side fetch() here does not, until now.
+const WIKIPEDIA_USER_AGENT =
+  'ConcertAndMatches/1.0 (https://www.concertandmatches.com; contact via site) node-fetch';
+
 // query -> { extract, title, fetchedAt } | { extract: null, fetchedAt }
 const cache = new Map();
 
@@ -35,7 +46,10 @@ async function fetchWithTimeout(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    return await fetch(url, { signal: controller.signal });
+    return await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': WIKIPEDIA_USER_AGENT },
+    });
   } finally {
     clearTimeout(timer);
   }
